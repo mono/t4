@@ -2,7 +2,7 @@
 // Test.cs
 //  
 // Author:
-//       Michael Hutchinson <mhutchinson@novell.com>
+//       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
 // 
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
 // 

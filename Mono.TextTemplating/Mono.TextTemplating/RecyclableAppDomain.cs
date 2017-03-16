@@ -2,7 +2,7 @@
 // RecyclableAppDomain.cs
 //  
 // Author:
-//       Michael Hutchinson <mhutch@xamarin.com>
+//       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
 // 
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
 // Copyright (c) 2012 Xamarin Inc. (http://xamarin.com_

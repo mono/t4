@@ -2,7 +2,7 @@
 // FileUtil.cs
 //
 // Author:
-//       Michael Hutchinson <m.j.hutchinson@gmail.com>
+//       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
 //
 // Copyright (c) 2013 Xamarin Inc.
 //

@@ -9,15 +9,13 @@
     <OutputType>Library</OutputType>
     <AssemblyName>Mono.TextTemplating.Tests</AssemblyName>
     <RootNamespace>Mono.TextTemplating.Tests</RootNamespace>
-    <TestRunnerCommand>..\..\..\..\build\bin\mdtool.exe</TestRunnerCommand>
-    <TestRunnerArgs>run-md-tests</TestRunnerArgs>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>False</Optimize>
-    <OutputPath>..\..\..\..\build\tests</OutputPath>
+    <OutputPath>bin\Debug</OutputPath>
     <DefineConstants>DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -26,7 +24,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\..\build\tests</OutputPath>
+    <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
@@ -34,6 +32,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.3.6.1\lib\net45\nunit.framework.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ParsingTests.cs" />
@@ -49,12 +50,10 @@
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj">
       <Project>{A2364D6A-00EF-417C-80A6-815726C70032}</Project>
       <Name>Mono.TextTemplating</Name>
-      <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\external\guiunit\src\framework\GuiUnit_NET_4_5.csproj">
-      <Project>{D12F0F7B-8DE3-43EC-BA49-41052D065A9B}</Project>
-      <Name>GuiUnit_NET_4_5</Name>
-    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

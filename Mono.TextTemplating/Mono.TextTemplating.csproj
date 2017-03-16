@@ -15,25 +15,25 @@
     <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>False</Optimize>
-    <OutputPath>..\..\..\..\build\AddIns\MonoDevelop.TextTemplating</OutputPath>
+    <OutputPath>bin\Debug</OutputPath>
     <DefineConstants>DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>False</ConsolePause>
     <NoWarn>1591;1573</NoWarn>
-    <DocumentationFile>..\..\..\..\build\AddIns\MonoDevelop.TextTemplating\Mono.TextTemplating.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\Mono.TextTemplating.xml</DocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\..\build\AddIns\MonoDevelop.TextTemplating</OutputPath>
+    <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>False</ConsolePause>
     <DebugSymbols>true</DebugSymbols>
     <NoWarn>1591;1573</NoWarn>
-    <DocumentationFile>..\..\..\..\build\AddIns\MonoDevelop.TextTemplating\Mono.TextTemplating.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\Mono.TextTemplating.xml</DocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>

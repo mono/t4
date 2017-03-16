@@ -2,7 +2,7 @@
 // EncodingHelper.cs
 //  
 // Author:
-//       Michael Hutchinson <mhutchinson@novell.com>
+//       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
 // 
 // Copyright (c) 2010 Novell, Inc.
 // 
