@@ -373,7 +373,7 @@ namespace Mono.TextTemplating
 						if (i == text.Length - 1)
 							break;
 					}
-				} else if (c != '\n') {
+				} else if (c != '\n' || text[i + 1] == '\n') {
 					continue;
 				}
 				i++;
