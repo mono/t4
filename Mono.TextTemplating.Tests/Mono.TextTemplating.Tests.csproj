@@ -10,6 +10,8 @@
     <AssemblyName>Mono.TextTemplating.Tests</AssemblyName>
     <RootNamespace>Mono.TextTemplating.Tests</RootNamespace>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
