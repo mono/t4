@@ -147,7 +147,7 @@ namespace Mono.TextTemplating
 				var obj = domain.CreateInstanceFromAndUnwrap (type.Assembly.Location, type.FullName, false,
 					BindingFlags.Default, null,
 					new object[] { host, results, templateClassFullName, settings.Culture, references.ToArray () },
-					null, null);
+					null, null,null);
 				return (CompiledTemplate)obj;
 			}
 			return new CompiledTemplate (host, results, templateClassFullName, settings.Culture, references.ToArray ());
@@ -167,7 +167,7 @@ namespace Mono.TextTemplating
 			
 			if (settings.Debug)
 				pars.TempFiles.KeepFiles = true;
-			if (string.IsNullOrWhiteSpace (pars.CompilerOptions))
+			if (StringUtil.IsNullOrWhiteSpace (pars.CompilerOptions))
 				pars.CompilerOptions = "/noconfig";
 			else if (!pars.CompilerOptions.Contains ("/noconfig"))
 				pars.CompilerOptions = "/noconfig " + pars.CompilerOptions;
