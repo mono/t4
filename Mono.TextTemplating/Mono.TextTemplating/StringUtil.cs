@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace Mono.TextTemplating
 {
-	static class StringUtil
+	static class StringUtil	
 	{
 		public static bool IsNullOrWhiteSpace(string value)
-    	{
-        	if (value == null) return true;
-        	return string.IsNullOrEmpty(value.Trim());
-    	}
+		{
+			if (value == null) return true;
+			return string.IsNullOrEmpty(value.Trim());
+		}
 	}
 }
