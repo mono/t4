@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Mono.TextTemplating
 {
-	static class StringUtil	
+	static class StringUtil
 	{
 		public static bool IsNullOrWhiteSpace(string value)
 		{
