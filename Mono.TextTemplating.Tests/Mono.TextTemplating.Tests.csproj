@@ -50,6 +50,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileUtilTest.cs" />
     <Compile Include="ParsingTests.cs" />
     <Compile Include="DummyHost.cs" />
     <Compile Include="GenerationTests.cs" />
