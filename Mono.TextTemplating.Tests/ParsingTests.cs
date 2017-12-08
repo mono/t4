@@ -26,13 +26,11 @@
 
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Mono.TextTemplating.Tests
 {
-	
-	
-	[TestFixture]
+	[TestClass]
 	public class ParsingTests
 	{
 		public static string ParseSample1 = 
@@ -48,8 +46,8 @@ Line Four
 baz \#>
 #>
 ";
-		
-		[Test]
+
+		[TestMethod]
 		public void TokenTest ()
 		{
 			string tf = "test.input";
@@ -132,8 +130,8 @@ baz \#>
 			Assert.AreEqual (new Location (tf, 12, 1), tk.Location);
 			Assert.AreEqual (State.EOF, tk.State);
 		}
-		
-		[Test]
+
+		[TestMethod]
 		public void ParseTest ()
 		{
 			string tf = "test.input";

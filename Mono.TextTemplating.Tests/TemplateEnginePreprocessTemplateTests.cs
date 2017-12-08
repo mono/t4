@@ -28,15 +28,15 @@ using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
+	[TestClass]
 	public class TemplateEnginePreprocessTemplateTests
-	{	
-		[Test]
+	{
+		[TestMethod]
 		public void Preprocess ()
 		{
 			string input = 
@@ -48,8 +48,8 @@ namespace Mono.TextTemplating.Tests
 			
 			Assert.AreEqual (expectedOutput, output);
 		}
-		
-		[Test]
+
+		[TestMethod]
 		public void Preprocess_ControlBlockAfterIncludedTemplateWithClassFeatureBlock_ReturnsValidCSharpOutput ()
 		{
 			string input = InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock;
@@ -61,7 +61,7 @@ namespace Mono.TextTemplating.Tests
 			Assert.AreEqual (expectedOutput, output, output);
 		}
 
-		[Test]
+		[TestMethod]
 		public void CaptureEncodingAndExtension ()
 		{
 			string input = InputTemplate_CaptureEncodingAndExtension;

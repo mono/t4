@@ -27,14 +27,14 @@
 using System;
 using System.Reflection;
 using Microsoft.VisualStudio.TextTemplating;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
+	[TestClass]
 	public class TextTemplatingSessionTests
 	{
-		[Test]
+		[TestMethod]
 		public void AppDomainSerializationTest ()
 		{
 			var guid = Guid.NewGuid ();

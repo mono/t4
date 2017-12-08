@@ -25,11 +25,11 @@
 // THE SOFTWARE.
 
 using System;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
+	[TestClass]
 	public class EngineTests
 	{
 		#pragma warning disable 414
@@ -50,10 +50,17 @@ namespace Mono.TextTemplating.Tests
 			new object [] { "a!b!c!d!e",           true,  "a",    "b",   "c",   "d!e"     },
 			new object [] { "foo!bar!baz!wibb!le", true,  "foo", "bar", "baz",  "wibb!le" },
 		};
-		#pragma warning restore 414
+#pragma warning restore 414
 
-		[Test]
-		[TestCaseSource(nameof (ParameterParsingCases))]
+		[TestMethod]
+		public void ParameterParsingTest()
+		{
+			foreach ( object[] parameters in ParameterParsingCases )
+			{
+				ParameterParsing( (string)parameters[0], (bool)parameters[ 1 ], (string)parameters[ 2 ], (string)parameters[ 3 ], (string)parameters[ 4 ], (string)parameters[ 5 ] );
+			}
+		}
+
 		public void ParameterParsing (
 			string parameter, bool valid,
 			string expectedProcessor, string expectedDirective,

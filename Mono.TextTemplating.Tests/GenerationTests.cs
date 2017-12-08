@@ -27,17 +27,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating.Tests
 {
-	
-	
-	[TestFixture]
+	[TestClass]
 	public class GenerationTests
-	{	
-		[Test]
+	{
+		[TestMethod]
 		public void TemplateGeneratorTest ()
 		{
 			var gen = new TemplateGenerator ();
@@ -46,7 +44,7 @@ namespace Mono.TextTemplating.Tests
 			Assert.AreEqual (0, gen.Errors.Count, "ProcessTemplate");
 		}
 
-		[Test]
+		[TestMethod]
 		public void ImportReferencesTest ()
 		{
 			var gen = new TemplateGenerator ();
@@ -57,23 +55,23 @@ namespace Mono.TextTemplating.Tests
 			Assert.AreEqual (0, gen.Errors.Count, "ImportReferencesTest");
 		}
 
-		[Test]
+		[TestMethod]
 		public void Generate ()
 		{
 			string Input = ParsingTests.ParseSample1;
 			string Output = OutputSample1;
 			Generate (Input, Output, "\n");
 		}
-		
-		[Test]
+
+		[TestMethod]
 		public void GenerateMacNewlines ()
 		{
 			string MacInput = ParsingTests.ParseSample1.Replace ("\n", "\r");
 			string MacOutput = OutputSample1.Replace ("\\n", "\\r").Replace ("\n", "\r");;
 			Generate (MacInput, MacOutput, "\r");
 		}
-		
-		[Test]
+
+		[TestMethod]
 		public void GenerateWindowsNewlines ()
 		{
 			string WinInput = ParsingTests.ParseSample1.Replace ("\n", "\r\n");
@@ -81,7 +79,7 @@ namespace Mono.TextTemplating.Tests
 			Generate (WinInput, WinOutput, "\r\n");
 		}
 
-		[Test]
+		[TestMethod]
 		public void DefaultLanguage ()
 		{
 			DummyHost host = new DummyHost ();
