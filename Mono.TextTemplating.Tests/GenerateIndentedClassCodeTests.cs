@@ -27,15 +27,16 @@
 using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
-using NUnit.Framework;
 using System.IO;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
+	[TestClass]
 	public class GenerateIndentedClassCodeTests
 	{
-		[Test]
+		[TestMethod]
 		public void FieldAndPropertyGenerated ()
 		{
 			var provider = CodeDomProvider.CreateProvider ("C#");

@@ -1,5 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <Import Project="C:\prodHost\3rd Party Samples\t4\packages\MSTest.TestAdapter.1.2.0\build\net45\MSTest.TestAdapter.props" Condition="Exists('C:\prodHost\3rd Party Samples\t4\packages\MSTest.TestAdapter.1.2.0\build\net45\MSTest.TestAdapter.props')" />
+  <Import Project="C:\prodHost\3rd Party Samples\t4\packages\Microsoft.NET.Test.Sdk.15.5.0\build\net45\Microsoft.Net.Test.Sdk.props" Condition="Exists('C:\prodHost\3rd Party Samples\t4\packages\Microsoft.NET.Test.Sdk.15.5.0\build\net45\Microsoft.Net.Test.Sdk.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -12,6 +14,8 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -33,12 +37,20 @@
     <NoWarn>1591;1573</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.3.6.1\lib\net45\nunit.framework.dll</HintPath>
+    <Reference Include="Microsoft.VisualStudio.CodeCoverage.Shim, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>C:\prodHost\3rd Party Samples\t4\packages\Microsoft.CodeCoverage.1.0.3\lib\netstandard1.0\Microsoft.VisualStudio.CodeCoverage.Shim.dll</HintPath>
+      <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.VisualStudio.TestPlatform.TestFramework, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\MSTest.TestFramework.1.2.0\lib\net45\Microsoft.VisualStudio.TestPlatform.TestFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.TestPlatform.TestFramework.Extensions, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\MSTest.TestFramework.1.2.0\lib\net45\Microsoft.VisualStudio.TestPlatform.TestFramework.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileUtilTest.cs" />
     <Compile Include="ParsingTests.cs" />
     <Compile Include="DummyHost.cs" />
     <Compile Include="GenerationTests.cs" />
@@ -57,5 +69,19 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('C:\prodHost\3rd Party Samples\t4\packages\Microsoft.NET.Test.Sdk.15.5.0\build\net45\Microsoft.Net.Test.Sdk.props')" Text="$([System.String]::Format('$(ErrorText)', 'C:\prodHost\3rd Party Samples\t4\packages\Microsoft.NET.Test.Sdk.15.5.0\build\net45\Microsoft.Net.Test.Sdk.props'))" />
+    <Error Condition="!Exists('C:\prodHost\3rd Party Samples\t4\packages\Microsoft.NET.Test.Sdk.15.5.0\build\net45\Microsoft.Net.Test.Sdk.targets')" Text="$([System.String]::Format('$(ErrorText)', 'C:\prodHost\3rd Party Samples\t4\packages\Microsoft.NET.Test.Sdk.15.5.0\build\net45\Microsoft.Net.Test.Sdk.targets'))" />
+    <Error Condition="!Exists('C:\prodHost\3rd Party Samples\t4\packages\MSTest.TestAdapter.1.2.0\build\net45\MSTest.TestAdapter.props')" Text="$([System.String]::Format('$(ErrorText)', 'C:\prodHost\3rd Party Samples\t4\packages\MSTest.TestAdapter.1.2.0\build\net45\MSTest.TestAdapter.props'))" />
+    <Error Condition="!Exists('C:\prodHost\3rd Party Samples\t4\packages\MSTest.TestAdapter.1.2.0\build\net45\MSTest.TestAdapter.targets')" Text="$([System.String]::Format('$(ErrorText)', 'C:\prodHost\3rd Party Samples\t4\packages\MSTest.TestAdapter.1.2.0\build\net45\MSTest.TestAdapter.targets'))" />
+  </Target>
+  <Import Project="C:\prodHost\3rd Party Samples\t4\packages\Microsoft.NET.Test.Sdk.15.5.0\build\net45\Microsoft.Net.Test.Sdk.targets" Condition="Exists('C:\prodHost\3rd Party Samples\t4\packages\Microsoft.NET.Test.Sdk.15.5.0\build\net45\Microsoft.Net.Test.Sdk.targets')" />
+  <Import Project="C:\prodHost\3rd Party Samples\t4\packages\MSTest.TestAdapter.1.2.0\build\net45\MSTest.TestAdapter.targets" Condition="Exists('C:\prodHost\3rd Party Samples\t4\packages\MSTest.TestAdapter.1.2.0\build\net45\MSTest.TestAdapter.targets')" />
 </Project>

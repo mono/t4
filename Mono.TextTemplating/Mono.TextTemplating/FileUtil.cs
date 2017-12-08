@@ -24,109 +24,55 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
-using System.IO;
+using System.Text;
 
 namespace Mono.TextTemplating
 {
 	static class FileUtil
 	{
-		//from MonoDevelop.Core.FileService, copied here so Mono.TextTemplating can be used w/o MD dependency
-		public unsafe static string AbsoluteToRelativePath (string baseDirectoryPath, string absPath)
+		public static string AbsoluteToRelativePath( string absPath, string relTo )
 		{
-			if (!Path.IsPathRooted (absPath) || string.IsNullOrEmpty (baseDirectoryPath))
-				return absPath;
+			string[] absDirs = absPath.Split( '\\' );
+			string[] relDirs = relTo.Split( '\\' );
 
-			absPath = GetFullPath (absPath);
-			baseDirectoryPath = GetFullPath (baseDirectoryPath).TrimEnd (Path.DirectorySeparatorChar);
+			// Get the shortest of the two paths
+			int len = absDirs.Length < relDirs.Length ? absDirs.Length :
+			relDirs.Length;
 
-			fixed (char* bPtr = baseDirectoryPath, aPtr = absPath) {
-				var bEnd = bPtr + baseDirectoryPath.Length;
-				var aEnd = aPtr + absPath.Length;
-				char* lastStartA = aEnd;
-				char* lastStartB = bEnd;
+			// Use to determine where in the loop we exited
+			int lastCommonRoot = -1;
+			int index;
 
-				int indx = 0;
-				// search common base path
-				var a = aPtr;
-				var b = bPtr;
-				while (a < aEnd) {
-					if (*a != *b)
-						break;
-					if (IsSeparator (*a)) {
-						indx++;
-						lastStartA = a + 1;
-						lastStartB = b;
-					}
-					a++;
-					b++;
-					if (b >= bEnd) {
-						if (a >= aEnd || IsSeparator (*a)) {
-							indx++;
-							lastStartA = a + 1;
-							lastStartB = b;
-						}
-						break;
-					}
-				}
-				if (indx == 0)
-					return absPath;
-
-				if (lastStartA >= aEnd)
-					return ".";
-
-				// handle case a: some/path b: some/path/deeper...
-				if (a >= aEnd) {
-					if (IsSeparator (*b)) {
-						lastStartA = a + 1;
-						lastStartB = b;
-					}
-				}
-
-				// look how many levels to go up into the base path
-				int goUpCount = 0;
-				while (lastStartB < bEnd) {
-					if (IsSeparator (*lastStartB))
-						goUpCount++;
-					lastStartB++;
-				}
-				var size = goUpCount * 2 + goUpCount + aEnd - lastStartA;
-				var result = new char [size];
-				fixed (char* rPtr = result) {
-					// go paths up
-					var r = rPtr;
-					for (int i = 0; i < goUpCount; i++) {
-						*(r++) = '.';
-						*(r++) = '.';
-						*(r++) = Path.DirectorySeparatorChar;
-					}
-					// copy the remaining absulute path
-					while (lastStartA < aEnd)
-						*(r++) = *(lastStartA++);
-				}
-				return new string (result);
+			// Find common root
+			for ( index = 0; index < len; index++ )
+			{
+				if ( absDirs[ index ] == relDirs[ index ] ) lastCommonRoot = index;
+				else break;
 			}
-		}
 
-		static bool IsSeparator (char ch)
-		{
-			return ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar || ch == Path.VolumeSeparatorChar;
-		}
-
-		static string GetFullPath (string path)
-		{
-			if (path == null)
-				throw new ArgumentNullException ("path");
-			if (!isWindows || path.IndexOf ('*') == -1)
-				return Path.GetFullPath (path);
-			else {
-				// On Windows, GetFullPath doesn't work if the path contains wildcards.
-				path = path.Replace ("*", wildcardMarker);
-				path = Path.GetFullPath (path);
-				return path.Replace (wildcardMarker, "*");
+			// If we didn't find a common prefix then throw
+			if ( lastCommonRoot == -1 )
+			{
+				throw new ArgumentException( "Paths do not have a common base" );
 			}
-		}
 
-		static readonly string wildcardMarker = "_" + Guid.NewGuid () + "_";
-		static readonly bool isWindows = Path.DirectorySeparatorChar == '\\';
+			// Build up the relative path
+			StringBuilder relativePath = new StringBuilder();
+
+			// Add on the ..
+			for ( index = lastCommonRoot + 1; index < absDirs.Length; index++ )
+			{
+				if ( absDirs[ index ].Length > 0 ) relativePath.Append( "..\\" );
+			}
+
+			// Add on the folders
+			for ( index = lastCommonRoot + 1; index < relDirs.Length - 1; index++ )
+			{
+				relativePath.Append( relDirs[ index ] + "\\" );
+			}
+			relativePath.Append( relDirs[ relDirs.Length - 1 ] );
+
+			return relativePath.ToString();
+		}
 	}
 }
