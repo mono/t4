@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <PackageVersion>1.3.0</PackageVersion>
+    <PackageLicenseUrl>http://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/mono/t4</PackageProjectUrl>
+    <Authors>mhutch</Authors>
+    <PackageTags>T4, templating</PackageTags>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)packages\$(Configuration)</PackageOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NuGet.Build.Packaging" Version="0.2.2" />
+  </ItemGroup>
+</Project>
