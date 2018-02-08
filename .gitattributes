@@ -1,0 +1,12 @@
+# default everything to autocrlf
+* text=auto
+
+# be explicit about the files we care about, just to be sure
+*.props text
+*.cs text
+*.csproj text
+*.md text
+*.snk binary
+
+# ensure this can be openen by VS even if copied from unix to windows
+*.sln text eol=crlf
