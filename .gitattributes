@@ -1,10 +1,8 @@
-# default everything to autocrlf
-* text=auto
-
-# be explicit about the files we care about, just to be sure
-*.props text
-*.cs text
+# set behaviors for the file types we care about
+*.cs text diff=csharp
 *.csproj text
+*.props text
+*.targets text
 *.md text
 *.snk binary
 
