@@ -9,4 +9,5 @@ build:
   verbosity: minimal
 after_build:
 - cmd: msbuild /t:Pack
-artifact: packages\*.nupkg
+artifacts:
+- path: packages\*.nupkg
