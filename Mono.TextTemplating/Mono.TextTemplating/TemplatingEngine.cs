@@ -979,7 +979,7 @@ namespace Mono.TextTemplating
 			type.Members.Add (helperCls);
 		}
 		
-		#region CodeDom helpers
+#region CodeDom helpers
 		
 		static CodeTypeReference TypeRef<T> ()
 		{
@@ -1084,7 +1084,7 @@ namespace Mono.TextTemplating
 			};
 		}
 
-		#endregion
+#endregion
 
 		//HACK: older versions of Mono don't implement GenerateCodeFromMember
 		// We have a workaround via reflection. First attempt to reflect the members we need to work around it.
@@ -1104,9 +1104,9 @@ namespace Mono.TextTemplating
 				return;
 			}
 
-			#pragma warning disable 0618
+#pragma warning disable 0618
 			var generator = (CodeGenerator) provider.CreateGenerator ();
-			#pragma warning restore 0618
+#pragma warning restore 0618
 			var dummy = new CodeTypeDeclaration ("Foo");
 
 			foreach (CodeTypeMember member in members) {

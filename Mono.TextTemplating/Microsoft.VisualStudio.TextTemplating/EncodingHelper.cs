@@ -29,6 +29,7 @@ using System.Text;
 
 namespace Microsoft.VisualStudio.TextTemplating
 {
+	[Obsolete("Not implemented")]
 	public static class EncodingHelper
 	{
 		public static Encoding GetEncoding (string filePath)

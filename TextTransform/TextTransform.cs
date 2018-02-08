@@ -25,8 +25,9 @@
 // THE SOFTWARE.
 
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using Mono.Options;
 
 namespace Mono.TextTemplating
@@ -34,8 +35,7 @@ namespace Mono.TextTemplating
 	class TextTransform
 	{
 		static OptionSet optionSet;
-		const string name ="TextTransform.exe";
-		
+
 		public static int Main (string[] args)
 		{
 			try {
@@ -47,7 +47,7 @@ namespace Mono.TextTemplating
 			}
 		}
 
-		private static int MainInternal (string[] args)
+		static int MainInternal (string[] args)
 		{
 			if (args.Length == 0) {
 				ShowHelp (true);
@@ -57,7 +57,6 @@ namespace Mono.TextTemplating
 			string outputFile = null, inputFile = null;
 			var directives = new List<string> ();
 			var parameters = new List<string> ();
-		//	var session = new Microsoft.VisualStudio.TextTemplating.TextTemplatingSession ();
 			string preprocess = null;
 			
 			optionSet = new OptionSet () {
@@ -138,10 +137,8 @@ namespace Mono.TextTemplating
 					className = preprocess.Substring (s + 1);
 				}
 				
-				string language;
-				string[] references;
 				generator.PreprocessTemplate (inputFile, className, classNamespace, outputFile, System.Text.Encoding.UTF8,
-					out language, out references);
+					out string language, out string[] references);
 				if (generator.Errors.HasErrors) {
 					Console.Write ("Preprocessing '{0}' into class '{1}.{2}' failed.", inputFile, classNamespace, className);
 				}
@@ -157,12 +154,12 @@ namespace Mono.TextTemplating
 		static void ShowHelp (bool concise)
 		{
 			Console.WriteLine ("TextTransform command line T4 processor");
-			Console.WriteLine ("Usage: {0} [options] input-file", name);
+			Console.WriteLine ("Usage: {0} [options] input-file", Path.GetFileName (Assembly.GetExecutingAssembly().Location));
 			if (concise) {
 				Console.WriteLine ("Use --help to display options.");
 			} else {
 				Console.WriteLine ("Options:");
-				optionSet.WriteOptionDescriptions (System.Console.Out);
+				optionSet.WriteOptionDescriptions (Console.Out);
 			}
 			Console.WriteLine ();
 			Environment.Exit (0);

@@ -25,15 +25,14 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 
 namespace Microsoft.VisualStudio.TextTemplating
 {
 	public static class ToStringHelper
 	{
-		static object [] formatProviderAsParameterArray;
-		
+		static readonly object[] formatProviderAsParameterArray;
+
 		static IFormatProvider formatProvider = System.Globalization.CultureInfo.InvariantCulture;
 		
 		static ToStringHelper ()
@@ -44,7 +43,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		public static string ToStringWithCulture (object objectToConvert)
 		{
 			if (objectToConvert == null)
-				throw new ArgumentNullException ("objectToConvert");
+				throw new ArgumentNullException (nameof (objectToConvert));
 
 			IConvertible conv = objectToConvert as IConvertible;
 			if (conv != null)

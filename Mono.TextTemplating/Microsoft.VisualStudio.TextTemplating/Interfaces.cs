@@ -25,12 +25,12 @@
 // THE SOFTWARE.
 
 using System;
-using System.Text;
-using System.CodeDom.Compiler;
-using System.Collections.Generic;
-using System.Collections;
-using System.Runtime.Serialization;
 using System.CodeDom;
+using System.CodeDom.Compiler;
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Text;
 
 namespace Microsoft.VisualStudio.TextTemplating
 {
@@ -39,14 +39,15 @@ namespace Microsoft.VisualStudio.TextTemplating
 		void SetProcessingRunIsHostSpecific (bool hostSpecific);
 		bool RequiresProcessingRunIsHostSpecific { get; }
 	}
-	
+
+	[Obsolete("Use Mono.TextTemplating.TemplatingEngine directly")]
 	public interface ITextTemplatingEngine
 	{
 		string ProcessTemplate (string content, ITextTemplatingEngineHost host);
-		string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className, 
-			string classNamespace, out string language, out string[] references);
+		string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className,
+			string classNamespace, out string language, out string [] references);
 	}
-	
+
 	public interface ITextTemplatingEngineHost
 	{
 		object GetHostOption (string optionName);
@@ -64,9 +65,9 @@ namespace Microsoft.VisualStudio.TextTemplating
 		void SetOutputEncoding (Encoding encoding, bool fromOutputDirective);
 		IList<string> StandardAssemblyReferences { get; }
 		IList<string> StandardImports { get; }
-		string TemplateFile { get; }	
+		string TemplateFile { get; }
 	}
-	
+
 	public interface ITextTemplatingSession :
 		IEquatable<ITextTemplatingSession>, IEquatable<Guid>, IDictionary<string, Object>,
 		ICollection<KeyValuePair<string, Object>>,
