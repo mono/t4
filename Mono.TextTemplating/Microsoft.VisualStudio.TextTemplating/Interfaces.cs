@@ -40,7 +40,6 @@ namespace Microsoft.VisualStudio.TextTemplating
 		bool RequiresProcessingRunIsHostSpecific { get; }
 	}
 	
-	[CLSCompliant(true)]
 	public interface ITextTemplatingEngine
 	{
 		string ProcessTemplate (string content, ITextTemplatingEngineHost host);
@@ -48,7 +47,6 @@ namespace Microsoft.VisualStudio.TextTemplating
 			string classNamespace, out string language, out string[] references);
 	}
 	
-	[CLSCompliant(true)]
 	public interface ITextTemplatingEngineHost
 	{
 		object GetHostOption (string optionName);
@@ -66,7 +64,6 @@ namespace Microsoft.VisualStudio.TextTemplating
 		string TemplateFile { get; }	
 	}
 	
-	[CLSCompliant(true)]
 	public interface ITextTemplatingSession :
 		IEquatable<ITextTemplatingSession>, IEquatable<Guid>, IDictionary<string, Object>,
 		ICollection<KeyValuePair<string, Object>>,
@@ -76,7 +73,6 @@ namespace Microsoft.VisualStudio.TextTemplating
 		Guid Id { get; }
 	}
 	
-	[CLSCompliant(true)]
 	public interface ITextTemplatingSessionHost	
 	{
 		ITextTemplatingSession CreateSession ();
