@@ -26,6 +26,8 @@
 
 using System;
 
+#if FEATURE_APPDOMAINS
+
 namespace Mono.TextTemplating
 {
 	/// <summary>
@@ -57,3 +59,4 @@ namespace Mono.TextTemplating
 	}
 }
 
+#endif

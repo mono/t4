@@ -1,11 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net45</TargetFramework>
+    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>1591;1573</NoWarn>
     <PackageId>Mono.TextTemplating</PackageId>
     <Description>Open-source implementation of the T4 templating engine.</Description>
+    <DefineSymbols Condition="'$(TargetFramework)'!='netstandard2.0'">$(DefineSymbols);FEATURE_APPDOMAINS</DefineSymbols>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CodeDom" Version="4.4.0" Condition="'$(TargetFramework)'=='netstandard2.0'" />
+  </ItemGroup>
 </Project>
