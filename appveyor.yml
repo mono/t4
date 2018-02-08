@@ -10,4 +10,4 @@ build:
 after_build:
 - cmd: msbuild /t:Pack
 artifacts:
-- path: packages\*.nupkg
+- path: packages\**\*.nupkg
