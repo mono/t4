@@ -32,8 +32,8 @@ namespace Mono.TextTemplating
 {
 	public class TemplatingAppDomainRecycler
 	{
-		const int DEFAULT_TIMEOUT_MS = 2 * 60 * 1000;
-		const int DEFAULT_MAX_USES = 20;
+		private const int DEFAULT_TIMEOUT_MS = 2 * 60 * 1000;
+		private const int DEFAULT_MAX_USES = 20;
 		
 		readonly string name;
 		readonly object lockObj = new object ();
@@ -48,7 +48,7 @@ namespace Mono.TextTemplating
 		public TemplatingAppDomainRecycler.Handle GetHandle ()
 		{
 			lock (lockObj) {
-				if (domain == null || domain.Domain == null || domain.UnusedHandles == 0) {
+				if (domain?.Domain == null || domain.UnusedHandles == 0) {
 					domain = new RecyclableAppDomain (name);
 				}
 				return domain.GetHandle ();
@@ -59,13 +59,9 @@ namespace Mono.TextTemplating
 		{
 			//TODO: implement timeout based recycling
 			//DateTime lastUsed;
-			
-			AppDomain domain;
-            DomainAssemblyLoader assemblyMap;
-			
-			int liveHandles;
-			int unusedHandles = DEFAULT_MAX_USES;
-			
+
+			DomainAssemblyLoader assemblyMap;
+
 			public RecyclableAppDomain (string name)
 			{
 				var info = new AppDomainSetup () {
@@ -76,12 +72,12 @@ namespace Mono.TextTemplating
                     DisallowApplicationBaseProbing = false,
 					ConfigurationFile = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile,
 				};
-				domain = AppDomain.CreateDomain (name, null, info);
+				Domain = AppDomain.CreateDomain (name, null, info);
                 var t = typeof(DomainAssemblyLoader);
                 AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
-                assemblyMap = (DomainAssemblyLoader) domain.CreateInstanceFromAndUnwrap(t.Assembly.Location, t.FullName);
+                assemblyMap = (DomainAssemblyLoader) Domain.CreateInstanceFromAndUnwrap(t.Assembly.Location, t.FullName);
                 AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomain_AssemblyResolve;
-                domain.AssemblyResolve += assemblyMap.Resolve;// new DomainAssemblyLoader(assemblyMap).Resolve;
+                Domain.AssemblyResolve += assemblyMap.Resolve;// new DomainAssemblyLoader(assemblyMap).Resolve;
 			}
 
             System.Reflection.Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
@@ -91,11 +87,13 @@ namespace Mono.TextTemplating
                     return a;
                 return null;
             }
-			
-			public int UnusedHandles { get { return unusedHandles; } }
-			public int LiveHandles { get { return liveHandles; } }
-			public AppDomain Domain { get { return domain; } }
-			
+
+			public int UnusedHandles { get; private set; } = DEFAULT_MAX_USES;
+
+			public int LiveHandles { get; private set; }
+
+			public AppDomain Domain { get; private set; }
+
 			public void AddAssembly (System.Reflection.Assembly assembly)
 			{
 				assemblyMap.Add (assembly.FullName, assembly.Location);
@@ -104,11 +102,11 @@ namespace Mono.TextTemplating
 			public Handle GetHandle ()
 			{
 				lock (this) {
-					if (unusedHandles <= 0) {
+					if (UnusedHandles <= 0) {
 						throw new InvalidOperationException ("No handles left");
 					}
-					unusedHandles--;
-					liveHandles++;
+					UnusedHandles--;
+					LiveHandles++;
 				}
 				return new Handle (this);
 			}
@@ -117,8 +115,8 @@ namespace Mono.TextTemplating
 			{
 				int lh;
 				lock (this) {
-					liveHandles--;
-					lh = liveHandles;
+					LiveHandles--;
+					lh = LiveHandles;
 				}
 				//We must unload domain every time after using it for generation
 				//Otherwise we could not load new version of the project-generated 
@@ -130,15 +128,15 @@ namespace Mono.TextTemplating
 			
 			void UnloadDomain ()
 			{
-				AppDomain.Unload (domain);
-				domain = null;
+				AppDomain.Unload (Domain);
+				Domain = null;
 				assemblyMap = null;
 				GC.SuppressFinalize (this);
 			}
 			
 			~RecyclableAppDomain ()
 			{
-				if (liveHandles != 0)
+				if (LiveHandles != 0)
 					Console.WriteLine ("WARNING: recyclable AppDomain's handles were not all disposed");
 			}
 		}
@@ -151,11 +149,9 @@ namespace Mono.TextTemplating
 			{
 				this.parent = parent;
 			}
-			
-			public AppDomain Domain {
-				get { return parent.Domain; }
-			}
-			
+
+			public AppDomain Domain => parent.Domain;
+
 			public void Dispose ()
 			{
 				if (parent == null)
@@ -179,11 +175,7 @@ namespace Mono.TextTemplating
         class DomainAssemblyLoader : MarshalByRefObject
 		{
             readonly Dictionary<string, string> map = new Dictionary<string, string>();
-			
-			public DomainAssemblyLoader ()
-			{
-			}
-			
+
 			public System.Reflection.Assembly Resolve (object sender, ResolveEventArgs args)
 			{
 				var assemblyFile = ResolveAssembly (args.Name);
@@ -192,24 +184,17 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-            public string ResolveAssembly(string name)
-            {
-                string result;
-                if (map.TryGetValue(name, out result))
-                    return result;
-                return null;
-            }
-
-            public void Add(string name, string location)
-            {
-                map[name] = location;
-            }
-
-			//keep this alive as long as the app domain is alive
-			public override object InitializeLifetimeService ()
+			private string ResolveAssembly (string name)
 			{
+				if (map.TryGetValue (name, out var result))
+					return result;
 				return null;
 			}
+
+            public void Add(string name, string location) => map[name] = location;
+
+			//keep this alive as long as the app domain is alive
+			public override object InitializeLifetimeService () => null;
 		}
 	}
 }

@@ -65,10 +65,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 	}
 	
 	public interface ITextTemplatingSession :
-		IEquatable<ITextTemplatingSession>, IEquatable<Guid>, IDictionary<string, Object>,
-		ICollection<KeyValuePair<string, Object>>,
-		IEnumerable<KeyValuePair<string, Object>>,
-		IEnumerable, ISerializable
+		IEquatable<ITextTemplatingSession>, IEquatable<Guid>, IDictionary<string, object>, ISerializable
 	{
 		Guid Id { get; }
 	}

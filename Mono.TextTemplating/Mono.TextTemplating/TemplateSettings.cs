@@ -25,8 +25,10 @@
 // THE SOFTWARE.
 
 using System;
+using System.CodeDom.Compiler;
 using System.Text;
 using System.Collections.Generic;
+using System.Globalization;
 using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating
@@ -40,23 +42,23 @@ namespace Mono.TextTemplating
 			CustomDirectives  = new List<CustomDirective> ();
 			DirectiveProcessors = new Dictionary<string, IDirectiveProcessor> ();
 		}
-		
+
 		public bool HostSpecific { get; set; }
 		public bool HostPropertyOnBase { get; set; }
 		public bool Debug { get; set; }
 		public string Inherits { get; set; }
 		public string Name { get; set; }
 		public string Namespace { get; set; }
-		public HashSet<string> Imports { get; private set; }
-		public HashSet<string> Assemblies { get; private set; }
-		public System.CodeDom.Compiler.CodeDomProvider Provider { get; set; }
+		public HashSet<string> Imports { get; }
+		public HashSet<string> Assemblies { get; }
+		public CodeDomProvider Provider { get; set; }
 		public string Language { get; set; }
 		public string CompilerOptions { get; set; }
 		public Encoding Encoding { get; set; }
 		public string Extension { get; set; }
-		public System.Globalization.CultureInfo Culture { get; set; }
-		public List<CustomDirective> CustomDirectives { get; private set; }
-		public Dictionary<string,IDirectiveProcessor> DirectiveProcessors { get; private set; }
+		public CultureInfo Culture { get; set; }
+		public List<CustomDirective> CustomDirectives { get; }
+		public Dictionary<string, IDirectiveProcessor> DirectiveProcessors { get; }
 		public bool IncludePreprocessingHelpers { get; set; }
 		public bool IsPreprocessed { get; set; }
 		public bool RelativeLinePragmas { get; set; }
@@ -64,13 +66,13 @@ namespace Mono.TextTemplating
 		public bool InternalVisibility { get; set; }
 		public Type HostType { get; set; }
 	}
-	
+
 	public class CustomDirective
 	{
 		public CustomDirective (string processorName, Directive directive)
 		{
-			this.ProcessorName = processorName;
-			this.Directive = directive;
+			ProcessorName = processorName;
+			Directive = directive;
 		}
 		
 		public string ProcessorName { get; set; }

@@ -1,4 +1,4 @@
-﻿//
+//
 // TextTemplatingSessionTests.cs
 //
 // Author:
@@ -42,7 +42,7 @@ namespace Mono.TextTemplating.Tests
 
 			var session = (TextTemplatingSession)appDomain.CreateInstanceFromAndUnwrap (
 				typeof(TextTemplatingSession).Assembly.Location,
-				typeof(TextTemplatingSession).FullName,
+				typeof(TextTemplatingSession).FullName ?? throw new InvalidOperationException(),
 				false,
 				BindingFlags.Public | BindingFlags.Instance,
 				null,

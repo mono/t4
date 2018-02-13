@@ -39,9 +39,7 @@ namespace Mono.TextTemplating
 		public System.Reflection.Assembly Resolve (object sender, ResolveEventArgs args)
 		{
 			var location = parent.GetAssemblyPath (args.Name);
-			if (location != null)
-				return System.Reflection.Assembly.LoadFrom (location);
-			return null;
+			return location != null ? System.Reflection.Assembly.LoadFrom (location) : null;
 		}
 		
 		class ParentDomainLookup : MarshalByRefObject
