@@ -40,23 +40,24 @@ namespace Mono.TextTemplating
 		TemplatingEngine engine;
 		
 		//per-run variables
-		string inputFile, outputFile;
+		string inputFile;
 		Encoding encoding;
 		
 		//host fields
-		readonly CompilerErrorCollection errors = new CompilerErrorCollection ();
-		readonly List<string> refs = new List<string> ();
-		readonly List<string> imports = new List<string> ();
-		readonly List<string> includePaths = new List<string> ();
-		readonly List<string> referencePaths = new List<string> ();
-		
+
 		//host properties for consumers to access
-		public CompilerErrorCollection Errors { get { return errors; } }
-		public List<string> Refs { get { return refs; } }
-		public List<string> Imports { get { return imports; } }
-		public List<string> IncludePaths { get { return includePaths; } }
-		public List<string> ReferencePaths { get { return referencePaths; } }
-		public string OutputFile { get { return outputFile; } }
+		public CompilerErrorCollection Errors { get; } = new CompilerErrorCollection ();
+
+		public List<string> Refs { get; } = new List<string> ();
+
+		public List<string> Imports { get; } = new List<string> ();
+
+		public List<string> IncludePaths { get; } = new List<string> ();
+
+		public List<string> ReferencePaths { get; } = new List<string> ();
+
+		public string OutputFile { get; private set; }
+
 		public bool UseRelativeLinePragmas { get; set; }
 		
 		public TemplateGenerator ()
@@ -69,62 +70,57 @@ namespace Mono.TextTemplating
 		public CompiledTemplate CompileTemplate (string content)
 		{
 			if (String.IsNullOrEmpty (content))
-				throw new ArgumentNullException ("content");
+				throw new ArgumentNullException (nameof(content));
 
-			errors.Clear ();
+			Errors.Clear ();
 			encoding = Encoding.UTF8;
 			
 			return Engine.CompileTemplate (content, this);
 		}
 		
-		protected TemplatingEngine Engine {
-			get {
-				if (engine == null)
-					engine = new TemplatingEngine ();
-				return engine;
-			}
-		}
-		
+		protected TemplatingEngine Engine => engine ?? (engine = new TemplatingEngine ());
+
 		public bool ProcessTemplate (string inputFile, string outputFile)
 		{
-			if (String.IsNullOrEmpty (inputFile))
-				throw new ArgumentNullException ("inputFile");
-			if (String.IsNullOrEmpty (outputFile))
-				throw new ArgumentNullException ("outputFile");
-			
+			if (string.IsNullOrEmpty (inputFile))
+				throw new ArgumentNullException (nameof(inputFile));
+			if (string.IsNullOrEmpty (outputFile))
+				throw new ArgumentNullException (nameof(outputFile));
+
 			string content;
 			try {
 				content = File.ReadAllText (inputFile);
-			} catch (IOException ex) {
-				errors.Clear ();
+			}
+			catch (IOException ex) {
+				Errors.Clear ();
 				AddError ("Could not read input file '" + inputFile + "':\n" + ex);
 				return false;
 			}
-			
+
 			string output;
 			ProcessTemplate (inputFile, content, ref outputFile, out output);
 			
 			try {
-				if (!errors.HasErrors)
+				if (!Errors.HasErrors)
 					File.WriteAllText (outputFile, output, encoding);
 			} catch (IOException ex) {
 				AddError ("Could not write output file '" + outputFile + "':\n" + ex);
 			}
 			
-			return !errors.HasErrors;
+			return !Errors.HasErrors;
 		}
 		
 		public bool ProcessTemplate (string inputFileName, string inputContent, ref string outputFileName, out string outputContent)
 		{
-			errors.Clear ();
+			Errors.Clear ();
 			encoding = Encoding.UTF8;
 			
-			outputFile = outputFileName;
+			OutputFile = outputFileName;
 			inputFile = inputFileName;
 			outputContent = Engine.ProcessTemplate (inputContent, this);
-			outputFileName = outputFile;
+			outputFileName = OutputFile;
 			
-			return !errors.HasErrors;
+			return !Errors.HasErrors;
 		}
 		
 		public bool PreprocessTemplate (string inputFile, string className, string classNamespace, 
@@ -134,15 +130,15 @@ namespace Mono.TextTemplating
 			references = null;
 
 			if (string.IsNullOrEmpty (inputFile))
-				throw new ArgumentNullException ("inputFile");
+				throw new ArgumentNullException (nameof(inputFile));
 			if (string.IsNullOrEmpty (outputFile))
-				throw new ArgumentNullException ("outputFile");
+				throw new ArgumentNullException (nameof(outputFile));
 			
 			string content;
 			try {
 				content = File.ReadAllText (inputFile);
 			} catch (IOException ex) {
-				errors.Clear ();
+				Errors.Clear ();
 				AddError ("Could not read input file '" + inputFile + "':\n" + ex);
 				return false;
 			}
@@ -151,31 +147,32 @@ namespace Mono.TextTemplating
 			PreprocessTemplate (inputFile, className, classNamespace, content, out language, out references, out output);
 			
 			try {
-				if (!errors.HasErrors)
+				if (!Errors.HasErrors)
 					File.WriteAllText (outputFile, output, encoding);
 			} catch (IOException ex) {
 				AddError ("Could not write output file '" + outputFile + "':\n" + ex);
 			}
 			
-			return !errors.HasErrors;
+			return !Errors.HasErrors;
 		}
 		
 		public bool PreprocessTemplate (string inputFileName, string className, string classNamespace, string inputContent, 
 			out string language, out string[] references, out string outputContent)
 		{
-			errors.Clear ();
+			Errors.Clear ();
 			encoding = Encoding.UTF8;
 			
 			inputFile = inputFileName;
 			outputContent = Engine.PreprocessTemplate (inputContent, this, className, classNamespace, out language, out references);
 			
-			return !errors.HasErrors;
+			return !Errors.HasErrors;
 		}
 		
 		CompilerError AddError (string error)
 		{
-			var err = new CompilerError ();
-			err.ErrorText = error;
+			var err = new CompilerError {
+				ErrorText = error
+			};
 			Errors.Add (err);
 			return err;
 		}
@@ -218,8 +215,7 @@ namespace Mono.TextTemplating
 		protected virtual string ResolveParameterValue (string directiveId, string processorName, string parameterName)
 		{
 			var key = new ParameterKey (processorName, directiveId, parameterName);
-			string value;
-			if (parameters.TryGetValue (key, out value))
+			if (parameters.TryGetValue (key, out var value))
 				return value;
 			if (processorName != null || directiveId != null)
 				return ResolveParameterValue (null, null, parameterName);
@@ -230,10 +226,10 @@ namespace Mono.TextTemplating
 		{
 			KeyValuePair<string,string> value;
 			if (!directiveProcessors.TryGetValue (processorName, out value))
-				throw new Exception (string.Format ("No directive processor registered as '{0}'", processorName));
+				throw new Exception ($"No directive processor registered as '{processorName}'");
 			var asmPath = ResolveAssemblyReference (value.Value);
 			if (asmPath == null)
-				throw new Exception (string.Format ("Could not resolve assembly '{0}' for directive processor '{1}'", value.Value, processorName));
+				throw new Exception ($"Could not resolve assembly '{value.Value}' for directive processor '{processorName}'");
 			var asm = Assembly.LoadFrom (asmPath);
 			return asm.GetType (value.Key, true);
 		}
@@ -244,7 +240,7 @@ namespace Mono.TextTemplating
 			if (Path.IsPathRooted (path))
 				return path;
 			var dir = Path.GetDirectoryName (inputFile);
-			var test = Path.Combine (dir, path);
+			var test = Path.Combine (dir ?? throw new InvalidOperationException(), path);
 			if (File.Exists (test) || Directory.Exists (test))
 				return test;
 			return path;
@@ -255,15 +251,9 @@ namespace Mono.TextTemplating
 		readonly Dictionary<ParameterKey,string> parameters = new Dictionary<ParameterKey, string> ();
 		readonly Dictionary<string,KeyValuePair<string,string>> directiveProcessors = new Dictionary<string, KeyValuePair<string,string>> ();
 		
-		public void AddDirectiveProcessor (string name, string klass, string assembly)
-		{
-			directiveProcessors.Add (name, new KeyValuePair<string,string> (klass,assembly));
-		}
-		
-		public void AddParameter (string processorName, string directiveName, string parameterName, string value)
-		{
-			parameters.Add (new ParameterKey (processorName, directiveName, parameterName), value);
-		}
+		public void AddDirectiveProcessor (string name, string klass, string assembly) => directiveProcessors.Add (name, new KeyValuePair<string,string> (klass,assembly));
+
+		public void AddParameter (string processorName, string directiveName, string parameterName, string value) => parameters.Add (new ParameterKey (processorName, directiveName, parameterName), value);
 
 		/// <summary>
 		/// Parses a parameter and adds it.
@@ -272,11 +262,11 @@ namespace Mono.TextTemplating
 		/// <param name="unparsedParameter">Parameter in name=value or processor!directive!name!value format.</param>
 		public bool TryAddParameter (string unparsedParameter)
 		{
-			string processor, directive, name, value;
-			if (TryParseParameter (unparsedParameter, out processor, out directive, out name, out value)) {
+			if (TryParseParameter (unparsedParameter, out var processor, out var directive, out var name, out var value)) {
 				AddParameter (processor, directive, name, value);
 				return true;
 			}
+
 			return false;
 		}
 
@@ -335,7 +325,7 @@ namespace Mono.TextTemplating
 			location = ResolvePath (requestFileName);
 			
 			if (location == null || !File.Exists (location)) {
-				foreach (string path in includePaths) {
+				foreach (string path in IncludePaths) {
 					string f = Path.Combine (path, requestFileName);
 					if (File.Exists (f)) {
 						location = f;
@@ -358,43 +348,25 @@ namespace Mono.TextTemplating
 		
 		#region Explicit ITextTemplatingEngineHost implementation
 		
-		bool ITextTemplatingEngineHost.LoadIncludeText (string requestFileName, out string content, out string location)
-		{
-			return LoadIncludeText (requestFileName, out content, out location);
-		}
-		
-		void ITextTemplatingEngineHost.LogErrors (CompilerErrorCollection errors)
-		{
-			this.errors.AddRange (errors);
-		}
-		
-		string ITextTemplatingEngineHost.ResolveAssemblyReference (string assemblyReference)
-		{
-			return ResolveAssemblyReference (assemblyReference);
-		}
-		
-		string ITextTemplatingEngineHost.ResolveParameterValue (string directiveId, string processorName, string parameterName)
-		{
-			return ResolveParameterValue (directiveId, processorName, parameterName);
-		}
-		
-		Type ITextTemplatingEngineHost.ResolveDirectiveProcessor (string processorName)
-		{
-			return ResolveDirectiveProcessor (processorName);
-		}
-		
-		string ITextTemplatingEngineHost.ResolvePath (string path)
-		{
-			return ResolvePath (path);
-		}
-		
+		bool ITextTemplatingEngineHost.LoadIncludeText (string requestFileName, out string content, out string location) => LoadIncludeText (requestFileName, out content, out location);
+
+		void ITextTemplatingEngineHost.LogErrors (CompilerErrorCollection errors) => this.Errors.AddRange (errors);
+
+		string ITextTemplatingEngineHost.ResolveAssemblyReference (string assemblyReference) => ResolveAssemblyReference (assemblyReference);
+
+		string ITextTemplatingEngineHost.ResolveParameterValue (string directiveId, string processorName, string parameterName) => ResolveParameterValue (directiveId, processorName, parameterName);
+
+		Type ITextTemplatingEngineHost.ResolveDirectiveProcessor (string processorName) => ResolveDirectiveProcessor (processorName);
+
+		string ITextTemplatingEngineHost.ResolvePath (string path) => ResolvePath (path);
+
 		void ITextTemplatingEngineHost.SetFileExtension (string extension)
 		{
 			extension = extension.TrimStart ('.');
-			if (Path.HasExtension (outputFile)) {
-				outputFile = Path.ChangeExtension (outputFile, extension);
+			if (Path.HasExtension (OutputFile)) {
+				OutputFile = Path.ChangeExtension (OutputFile, extension);
 			} else {
-				outputFile = outputFile + "." + extension;
+				OutputFile = OutputFile + "." + extension;
 			}
 		}
 		
@@ -402,19 +374,13 @@ namespace Mono.TextTemplating
 		{
 			this.encoding = encoding;
 		}
-		
-		IList<string> ITextTemplatingEngineHost.StandardAssemblyReferences {
-			get { return refs; }
-		}
-		
-		IList<string> ITextTemplatingEngineHost.StandardImports {
-			get { return imports; }
-		}
-		
-		string ITextTemplatingEngineHost.TemplateFile {
-			get { return inputFile; }
-		}
-		
+
+		IList<string> ITextTemplatingEngineHost.StandardAssemblyReferences => Refs;
+
+		IList<string> ITextTemplatingEngineHost.StandardImports => Imports;
+
+		string ITextTemplatingEngineHost.TemplateFile => inputFile;
+
 		#endregion
 		
 		struct ParameterKey : IEquatable<ParameterKey>
@@ -432,22 +398,13 @@ namespace Mono.TextTemplating
 			}
 			
 			string processorName, directiveName, parameterName;
-			readonly int hashCode;
+			private readonly int hashCode;
 			
-			public override bool Equals (object obj)
-			{
-				return obj is ParameterKey && Equals ((ParameterKey)obj);
-			}
-			
-			public bool Equals (ParameterKey other)
-			{
-				return processorName == other.processorName && directiveName == other.directiveName && parameterName == other.parameterName;
-			}
-			
-			public override int GetHashCode ()
-			{
-				return hashCode;
-			}
+			public override bool Equals (object obj) => obj is ParameterKey key && Equals (key);
+
+			public bool Equals (ParameterKey other) => processorName == other.processorName && directiveName == other.directiveName && parameterName == other.parameterName;
+
+			public override int GetHashCode () => hashCode;
 		}
 
 		/// <summary>

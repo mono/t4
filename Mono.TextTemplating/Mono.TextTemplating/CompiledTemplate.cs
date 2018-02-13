@@ -60,19 +60,17 @@ namespace Mono.TextTemplating
 			
 			//set the host property if it exists
 			Type hostType = null;
-			var gen = host as TemplateGenerator;
-			if (gen != null) {
+			if (host is TemplateGenerator gen) {
 				hostType = gen.SpecificHostType;
 			}
 			var hostProp = transformType.GetProperty ("Host", hostType ?? typeof(ITextTemplatingEngineHost));
 			if (hostProp != null && hostProp.CanWrite)
 				hostProp.SetValue (textTransformation, host, null);
-			
-			var sessionHost = host as ITextTemplatingSessionHost;
-			if (sessionHost != null) {
+
+			if (host is ITextTemplatingSessionHost sessionHost) {
 				//FIXME: should we create a session if it's null?
 				var sessionProp = transformType.GetProperty ("Session", typeof (IDictionary<string, object>));
-				sessionProp.SetValue (textTransformation, sessionHost.Session, null);
+				if (sessionProp != null) sessionProp.SetValue (textTransformation, sessionHost.Session, null);
 			}
 		}
 
@@ -92,10 +90,7 @@ namespace Mono.TextTemplating
 			errors.Clear ();
 			
 			//set the culture
-			if (culture != null)
-				ToStringHelper.FormatProvider = culture;
-			else
-				ToStringHelper.FormatProvider = CultureInfo.InvariantCulture;
+			ToStringHelper.FormatProvider = culture ?? CultureInfo.InvariantCulture;
 
 			string output = null;
 
@@ -136,10 +131,9 @@ namespace Mono.TextTemplating
 		
 		public void Dispose ()
 		{
-			if (host != null) {
-				host = null;
-				AppDomain.CurrentDomain.AssemblyResolve -= ResolveReferencedAssemblies;
-			}
+			if (host == null) return;
+			host = null;
+			AppDomain.CurrentDomain.AssemblyResolve -= ResolveReferencedAssemblies;
 		}
 	}
 }

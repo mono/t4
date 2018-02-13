@@ -24,19 +24,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.IO;
-using System.Text;
-using System.Collections.Generic;
-using System.CodeDom;
-using System.CodeDom.Compiler;
 using Mono.TextTemplating;
 
 namespace Microsoft.VisualStudio.TextTemplating
 {
 	public class Engine : ITextTemplatingEngine
 	{
-		TemplatingEngine engine = new TemplatingEngine ();
+		private readonly TemplatingEngine _engine = new TemplatingEngine ();
 		
 		public Engine ()
 		{
@@ -44,15 +38,12 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
 		{
-			return engine.ProcessTemplate (content, host);
+			return _engine.ProcessTemplate (content, host);
 		}
-		
-		public string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className, 
-			string classNamespace, out string language, out string[] references)
-		{
-			return engine.PreprocessTemplate (content, host, className, classNamespace, out language, out references);
-		}
-		
+
+		public string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className,
+			string classNamespace, out string language, out string[] references) => _engine.PreprocessTemplate (content, host, className, classNamespace, out language, out references);
+
 		public const string CacheAssembliesOptionString = "CacheAssemblies";
 	}
 }

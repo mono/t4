@@ -62,26 +62,14 @@ namespace Microsoft.VisualStudio.TextTemplating
 			postStatements.Add (statement);
 		}
 		
-		public override string GetClassCodeForProcessingRun ()
-		{
-			return TemplatingEngine.GenerateIndentedClassCode (provider, members);
-		}
-		
-		public override string[] GetImportsForProcessingRun ()
-		{
-			return null;
-		}
-		
-		public override string GetPostInitializationCodeForProcessingRun ()
-		{
-			return TemplatingEngine.IndentSnippetText (provider, StatementsToCode (postStatements), "            ");
-		}
-		
-		public override string GetPreInitializationCodeForProcessingRun ()
-		{
-			return null;
-		}
-		
+		public override string GetClassCodeForProcessingRun () => TemplatingEngine.GenerateIndentedClassCode (provider, members);
+
+		public override string[] GetImportsForProcessingRun () => null;
+
+		public override string GetPostInitializationCodeForProcessingRun () => TemplatingEngine.IndentSnippetText (provider, StatementsToCode (postStatements), "            ");
+
+		public override string GetPreInitializationCodeForProcessingRun () => null;
+
 		string StatementsToCode (List<CodeStatement> statements)
 		{
 			var options = new CodeGeneratorOptions ();
@@ -92,16 +80,10 @@ namespace Microsoft.VisualStudio.TextTemplating
 			}
 		}
 		
-		public override string[] GetReferencesForProcessingRun ()
-		{
-			return null;
-		}
-		
-		public override bool IsDirectiveSupported (string directiveName)
-		{
-			return directiveName == "parameter";
-		}
-		
+		public override string[] GetReferencesForProcessingRun () => null;
+
+		public override bool IsDirectiveSupported (string directiveName) => directiveName == "parameter";
+
 		public override void ProcessDirective (string directiveName, IDictionary<string, string> arguments)
 		{
 			string name = arguments["name"];
@@ -183,29 +165,15 @@ namespace Microsoft.VisualStudio.TextTemplating
 			this.postStatements.Add (checkCallContext);
 		}
 		
-		static CodeBinaryOperatorExpression NotNull (CodeExpression reference)
-		{
-			return new CodeBinaryOperatorExpression (reference, CodeBinaryOperatorType.IdentityInequality, new CodePrimitiveExpression (null));
-		}
-		
-		static CodeBinaryOperatorExpression IsFalse (CodeExpression expr)
-		{
-			return new CodeBinaryOperatorExpression (expr, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression (false));
-		}
-		
-		static CodeBinaryOperatorExpression BooleanAnd (CodeExpression expr1, CodeExpression expr2)
-		{
-			return new CodeBinaryOperatorExpression (expr1, CodeBinaryOperatorType.BooleanAnd, expr2);
-		}
-		
-		void IRecognizeHostSpecific.SetProcessingRunIsHostSpecific (bool hostSpecific)
-		{
-			this.hostSpecific = hostSpecific;
-		}
+		static CodeBinaryOperatorExpression NotNull (CodeExpression reference) => new CodeBinaryOperatorExpression (reference, CodeBinaryOperatorType.IdentityInequality, new CodePrimitiveExpression (null));
 
-		public bool RequiresProcessingRunIsHostSpecific {
-			get { return false; }
-		}
+		static CodeBinaryOperatorExpression IsFalse (CodeExpression expr) => new CodeBinaryOperatorExpression (expr, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression (false));
+
+		static CodeBinaryOperatorExpression BooleanAnd (CodeExpression expr1, CodeExpression expr2) => new CodeBinaryOperatorExpression (expr1, CodeBinaryOperatorType.BooleanAnd, expr2);
+
+		void IRecognizeHostSpecific.SetProcessingRunIsHostSpecific (bool hostSpecific) => this.hostSpecific = hostSpecific;
+
+		public bool RequiresProcessingRunIsHostSpecific => false;
 	}
 }
 

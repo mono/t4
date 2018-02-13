@@ -39,12 +39,12 @@ namespace Mono.TextTemplating.Tests
 		[Test]
 		public void Preprocess ()
 		{
-			string input = 
+			var input = 
 				"<#@ template language=\"C#\" #>\r\n" +
 				"Test\r\n";
 			
-			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (OutputSample1, "\n");
-			string output = Preprocess (input);
+			var expectedOutput = TemplatingEngineHelper.CleanCodeDom (OutputSample1, "\n");
+			var output = Preprocess (input);
 			
 			Assert.AreEqual (expectedOutput, output);
 		}
@@ -52,11 +52,11 @@ namespace Mono.TextTemplating.Tests
 		[Test]
 		public void Preprocess_ControlBlockAfterIncludedTemplateWithClassFeatureBlock_ReturnsValidCSharpOutput ()
 		{
-			string input = InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock;
-			DummyHost host = CreateDummyHostForControlBlockAfterIncludedTemplateWithClassFeatureBlockTest ();
+			var input = InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock;
+			var host = CreateDummyHostForControlBlockAfterIncludedTemplateWithClassFeatureBlockTest ();
 			
-			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock, "\n");
-			string output = Preprocess (input, host);
+			var expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock, "\n");
+			var output = Preprocess (input, host);
 			
 			Assert.AreEqual (expectedOutput, output, output);
 		}

@@ -33,22 +33,18 @@ namespace Microsoft.VisualStudio.TextTemplating
 {
 	public abstract class DirectiveProcessor : IDirectiveProcessor
 	{
-		CompilerErrorCollection errors;
+		private CompilerErrorCollection errors;
 
-		protected DirectiveProcessor ()
-		{
-		}
-		
 		public virtual void Initialize (ITextTemplatingEngineHost host)
 		{
 			if (host == null)
-				throw new ArgumentNullException ("host");
+				throw new ArgumentNullException (nameof(host));
 		}
 		
 		public virtual void StartProcessingRun (CodeDomProvider languageProvider, string templateContents, CompilerErrorCollection errors)
 		{
 			if (languageProvider == null)
-				throw new ArgumentNullException ("languageProvider");
+				throw new ArgumentNullException (nameof(languageProvider));
 			this.errors = errors;
 		}
 		
@@ -66,14 +62,12 @@ namespace Microsoft.VisualStudio.TextTemplating
 			return null;
 		}
 
-		CompilerErrorCollection IDirectiveProcessor.Errors { get { return errors; } }
+		CompilerErrorCollection IDirectiveProcessor.Errors => errors;
 
 		void IDirectiveProcessor.SetProcessingRunIsHostSpecific (bool hostSpecific)
 		{
 		}
 
-		bool IDirectiveProcessor.RequiresProcessingRunIsHostSpecific {
-			get { return false; }
-		}
+		bool IDirectiveProcessor.RequiresProcessingRunIsHostSpecific => false;
 	}
 }

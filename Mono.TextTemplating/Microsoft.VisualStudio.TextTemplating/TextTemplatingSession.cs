@@ -33,6 +33,8 @@ namespace Microsoft.VisualStudio.TextTemplating
 	[Serializable]
 	public sealed class TextTemplatingSession : Dictionary<string, Object>, ITextTemplatingSession, ISerializable
 	{
+		private readonly Guid _id;
+
 		public TextTemplatingSession () : this (Guid.NewGuid ())
 		{
 		}
@@ -40,42 +42,27 @@ namespace Microsoft.VisualStudio.TextTemplating
 		TextTemplatingSession (SerializationInfo info, StreamingContext context)
 			: base (info, context)
 		{
-			Id = (Guid)info.GetValue ("Id", typeof (Guid));
+			_id = (Guid)info.GetValue ("Id", typeof (Guid));
 		}
 
 		public TextTemplatingSession (Guid id)
 		{
-			this.Id = id;
+			_id = id;
 		}
-		
-		public Guid Id {
-			get; private set;
-		}
-		
-		public override int GetHashCode ()
-		{
-			return Id.GetHashCode ();
-		}
-		
-		public override bool Equals (object obj)
-		{
-			var o = obj as TextTemplatingSession;
-			return o != null && o.Equals (this);
-		}
-		
-		public bool Equals (Guid other)
-		{
-			return other.Equals (Id);
-		}
-		
-		public bool Equals (ITextTemplatingSession other)
-		{
-			return other != null && other.Id == this.Id;
-		}
+
+		public Guid Id => _id;
+
+		public override int GetHashCode () => Id.GetHashCode ();
+
+		public override bool Equals (object obj) => obj is TextTemplatingSession o && o.Equals (this);
+
+		public bool Equals (Guid other) => other.Equals (Id);
+
+		public bool Equals (ITextTemplatingSession other) => other != null && other.Id == this.Id;
 
 		void ISerializable.GetObjectData (SerializationInfo info, StreamingContext context)
 		{
-			base.GetObjectData (info, context);
+			GetObjectData (info, context);
 			info.AddValue ("Id", Id);
 		}
 	}

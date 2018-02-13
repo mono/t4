@@ -17,7 +17,7 @@
 // all copies or substantial portions of the Software.
 // 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,s
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
@@ -28,26 +28,22 @@ using System;
 
 namespace Mono.TextTemplating
 {
-	
 	public class Tokeniser
 	{
-		readonly string content;
-		int position;
-		string value;
-		State nextState = State.Content;
-		Location nextStateLocation;
-		Location nextStateTagStartLocation;
-		
+		private State nextState = State.Content;
+		private Location nextStateLocation;
+		private Location nextStateTagStartLocation;
+
 		public Tokeniser (string fileName, string content)
 		{
 			State = State.Content;
-			this.content = content;
-			this.Location = this.nextStateLocation = this.nextStateTagStartLocation = new Location (fileName, 1, 1);
+			Content = content;
+			Location = nextStateLocation = nextStateTagStartLocation = new Location (fileName, 1, 1);
 		}
-		
+
 		public bool Advance ()
 		{
-			value = null;
+			Value = null;
 			State = nextState;
 			Location = nextStateLocation;
 			TagStartLocation = nextStateTagStartLocation;
@@ -56,218 +52,217 @@ namespace Mono.TextTemplating
 			nextState = GetNextStateAndCurrentValue ();
 			return true;
 		}
-		
-		State GetNextStateAndCurrentValue ()
+
+		private State GetNextStateAndCurrentValue ()
 		{
 			switch (State) {
 			case State.Block:
 			case State.Expression:
 			case State.Helper:
 				return GetBlockEnd ();
-			
+
 			case State.Directive:
 				return NextStateInDirective ();
-				
+
 			case State.Content:
 				return NextStateInContent ();
-				
+
 			case State.DirectiveName:
 				return GetDirectiveName ();
-				
+
 			case State.DirectiveValue:
 				return GetDirectiveValue ();
-				
+
 			default:
 				throw new InvalidOperationException ("Unexpected state '" + State + "'");
 			}
 		}
-		
-		State GetBlockEnd ()
+
+		private State GetBlockEnd ()
 		{
-			int start = position;
-			for (; position < content.Length; position++) {
-				char c = content[position];
+			var start = Position;
+			for (; Position < Content.Length; Position++) {
+				var c = Content[Position];
 				nextStateTagStartLocation = nextStateLocation;
 				nextStateLocation = nextStateLocation.AddCol ();
 				if (c == '\r') {
-					if (position + 1 < content.Length && content[position + 1] == '\n')
-						position++;
-					nextStateLocation = nextStateLocation.AddLine();
+					if (Position + 1 < Content.Length && Content[Position + 1] == '\n')
+						Position++;
+					nextStateLocation = nextStateLocation.AddLine ();
 				} else if (c == '\n') {
-					nextStateLocation = nextStateLocation.AddLine();
-				} else if (c =='>' && content[position-1] == '#' && content[position-2] != '\\') {
-					value = content.Substring (start, position - start - 1);
-					position++;
+					nextStateLocation = nextStateLocation.AddLine ();
+				} else if (c == '>' && Content[Position - 1] == '#' && Content[Position - 2] != '\\') {
+					Value = Content.Substring (start, Position - start - 1);
+					Position++;
 					TagEndLocation = nextStateLocation;
-					
+
 					//skip newlines directly after blocks, unless they're expressions
-					if (State != State.Expression && (position += IsNewLine()) > 0) {
-						nextStateLocation = nextStateLocation.AddLine ();
-					}
+					if (State != State.Expression && (Position += IsNewLine ()) > 0) nextStateLocation = nextStateLocation.AddLine ();
 					return State.Content;
 				}
 			}
+
 			throw new ParserException ("Unexpected end of file.", nextStateLocation);
 		}
-		
-		State GetDirectiveName ()
+
+		private State GetDirectiveName ()
 		{
-			int start = position;
-			for (; position < content.Length; position++) {
-				char c = content [position];
-				if (!Char.IsLetterOrDigit (c)) {
-					value = content.Substring (start, position - start);
+			var start = Position;
+			for (; Position < Content.Length; Position++) {
+				var c = Content[Position];
+				if (!char.IsLetterOrDigit (c)) {
+					Value = Content.Substring (start, Position - start);
 					return State.Directive;
 				}
+
 				nextStateLocation = nextStateLocation.AddCol ();
 			}
+
 			throw new ParserException ("Unexpected end of file.", nextStateLocation);
 		}
-		
-		State GetDirectiveValue ()
+
+		private State GetDirectiveValue ()
 		{
-			int start = position;
+			var start = Position;
 			int delimiter = '\0';
-			for (; position < content.Length; position++) {
-				char c = content[position];
+			for (; Position < Content.Length; Position++) {
+				var c = Content[Position];
 				nextStateLocation = nextStateLocation.AddCol ();
 				if (c == '\r') {
-					if (position + 1 < content.Length && content[position + 1] == '\n')
-						position++;
-					nextStateLocation = nextStateLocation.AddLine();
-				} else if (c == '\n')
-					nextStateLocation = nextStateLocation.AddLine();
+					if (Position + 1 < Content.Length && Content[Position + 1] == '\n')
+						Position++;
+					nextStateLocation = nextStateLocation.AddLine ();
+				} else if (c == '\n') {
+					nextStateLocation = nextStateLocation.AddLine ();
+				}
+
 				if (delimiter == '\0') {
 					if (c == '\'' || c == '"') {
-						start = position;
+						start = Position;
 						delimiter = c;
-					} else if (!Char.IsWhiteSpace (c)) {
+					} else if (!char.IsWhiteSpace (c)) {
 						throw new ParserException ("Unexpected character '" + c + "'. Expecting attribute value.", nextStateLocation);
 					}
+
 					continue;
 				}
+
 				if (c == delimiter) {
-					value = content.Substring (start + 1, position - start - 1);
-					position++;
+					Value = Content.Substring (start + 1, Position - start - 1);
+					Position++;
 					return State.Directive;
 				}
 			}
+
 			throw new ParserException ("Unexpected end of file.", nextStateLocation);
 		}
-		
-		State NextStateInContent ()
+
+		private State NextStateInContent ()
 		{
-			int start = position;
-			for (; position < content.Length; position++) {
-				char c = content[position];
+			var start = Position;
+			for (; Position < Content.Length; Position++) {
+				var c = Content[Position];
 				nextStateTagStartLocation = nextStateLocation;
 				nextStateLocation = nextStateLocation.AddCol ();
 				if (c == '\r') {
-					if (position + 1 < content.Length && content[position + 1] == '\n')
-						position++;
-					nextStateLocation = nextStateLocation.AddLine();
+					if (Position + 1 < Content.Length && Content[Position + 1] == '\n')
+						Position++;
+					nextStateLocation = nextStateLocation.AddLine ();
 				} else if (c == '\n') {
-					nextStateLocation = nextStateLocation.AddLine();
-				} else if (c =='<' && position + 2 < content.Length && content[position+1] == '#') {
+					nextStateLocation = nextStateLocation.AddLine ();
+				} else if (c == '<' && Position + 2 < Content.Length && Content[Position + 1] == '#') {
 					TagEndLocation = nextStateLocation;
-					char type = content [position + 2];
+					var type = Content[Position + 2];
 					if (type == '@') {
 						nextStateLocation = nextStateLocation.AddCols (2);
-						value = content.Substring (start, position - start);
-						position += 3;
+						Value = Content.Substring (start, Position - start);
+						Position += 3;
 						return State.Directive;
 					}
+
 					if (type == '=') {
 						nextStateLocation = nextStateLocation.AddCols (2);
-						value = content.Substring (start, position - start);
-						position += 3;
+						Value = Content.Substring (start, Position - start);
+						Position += 3;
 						return State.Expression;
 					}
+
 					if (type == '+') {
 						nextStateLocation = nextStateLocation.AddCols (2);
-						value = content.Substring (start, position - start);
-						position += 3;
+						Value = Content.Substring (start, Position - start);
+						Position += 3;
 						return State.Helper;
 					}
-					value = content.Substring (start, position - start);
+
+					Value = Content.Substring (start, Position - start);
 					nextStateLocation = nextStateLocation.AddCol ();
-					position += 2;
+					Position += 2;
 					return State.Block;
 				}
 			}
+
 			//EOF is only valid when we're in content
-			value = content.Substring (start);
+			Value = Content.Substring (start);
 			return State.EOF;
 		}
 
-		int IsNewLine() {
-			int found = 0;
+		private int IsNewLine ()
+		{
+			var found = 0;
 
-			if (position < content.Length && content[position] == '\r') {
-				found++;
-			}
-			if (position+found < content.Length && content[position+found] == '\n') {
-				found++;
-			}
+			if (Position < Content.Length && Content[Position] == '\r') found++;
+			if (Position + found < Content.Length && Content[Position + found] == '\n') found++;
 			return found;
 		}
-		
-		State NextStateInDirective () {
-			for (; position < content.Length; position++) {
-				char c = content[position];
+
+		private State NextStateInDirective ()
+		{
+			for (; Position < Content.Length; Position++) {
+				var c = Content[Position];
 				if (c == '\r') {
-					if (position + 1 < content.Length && content[position + 1] == '\n')
-						position++;
-					nextStateLocation = nextStateLocation.AddLine();
+					if (Position + 1 < Content.Length && Content[Position + 1] == '\n')
+						Position++;
+					nextStateLocation = nextStateLocation.AddLine ();
 				} else if (c == '\n') {
-					nextStateLocation = nextStateLocation.AddLine();
-				} else if (Char.IsLetter (c)) {
+					nextStateLocation = nextStateLocation.AddLine ();
+				} else if (char.IsLetter (c)) {
 					return State.DirectiveName;
 				} else if (c == '=') {
 					nextStateLocation = nextStateLocation.AddCol ();
-					position++;
-					return State.DirectiveValue;	
-				} else if (c == '#' && position + 1 < content.Length && content[position+1] == '>') {
-					position+=2;
+					Position++;
+					return State.DirectiveValue;
+				} else if (c == '#' && Position + 1 < Content.Length && Content[Position + 1] == '>') {
+					Position += 2;
 					TagEndLocation = nextStateLocation.AddCols (2);
 					nextStateLocation = nextStateLocation.AddCols (3);
-					
+
 					//skip newlines directly after directives
-					if ((position += IsNewLine()) > 0) {
-						nextStateLocation = nextStateLocation.AddLine();
-					}
+					if ((Position += IsNewLine ()) > 0) nextStateLocation = nextStateLocation.AddLine ();
 
 					return State.Content;
-				} else if (!Char.IsWhiteSpace (c)) {
+				} else if (!char.IsWhiteSpace (c)) {
 					throw new ParserException ("Directive ended unexpectedly with character '" + c + "'", nextStateLocation);
 				} else {
 					nextStateLocation = nextStateLocation.AddCol ();
 				}
 			}
+
 			throw new ParserException ("Unexpected end of file.", nextStateLocation);
 		}
-		
-		public State State {
-			get; private set;
-		}
-		
-		public int Position {
-			get { return position; }
-		}
-		
-		public string Content {
-			get { return content; }
-		}
-		
-		public string Value {
-			get { return value; }
-		}
-		
+
+		public State State { get; private set; }
+
+		public int Position { get; private set; }
+
+		public string Content { get; }
+
+		public string Value { get; private set; }
+
 		public Location Location { get; private set; }
 		public Location TagStartLocation { get; private set; }
 		public Location TagEndLocation { get; private set; }
 	}
-	
+
 	public enum State
 	{
 		Content = 0,
@@ -280,14 +275,11 @@ namespace Mono.TextTemplating
 		Name,
 		EOF
 	}
-	
+
 	public class ParserException : Exception
 	{
-		public ParserException (string message, Location location) : base (message)
-		{
-			Location = location;
-		}
-		
-		public Location Location { get; private set; }
+		public ParserException (string message, Location location) : base (message) => Location = location;
+
+		public Location Location { get; }
 	}
 }

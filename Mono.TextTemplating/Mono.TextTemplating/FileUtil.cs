@@ -1,4 +1,4 @@
-﻿//
+//
 // FileUtil.cs
 //
 // Author:
@@ -31,7 +31,7 @@ namespace Mono.TextTemplating
 	static class FileUtil
 	{
 		//from MonoDevelop.Core.FileService, copied here so Mono.TextTemplating can be used w/o MD dependency
-		public unsafe static string AbsoluteToRelativePath (string baseDirectoryPath, string absPath)
+		public static unsafe string AbsoluteToRelativePath (string baseDirectoryPath, string absPath)
 		{
 			if (!Path.IsPathRooted (absPath) || string.IsNullOrEmpty (baseDirectoryPath))
 				return absPath;
@@ -116,17 +116,17 @@ namespace Mono.TextTemplating
 		{
 			if (path == null)
 				throw new ArgumentNullException ("path");
-			if (!isWindows || path.IndexOf ('*') == -1)
+			if (!IsWindows || path.IndexOf ('*') == -1)
 				return Path.GetFullPath (path);
 			else {
 				// On Windows, GetFullPath doesn't work if the path contains wildcards.
-				path = path.Replace ("*", wildcardMarker);
+				path = path.Replace ("*", WildcardMarker);
 				path = Path.GetFullPath (path);
-				return path.Replace (wildcardMarker, "*");
+				return path.Replace (WildcardMarker, "*");
 			}
 		}
 
-		static readonly string wildcardMarker = "_" + Guid.NewGuid () + "_";
-		static readonly bool isWindows = Path.DirectorySeparatorChar == '\\';
+		private static readonly string WildcardMarker = "_" + Guid.NewGuid () + "_";
+		static readonly bool IsWindows = Path.DirectorySeparatorChar == '\\';
 	}
 }

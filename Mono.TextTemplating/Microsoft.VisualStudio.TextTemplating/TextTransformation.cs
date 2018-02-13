@@ -38,11 +38,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		CompilerErrorCollection errors;
 		StringBuilder builder;
 		bool endsWithNewline;
-		
-		public TextTransformation ()
-		{
-		}
-		
+
 		public virtual void Initialize ()
 		{
 		}
@@ -53,32 +49,14 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		#region Errors
 		
-		public void Error (string message)
-		{
-			Errors.Add (new CompilerError ("", 0, 0, "", message));
-		}
-		
-		public void Warning (string message)
-		{
-			Errors.Add (new CompilerError ("", 0, 0, "", message) { IsWarning = true });
-		}
-		
-		protected internal CompilerErrorCollection Errors {
-			get {
-				if (errors == null)
-					errors = new CompilerErrorCollection ();
-				return errors;
-			}
-		}
-		
-		Stack<int> Indents {
-			get {
-				if (indents == null)
-					indents = new Stack<int> ();
-				return indents;
-			}
-		}
-		
+		public void Error (string message) => Errors.Add (new CompilerError ("", 0, 0, "", message));
+
+		public void Warning (string message) => Errors.Add (new CompilerError ("", 0, 0, "", message) { IsWarning = true });
+
+		protected internal CompilerErrorCollection Errors => errors ?? (errors = new CompilerErrorCollection ());
+
+		Stack<int> Indents => indents ?? (indents = new Stack<int> ());
+
 		#endregion
 		
 		#region Indents
@@ -96,7 +74,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		public void PushIndent (string indent)
 		{
 			if (indent == null)
-				throw new ArgumentNullException ("indent");
+				throw new ArgumentNullException (nameof(indent));
 			Indents.Push (indent.Length);
 			currentIndent += indent;
 		}
@@ -107,23 +85,15 @@ namespace Microsoft.VisualStudio.TextTemplating
 			Indents.Clear ();
 		}
 		
-		public string CurrentIndent {
-			get { return currentIndent; }
-		}
-		
+		public string CurrentIndent => currentIndent;
+
 		#endregion
 		
 		#region Writing
 		
 		protected StringBuilder GenerationEnvironment {
-			get {
-				if (builder == null)
-					builder = new StringBuilder ();
-				return builder;
-			}
-			set {
-				builder = value;
-			}
+			get => builder ?? (builder = new StringBuilder ());
+			set => builder = value;
 		}
 		
 		public void Write (string textToAppend)
@@ -136,7 +106,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 			}
 			endsWithNewline = false;
 			
-			char last = textToAppend[textToAppend.Length-1];
+			var last = textToAppend[textToAppend.Length-1];
 			if (last == '\n' || last == '\r') {
 				endsWithNewline = true;
 			}
@@ -174,11 +144,8 @@ namespace Microsoft.VisualStudio.TextTemplating
 				GenerationEnvironment.Append (textToAppend);
 		}
 		
-		public void Write (string format, params object[] args)
-		{
-			Write (string.Format (format, args));
-		}
-		
+		public void Write (string format, params object[] args) => Write (string.Format (format, args));
+
 		public void WriteLine (string textToAppend)
 		{
 			Write (textToAppend);

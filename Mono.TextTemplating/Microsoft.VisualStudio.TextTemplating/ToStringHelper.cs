@@ -43,27 +43,24 @@ namespace Microsoft.VisualStudio.TextTemplating
 
 		public static string ToStringWithCulture (object objectToConvert)
 		{
-			if (objectToConvert == null)
-				throw new ArgumentNullException ("objectToConvert");
-
-			IConvertible conv = objectToConvert as IConvertible;
-			if (conv != null)
+			switch (objectToConvert)
+			{
+			case null:
+				throw new ArgumentNullException (nameof(objectToConvert));
+			case IConvertible conv:
 				return conv.ToString (formatProvider);
-			
-			var str = objectToConvert as string;
-			if (str != null)
-				return str;
-			
+			}
+
 			//TODO: implement a cache of types and DynamicMethods
-			MethodInfo mi = objectToConvert.GetType ().GetMethod ("ToString", new Type[] { typeof (IFormatProvider) });
+			MethodInfo mi = objectToConvert.GetType ().GetMethod ("ToString", new[] { typeof (IFormatProvider) });
 			if (mi != null)
 				return (string) mi.Invoke (objectToConvert, formatProviderAsParameterArray);
 			return objectToConvert.ToString ();
 		}
 		
 		public static IFormatProvider FormatProvider {
-			get { return (IFormatProvider)formatProviderAsParameterArray[0]; }
-			set { formatProviderAsParameterArray[0] = formatProvider = value; }
+			get => (IFormatProvider)formatProviderAsParameterArray[0];
+			set => formatProviderAsParameterArray[0] = formatProvider = value;
 		}
 	}
 }

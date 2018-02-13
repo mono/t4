@@ -33,33 +33,34 @@ namespace Mono.TextTemplating
 {
 	class TextTransform
 	{
-		static OptionSet optionSet;
-		const string name ="TextTransform.exe";
-		
+		private static OptionSet optionSet;
+		private const string name = @"TextTransform.exe";
+
 		public static int Main (string[] args)
 		{
 			try {
-				return MainInternal(args);
+				return MainInternal (args);
 			}
 			catch (Exception e) {
-				Console.Error.WriteLine(e);
+				Console.Error.WriteLine (e);
 				return -1;
 			}
 		}
 
 		private static int MainInternal (string[] args)
 		{
+			if (args == null) throw new ArgumentNullException (nameof (args));
 			if (args.Length == 0) {
 				ShowHelp (true);
 			}
-			
+
 			var generator = new TemplateGenerator ();
-			string outputFile = null, inputFile = null;
+			string outputFile = null;
 			var directives = new List<string> ();
 			var parameters = new List<string> ();
-		//	var session = new Microsoft.VisualStudio.TextTemplating.TextTemplatingSession ();
+			//	var session = new Microsoft.VisualStudio.TextTemplating.TextTemplatingSession ();
 			string preprocess = null;
-			
+
 			optionSet = new OptionSet () {
 				{ "o=|out=", "The name of the output {file}", s => outputFile = s },
 				{ "r=", "Assemblies to reference", s => generator.Refs.Add (s) },
@@ -72,38 +73,37 @@ namespace Mono.TextTemplating
 		//		{ "k=,", "Session {key},{value} pairs", (s, t) => session.Add (s, t) },
 				{ "c=", "Preprocess the template into {0:class}", (s) => preprocess = s },
 			};
-			
+
 			var remainingArgs = optionSet.Parse (args);
-			
+
 			if (remainingArgs.Count != 1) {
 				Console.Error.WriteLine ("No input file specified.");
 				return -1;
 			}
-			inputFile = remainingArgs [0];
-			
+			var inputFile = remainingArgs[0];
+
 			if (!File.Exists (inputFile)) {
 				Console.Error.WriteLine ("Input file '{0}' does not exist.", inputFile);
 				return -1;
 			}
-			
+
 			if (string.IsNullOrEmpty (outputFile)) {
 				outputFile = inputFile;
 				if (Path.HasExtension (outputFile)) {
 					var dir = Path.GetDirectoryName (outputFile);
 					var fn = Path.GetFileNameWithoutExtension (outputFile);
-					outputFile = Path.Combine (dir, fn + ".txt");
+					outputFile = Path.Combine (dir ?? throw new InvalidOperationException (), fn + ".txt");
 				} else {
 					outputFile = outputFile + ".txt";
 				}
 			}
 
 			foreach (var par in parameters) {
-				if (!generator.TryAddParameter (par)) {
-					Console.Error.WriteLine ("Parameter has incorrect format: {0}", par);
-					return -1;
-				}
+				if (generator.TryAddParameter (par)) continue;
+				Console.Error.WriteLine ("Parameter has incorrect format: {0}", par);
+				return -1;
 			}
-			
+
 			foreach (var dir in directives) {
 				var split = dir.Split ('!');
 
@@ -112,49 +112,46 @@ namespace Mono.TextTemplating
 					return -1;
 				}
 
-				for (int i = 0; i < 3; i++) {
-					string s = split [i];
-					if (string.IsNullOrEmpty (s)) {
-						string kind = i == 0? "name" : (i == 1 ? "class" : "assembly");
-						Console.Error.WriteLine ("Directive has missing {0} value: {1}", kind, dir);
-						return -1;
-					}
+				for (var i = 0; i < 3; i++) {
+					var s = split[i];
+					if (!string.IsNullOrEmpty (s)) continue;
+					var kind = i == 0 ? "name" : (i == 1 ? "class" : "assembly");
+					Console.Error.WriteLine ("Directive has missing {0} value: {1}", kind, dir);
+					return -1;
 				}
 
 				generator.AddDirectiveProcessor (split[0], split[1], split[2]);
 			}
-			
+
 			if (preprocess == null) {
 				generator.ProcessTemplate (inputFile, outputFile);
 				if (generator.Errors.HasErrors) {
 					Console.WriteLine ("Processing '{0}' failed.", inputFile);
 				}
 			} else {
-				string className = preprocess;
+				var className = preprocess;
 				string classNamespace = null;
-				int s = preprocess.LastIndexOf ('.');
+				var s = preprocess.LastIndexOf ('.');
 				if (s > 0) {
 					classNamespace = preprocess.Substring (0, s);
 					className = preprocess.Substring (s + 1);
 				}
-				
-				string language;
-				string[] references;
+
 				generator.PreprocessTemplate (inputFile, className, classNamespace, outputFile, System.Text.Encoding.UTF8,
-					out language, out references);
+					out var language, out _);
 				if (generator.Errors.HasErrors) {
 					Console.Write ("Preprocessing '{0}' into class '{1}.{2}' failed.", inputFile, classNamespace, className);
 				}
 			}
-			
+
 			foreach (System.CodeDom.Compiler.CompilerError err in generator.Errors)
 				Console.Error.WriteLine ("{0}({1},{2}): {3} {4}", err.FileName, err.Line, err.Column,
-				                   err.IsWarning? "WARNING" : "ERROR", err.ErrorText);
-			
-			return generator.Errors.HasErrors? -1 : 0;
+								   err.IsWarning ? "WARNING" : "ERROR", err.ErrorText);
+
+			return generator.Errors.HasErrors ? -1 : 0;
 		}
-		
-		static void ShowHelp (bool concise)
+
+		private static void ShowHelp (bool concise)
 		{
 			Console.WriteLine ("TextTransform command line T4 processor");
 			Console.WriteLine ("Usage: {0} [options] input-file", name);
