@@ -3,6 +3,7 @@
     <TargetFramework>net45</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
