@@ -28,6 +28,8 @@
 using System;
 using System.Collections.Generic;
 
+#if FEATURE_APPDOMAINS
+
 namespace Mono.TextTemplating
 {
 	public class TemplatingAppDomainRecycler
@@ -213,3 +215,5 @@ namespace Mono.TextTemplating
 		}
 	}
 }
+
+#endif

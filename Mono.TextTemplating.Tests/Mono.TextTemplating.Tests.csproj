@@ -3,9 +3,10 @@
     <TargetFramework>net45</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NUnit" Version="3.6.1" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
+    <PackageReference Include="NUnit" Version="3.8.0" />
   </ItemGroup>
 </Project>

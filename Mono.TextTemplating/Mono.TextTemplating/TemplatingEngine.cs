@@ -25,54 +25,54 @@
 // THE SOFTWARE.
 
 using System;
-using System.IO;
-using System.Text;
-using System.Collections.Generic;
 using System.CodeDom;
 using System.CodeDom.Compiler;
-using Microsoft.CSharp;
-using Microsoft.VisualStudio.TextTemplating;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using Microsoft.CSharp;
+using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating
 {
-	public class TemplatingEngine : MarshalByRefObject, ITextTemplatingEngine
+	public class TemplatingEngine :
+#if FEATURE_APPDOMAINS
+		MarshalByRefObject,
+#endif
+#pragma warning disable 618
+		ITextTemplatingEngine
+#pragma warning restore 618
 	{
 		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
 		{
-			var tpl = CompileTemplate (content, host);
-			try {
-				if (tpl != null)
-					return tpl.Process ();
-				return null;
-			} finally {
-				if (tpl != null)
-					tpl.Dispose ();
+			using (var tpl = CompileTemplate (content, host)) {
+				return tpl?.Process ();
 			}
 		}
-		
-		public string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className, 
-			string classNamespace, out string language, out string[] references)
+
+		public string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className,
+			string classNamespace, out string language, out string [] references)
 		{
 			if (content == null)
-				throw new ArgumentNullException ("content");
+				throw new ArgumentNullException (nameof (content));
 			if (host == null)
-				throw new ArgumentNullException ("host");
+				throw new ArgumentNullException (nameof (host));
 			if (className == null)
-				throw new ArgumentNullException ("className");
+				throw new ArgumentNullException (nameof (className));
 			if (classNamespace == null)
-				throw new ArgumentNullException ("classNamespace");
-			
+				throw new ArgumentNullException (nameof (classNamespace));
+
 			language = null;
 			references = null;
-			
+
 			var pt = ParsedTemplate.FromText (content, host);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
 			}
-			
+
 			var settings = GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
@@ -83,15 +83,15 @@ namespace Mono.TextTemplating
 			settings.IncludePreprocessingHelpers = string.IsNullOrEmpty (settings.Inherits);
 			settings.IsPreprocessed = true;
 			language = settings.Language;
-			
+
 			var ccu = GenerateCompileUnit (host, content, pt, settings);
 			references = ProcessReferences (host, pt, settings).ToArray ();
-			
+
 			host.LogErrors (pt.Errors);
 			if (pt.Errors.HasErrors) {
 				return null;
 			}
-			
+
 			var options = new CodeGeneratorOptions ();
 			using (var sw = new StringWriter ()) {
 				settings.Provider.GenerateCodeFromCompileUnit (ccu, sw, options);
@@ -102,22 +102,22 @@ namespace Mono.TextTemplating
 		public CompiledTemplate CompileTemplate (string content, ITextTemplatingEngineHost host)
 		{
 			if (content == null)
-				throw new ArgumentNullException ("content");
+				throw new ArgumentNullException (nameof (content));
 			if (host == null)
-				throw new ArgumentNullException ("host");
-			
+				throw new ArgumentNullException (nameof (host));
+
 			var pt = ParsedTemplate.FromText (content, host);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
 			}
-			
+
 			var settings = GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
 			}
-			
+
 			if (!string.IsNullOrEmpty (settings.Extension)) {
 				host.SetFileExtension (settings.Extension);
 			}
@@ -125,22 +125,24 @@ namespace Mono.TextTemplating
 				//FIXME: when is this called with false?
 				host.SetOutputEncoding (settings.Encoding, true);
 			}
-			
+
 			var ccu = GenerateCompileUnit (host, content, pt, settings);
 			var references = ProcessReferences (host, pt, settings);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
 			}
-			
+
 			var results = GenerateCode (references, settings, ccu);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
 				return null;
 			}
-			
+
 			var templateClassFullName = settings.Namespace + "." + settings.Name;
+
+#if FEATURE_APPDOMAINS
 			var domain = host.ProvideTemplatingAppDomain (content);
 			if (domain != null) {
 				var type = typeof(CompiledTemplate);
@@ -150,6 +152,8 @@ namespace Mono.TextTemplating
 					null, null);
 				return (CompiledTemplate)obj;
 			}
+#endif
+
 			return new CompiledTemplate (host, results, templateClassFullName, settings.Culture, references.ToArray ());
 		}
 		
@@ -975,7 +979,7 @@ namespace Mono.TextTemplating
 			type.Members.Add (helperCls);
 		}
 		
-		#region CodeDom helpers
+#region CodeDom helpers
 		
 		static CodeTypeReference TypeRef<T> ()
 		{
@@ -1080,7 +1084,7 @@ namespace Mono.TextTemplating
 			};
 		}
 
-		#endregion
+#endregion
 
 		//HACK: older versions of Mono don't implement GenerateCodeFromMember
 		// We have a workaround via reflection. First attempt to reflect the members we need to work around it.
@@ -1100,9 +1104,9 @@ namespace Mono.TextTemplating
 				return;
 			}
 
-			#pragma warning disable 0618
+#pragma warning disable 0618
 			var generator = (CodeGenerator) provider.CreateGenerator ();
-			#pragma warning restore 0618
+#pragma warning restore 0618
 			var dummy = new CodeTypeDeclaration ("Foo");
 
 			foreach (CodeTypeMember member in members) {

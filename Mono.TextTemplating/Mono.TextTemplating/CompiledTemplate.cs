@@ -33,23 +33,29 @@ using System.Collections.Generic;
 
 namespace Mono.TextTemplating
 {
-	public sealed class CompiledTemplate : MarshalByRefObject, IDisposable
+	public sealed class CompiledTemplate :
+#if FEATURE_APPDOMAINS
+		MarshalByRefObject,
+#endif
+		IDisposable
 	{
 		ITextTemplatingEngineHost host;
 		object textTransformation;
 		readonly CultureInfo culture;
-		readonly string[] assemblyFiles;
-		
+		readonly string [] assemblyFiles;
+
 		public CompiledTemplate (ITextTemplatingEngineHost host, CompilerResults results, string fullName, CultureInfo culture,
-			string[] assemblyFiles)
+			string [] assemblyFiles)
 		{
+#if FEATURE_APPDOMAINS
 			AppDomain.CurrentDomain.AssemblyResolve += ResolveReferencedAssemblies;
+#endif
 			this.host = host;
 			this.culture = culture;
 			this.assemblyFiles = assemblyFiles;
 			Load (results, fullName);
 		}
-		
+
 		void Load (CompilerResults results, string fullName)
 		{
 			var assembly = results.CompiledAssembly;
@@ -57,17 +63,17 @@ namespace Mono.TextTemplating
 			//MS Templating Engine does not look on the type itself, 
 			//it checks only that required methods are exists in the compiled type 
 			textTransformation = Activator.CreateInstance (transformType);
-			
+
 			//set the host property if it exists
 			Type hostType = null;
 			var gen = host as TemplateGenerator;
 			if (gen != null) {
 				hostType = gen.SpecificHostType;
 			}
-			var hostProp = transformType.GetProperty ("Host", hostType ?? typeof(ITextTemplatingEngineHost));
+			var hostProp = transformType.GetProperty ("Host", hostType ?? typeof (ITextTemplatingEngineHost));
 			if (hostProp != null && hostProp.CanWrite)
 				hostProp.SetValue (textTransformation, host, null);
-			
+
 			var sessionHost = host as ITextTemplatingSessionHost;
 			if (sessionHost != null) {
 				//FIXME: should we create a session if it's null?
@@ -83,14 +89,14 @@ namespace Mono.TextTemplating
 			var errorProp = ttType.GetProperty ("Errors", BindingFlags.Instance | BindingFlags.NonPublic);
 			if (errorProp == null)
 				throw new ArgumentException ("Template must have 'Errors' property");
-			var errorMethod = ttType.GetMethod ("Error",new Type[]{typeof(string)});
+			var errorMethod = ttType.GetMethod ("Error", new Type [] { typeof (string) });
 			if (errorMethod == null) {
 				throw new ArgumentException ("Template must have 'Error(string message)' method");
 			}
 
-			var errors = (CompilerErrorCollection) errorProp.GetValue (textTransformation);
+			var errors = (CompilerErrorCollection)errorProp.GetValue (textTransformation);
 			errors.Clear ();
-			
+
 			//set the culture
 			if (culture != null)
 				ToStringHelper.FormatProvider = culture;
@@ -103,22 +109,23 @@ namespace Mono.TextTemplating
 			var transformMethod = ttType.GetMethod ("TransformText");
 
 			if (initMethod == null) {
-				errorMethod.Invoke (textTransformation, new object[]{ "Error running transform: no method Initialize()" });
+				errorMethod.Invoke (textTransformation, new object [] { "Error running transform: no method Initialize()" });
 			} else if (transformMethod == null) {
-				errorMethod.Invoke (textTransformation, new object[]{ "Error running transform: no method TransformText()" });
+				errorMethod.Invoke (textTransformation, new object [] { "Error running transform: no method TransformText()" });
 			} else try {
-				initMethod.Invoke (textTransformation, null);
-				output = (string)transformMethod.Invoke (textTransformation, null);
-			} catch (Exception ex) {
-				errorMethod.Invoke (textTransformation, new object[]{ "Error running transform: " + ex });
-			}
+					initMethod.Invoke (textTransformation, null);
+					output = (string)transformMethod.Invoke (textTransformation, null);
+				} catch (Exception ex) {
+					errorMethod.Invoke (textTransformation, new object [] { "Error running transform: " + ex });
+				}
 
 			host.LogErrors (errors);
-			
+
 			ToStringHelper.FormatProvider = CultureInfo.InvariantCulture;
 			return output;
 		}
-		
+
+
 		Assembly ResolveReferencedAssemblies (object sender, ResolveEventArgs args)
 		{
 			AssemblyName asmName = new AssemblyName (args.Name);
@@ -133,13 +140,15 @@ namespace Mono.TextTemplating
 
 			return null;
 		}
-		
+
 		public void Dispose ()
 		{
+#if FEATURE_APPDOMAINS
 			if (host != null) {
 				host = null;
 				AppDomain.CurrentDomain.AssemblyResolve -= ResolveReferencedAssemblies;
 			}
+#endif
 		}
 	}
 }

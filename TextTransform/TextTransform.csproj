@@ -6,13 +6,14 @@
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>1591;1573</NoWarn>
+    <LangVersion>7.1</LangVersion>
     <PackageId>Mono.TextTemplating.Console</PackageId>
     <IsTool>True</IsTool>
     <Description>Command-line T4 text transform tool.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <!-- the PackageFile and the Pack="False" work around NuGetizer not supporting private assets from project references -->
-    <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" Pack="False" />
-    <PackageFile Include="$(OutputPath)\Mono.TextTemplating.dll" PackagePath="tools\Mono.TextTemplating.dll" />
+    <!-- work around nuget pack targets not packaging private assets from project references -->
+    <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" PrivateAssets="all" />
+    <None Include="$(OutDir)\Mono.TextTemplating.dll" Pack="true" PackagePath="tools\Mono.TextTemplating.dll" />
   </ItemGroup>
 </Project>

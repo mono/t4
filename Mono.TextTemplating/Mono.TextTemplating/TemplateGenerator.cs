@@ -34,7 +34,11 @@ using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating
 {
-	public class TemplateGenerator : MarshalByRefObject, ITextTemplatingEngineHost
+	public class TemplateGenerator :
+#if FEATURE_APPDOMAINS
+		MarshalByRefObject,
+#endif
+		ITextTemplatingEngineHost
 	{
 		//re-usable
 		TemplatingEngine engine;
