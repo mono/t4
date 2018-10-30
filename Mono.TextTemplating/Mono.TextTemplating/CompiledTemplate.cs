@@ -94,7 +94,7 @@ namespace Mono.TextTemplating
 				throw new ArgumentException ("Template must have 'Error(string message)' method");
 			}
 
-			var errors = (CompilerErrorCollection)errorProp.GetValue (textTransformation);
+			var errors = (CompilerErrorCollection)errorProp.GetValue (textTransformation, null);
 			errors.Clear ();
 
 			//set the culture

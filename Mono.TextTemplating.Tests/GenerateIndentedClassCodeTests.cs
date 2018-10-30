@@ -1,4 +1,4 @@
-﻿//
+//
 // GenerateIndentedClassCodeTests.cs
 //
 // Author:
@@ -84,7 +84,7 @@ namespace Mono.TextTemplating.Tests
 
 					string line;
 					while ((line = reader.ReadLine ()) != null) {
-						if (!String.IsNullOrWhiteSpace (line)) {
+						if (!StringUtil.IsNullOrWhiteSpace (line)) {
 							writer.Write (line);
 							writer.Write (newLine);
 						}

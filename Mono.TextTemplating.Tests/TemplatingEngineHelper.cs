@@ -46,13 +46,13 @@ namespace Mono.TextTemplating.Tests
 					while ((line = reader.ReadLine ()) != null) {
 
 						if (stripHeader) {
-							if (line.StartsWith ("//", StringComparison.Ordinal) || string.IsNullOrWhiteSpace (line))
+							if (line.StartsWith ("//", StringComparison.Ordinal) || StringUtil.IsNullOrWhiteSpace (line))
 								continue;
 							stripHeader = false;
 						}
 
 						if (afterLineDirective) {
-							if (string.IsNullOrWhiteSpace (line))
+							if (StringUtil.IsNullOrWhiteSpace (line))
 								continue;
 							afterLineDirective = false;
 						}

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net45</TargetFramework>
+    <TargetFrameworks>net35;net40;net45</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
@@ -12,8 +12,12 @@
     <Description>Command-line T4 text transform tool.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="bin\**" />
+    <EmbeddedResource Remove="bin\**" />
+    <None Remove="bin\**" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- work around nuget pack targets not packaging private assets from project references -->
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" PrivateAssets="all" />
-    <None Include="$(OutDir)\Mono.TextTemplating.dll" Pack="true" PackagePath="tools\Mono.TextTemplating.dll" />
   </ItemGroup>
 </Project>
