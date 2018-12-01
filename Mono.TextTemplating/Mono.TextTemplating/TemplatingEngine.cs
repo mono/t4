@@ -489,12 +489,16 @@ namespace Mono.TextTemplating
 			}
 			namespac.Types.Add (type);
 			
+			var transformMethComment = new CodeCommentStatement(
+				"<summary>Transform template text</summary><returns></returns>",
+				true);
 			//prep the transform method
 			var transformMeth = new CodeMemberMethod {
 				Name = "TransformText",
 				ReturnType = new CodeTypeReference (typeof (String)),
 				Attributes = MemberAttributes.Public,
 			};
+			transformMeth.Comments.Add(transformMethComment);
 			if (!settings.IncludePreprocessingHelpers)
 				transformMeth.Attributes |= MemberAttributes.Override;
 			
@@ -596,7 +600,9 @@ namespace Mono.TextTemplating
 			GenerateInitializationMethod (type, settings);
 			
 			if (settings.IncludePreprocessingHelpers) {
+				var comment = new CodeCommentStatement("<summary></summary>", true);
 				var baseClass = new CodeTypeDeclaration (settings.Name + "Base");
+				baseClass.Comments.Add(comment);
 				GenerateProcessingHelpers (baseClass, settings);
 				AddToStringHelper (baseClass, settings);
 				namespac.Types.Add (baseClass);
@@ -630,12 +636,16 @@ namespace Mono.TextTemplating
 		
 		static void GenerateInitializationMethod (CodeTypeDeclaration type, TemplateSettings settings)
 		{
+			var initializeMethComment = new CodeCommentStatement (
+				"<summary>Initialize transformer</summary>",
+				true);
 			//initialization method
 			var initializeMeth = new CodeMemberMethod {
 				Name = "Initialize",
 				ReturnType = new CodeTypeReference (typeof (void), CodeTypeReferenceOptions.GlobalReference),
 				Attributes = MemberAttributes.Public
 			};
+			initializeMeth.Comments.Add(initializeMethComment);
 			if (!settings.IncludePreprocessingHelpers)
 				initializeMeth.Attributes |= MemberAttributes.Override;
 
@@ -760,19 +770,25 @@ namespace Mono.TextTemplating
 			var errorsPropRef = new CodePropertyReferenceExpression (new CodeThisReferenceExpression (), "Errors");
 			
 			var compilerErrorTypeRef = TypeRef<CompilerError> ();
+			var errorComment = new CodeCommentStatement(
+				"<summary></summary>", true
+			);
 			var errorMeth = new CodeMemberMethod {
 				Name = "Error",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
+			errorMeth.Comments.Add(errorComment);
 			errorMeth.Parameters.Add (new CodeParameterDeclarationExpression (stringTypeRef, "message"));
 			errorMeth.Statements.Add (new CodeMethodInvokeExpression (errorsPropRef, "Add",
 				new CodeObjectCreateExpression (compilerErrorTypeRef, nullPrim, minusOnePrim, minusOnePrim, nullPrim,
 					new CodeArgumentReferenceExpression ("message"))));
 			
+			var warningComment = new CodeCommentStatement("<summary>Warning</summary>", true);
 			var warningMeth = new CodeMemberMethod {
 				Name = "Warning",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
+			warningMeth.Comments.Add(warningComment);
 			warningMeth.Parameters.Add (new CodeParameterDeclarationExpression (stringTypeRef, "message"));
 			warningMeth.Statements.Add (new CodeVariableDeclarationStatement (compilerErrorTypeRef, "val",
 				new CodeObjectCreateExpression (compilerErrorTypeRef, nullPrim, minusOnePrim, minusOnePrim, nullPrim,
@@ -810,11 +826,15 @@ namespace Mono.TextTemplating
 			currentIndentField.InitExpression = stringEmptyRef;
 			var currentIndentFieldRef = new CodeFieldReferenceExpression (thisRef, currentIndentField.Name);
 			
+			var popIndentComment = new CodeCommentStatement(
+				"<summary>PopIndent</summary>", true
+			);
 			var popIndentMeth = new CodeMemberMethod {
 				Name = "PopIndent",
 				ReturnType = stringTypeRef,
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
+			popIndentMeth.Comments.Add(popIndentComment);
 			popIndentMeth.Statements.Add (new CodeConditionStatement (
 				new CodeBinaryOperatorExpression (new CodePropertyReferenceExpression (indentsPropRef, "Count"),
 					CodeBinaryOperatorType.ValueEquality, zeroPrim),
@@ -830,20 +850,28 @@ namespace Mono.TextTemplating
 				new CodeMethodInvokeExpression (currentIndentFieldRef, "Substring", zeroPrim, new CodeVariableReferenceExpression ("lastPos"))));
 			popIndentMeth.Statements.Add (new CodeMethodReturnStatement (new CodeVariableReferenceExpression ("last")));
 			
+			var pushIndentComment = new CodeCommentStatement (
+				"<summary>PopIndent</summary>", true
+			);
 			var pushIndentMeth = new CodeMemberMethod {
 				Name = "PushIndent",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
+			pushIndentMeth.Comments.Add(pushIndentComment);
 			pushIndentMeth.Parameters.Add (new CodeParameterDeclarationExpression (stringTypeRef, "indent"));
 			pushIndentMeth.Statements.Add (new CodeMethodInvokeExpression (indentsPropRef, "Push",
 				new CodePropertyReferenceExpression (new CodeArgumentReferenceExpression ("indent"), "Length")));
 			pushIndentMeth.Statements.Add (new CodeAssignStatement (currentIndentFieldRef,
 				new CodeBinaryOperatorExpression (currentIndentFieldRef, CodeBinaryOperatorType.Add, new CodeArgumentReferenceExpression ("indent"))));
 			
+			var clearIndentComment = new CodeCommentStatement (
+				"<summary>PopIndent</summary>", true
+			);
 			var clearIndentMeth = new CodeMemberMethod {
 				Name = "ClearIndent",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
+			clearIndentMeth.Comments.Add(clearIndentComment);
 			clearIndentMeth.Statements.Add (new CodeAssignStatement (currentIndentFieldRef, stringEmptyRef));
 			clearIndentMeth.Statements.Add (new CodeMethodInvokeExpression (indentsPropRef, "Clear"));
 			
@@ -873,33 +901,47 @@ namespace Mono.TextTemplating
 			var formatParamRef = new CodeArgumentReferenceExpression ("format");
 			var argsParamRef = new CodeArgumentReferenceExpression ("args");
 			
+			var writeComment = new CodeCommentStatement("<summary>Write</summary>", true);
 			var writeMeth = new CodeMemberMethod {
 				Name = "Write",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
+			writeMeth.Comments.Add(writeComment);
 			writeMeth.Parameters.Add (textToAppendParam);
 			writeMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "Append", new CodeArgumentReferenceExpression ("textToAppend")));
 			
+			var writeArgsComment = new CodeCommentStatement (
+				"<summary>Write</summary><param name=\"format\"></param><param name=\"args\"></param>", true
+				);
 			var writeArgsMeth = new CodeMemberMethod {
 				Name = "Write",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
+			writeArgsMeth.Comments.Add (writeComment);
 			writeArgsMeth.Parameters.Add (formatParam);
 			writeArgsMeth.Parameters.Add (argsParam);
 			writeArgsMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "AppendFormat", formatParamRef, argsParamRef));
 			
+			var writeLineComment = new CodeCommentStatement (
+				"<summary>WriteLine</summary>", true
+				);
 			var writeLineMeth = new CodeMemberMethod {
 				Name = "WriteLine",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
+			writeLineMeth.Comments.Add(writeLineComment);
 			writeLineMeth.Parameters.Add (textToAppendParam);
 			writeLineMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "Append", currentIndentFieldRef));
 			writeLineMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "AppendLine", textToAppendParamRef));
 			
+			var writeLineArgsComment = new CodeCommentStatement (
+				"<summary>WriteLine</summary><param name=\"format\"></param><param name=\"args\"></param>", true
+				);
 			var writeLineArgsMeth = new CodeMemberMethod {
 				Name = "WriteLine",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
+			writeLineArgsMeth.Comments.Add(writeLineArgsComment);
 			writeLineArgsMeth.Parameters.Add (formatParam);
 			writeLineArgsMeth.Parameters.Add (argsParam);
 			writeLineArgsMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "Append", currentIndentFieldRef));
@@ -914,10 +956,14 @@ namespace Mono.TextTemplating
 		
 		static void AddToStringHelper (CodeTypeDeclaration type, TemplateSettings settings)
 		{
+			var helperComment = new CodeCommentStatement(
+				"<summary>ToStringInstanceHelper</summary>", true
+			);
 			var helperCls = new CodeTypeDeclaration ("ToStringInstanceHelper") {
 				IsClass = true,
 				TypeAttributes = TypeAttributes.NestedPublic,
 			};
+			helperCls.Comments.Add(helperComment);
 			
 			var formatProviderField = PrivateField (TypeRef<IFormatProvider> (), "formatProvider");
 			formatProviderField.InitExpression = new CodePropertyReferenceExpression (
@@ -930,11 +976,16 @@ namespace Mono.TextTemplating
 			helperCls.Members.Add (formatProviderField);
 			helperCls.Members.Add (formatProviderProp);
 			
+			var comment = new CodeCommentStatement(
+				$"<summary></summary><param name=\"objectToConvert\"></param><returns></returns>",
+				true
+			);
 			var meth = new CodeMemberMethod {
 				Name = "ToStringWithCulture",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 				ReturnType = TypeRef<string> (),
 			};
+			meth.Comments.Add(comment);
 			meth.Parameters.Add (new CodeParameterDeclarationExpression (TypeRef<object> (), "objectToConvert"));
 			var paramRef = new CodeArgumentReferenceExpression ("objectToConvert");
 			
@@ -988,11 +1039,13 @@ namespace Mono.TextTemplating
 		
 		static CodeMemberProperty GenerateGetterSetterProperty (string propertyName, CodeMemberField field)
 		{
+			var comment = new CodeCommentStatement($"<summary>{propertyName}</summary>", true);
 			var prop = new CodeMemberProperty {
 				Name = propertyName,
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 				Type = field.Type
 			};
+			prop.Comments.Add(comment);
 			var fieldRef = new CodeFieldReferenceExpression (new CodeThisReferenceExpression (), field.Name);
 			AddGetter (prop, fieldRef);
 			AddSetter (prop, fieldRef);
@@ -1001,12 +1054,14 @@ namespace Mono.TextTemplating
 		
 		static CodeMemberProperty GenerateGetterProperty (string propertyName, CodeMemberField field)
 		{
+			var comment = new CodeCommentStatement($"<summary>{propertyName}</summary>", true);
 			var prop = new CodeMemberProperty {
 				Name = propertyName,
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 				HasSet = false,
 				Type = field.Type
 			};
+			prop.Comments.Add(comment);
 			var fieldRef = new CodeFieldReferenceExpression (new CodeThisReferenceExpression (), field.Name);
 			AddGetter (prop, fieldRef);
 			return prop;
