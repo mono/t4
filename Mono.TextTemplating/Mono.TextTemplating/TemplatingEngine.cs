@@ -32,8 +32,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using Microsoft.CSharp;
 using Microsoft.VisualStudio.TextTemplating;
+using Mono.TextTemplating.CodeCompilation;
 
 namespace Mono.TextTemplating
 {
@@ -133,7 +135,7 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			var results = GenerateCode (references, settings, ccu);
+			var results = CompileCode (references, settings, ccu);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
@@ -156,8 +158,60 @@ namespace Mono.TextTemplating
 
 			return new CompiledTemplate (host, results, templateClassFullName, settings.Culture, references.ToArray ());
 		}
-		
-		static CompilerResults GenerateCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
+
+		static CompilerResults CompileCode2 (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
+		{
+			string sourceText;
+			var genOptions = new CodeGeneratorOptions ();
+			using (var sw = new StringWriter ()) {
+				settings.Provider.GenerateCodeFromCompileUnit (ccu, sw, genOptions);
+				sourceText = sw.ToString ();
+			}
+
+			var runtime = RuntimeInfo.GetRuntime ();
+			if (runtime.Error != null) {
+				throw new Exception (runtime.Error);
+			}
+
+			var tempFolder = Path.GetTempFileName ();
+			File.Delete (tempFolder);
+			Directory.CreateDirectory (tempFolder);
+
+			var sourceFilename = Path.Combine (tempFolder, settings.Name + settings.Provider.FileExtension);
+			File.WriteAllText (sourceFilename, sourceText);
+
+			var args = new CodeCompilerArguments ();
+			args.AssemblyReferences.AddRange (references);
+			args.Debug = settings.Debug;
+			args.SourceFiles.Add (sourceFilename);
+			args.AdditionalArguments = settings.CompilerOptions;
+			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
+
+			var compiler = new CscCodeCompiler (runtime.CscPath);
+
+			var result = compiler.CompileFile (args, CancellationToken.None).Result;
+
+			var r = new CompilerResults (new TempFileCollection ());
+			r.TempFiles.AddFile (sourceFilename, false);
+			r.NativeCompilerReturnValue = result.ExitCode;
+			r.Output.AddRange (result.Output.ToArray ());
+
+			if (result.Success) {
+				r.TempFiles.AddFile (args.OutputPath, true);
+				if (args.Debug) {
+					r.TempFiles.AddFile (Path.ChangeExtension (args.OutputPath, ".dll"), true);
+				}
+				r.PathToAssembly = args.OutputPath;
+			}
+
+			if (!args.Debug) {
+				r.TempFiles.Delete ();
+			}
+
+			return r;
+		}
+
+		static CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
 		{
 			var pars = new CompilerParameters {
 				GenerateExecutable = false,
