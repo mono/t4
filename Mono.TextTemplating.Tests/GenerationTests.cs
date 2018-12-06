@@ -139,10 +139,10 @@ namespace Mono.TextTemplating.Tests
 		}
 
 		#endregion
-		
+
 		#region Expected output strings
-		
-		public static string OutputSample1 = 
+
+		public static string OutputSample1 =
 @"
 namespace Microsoft.VisualStudio.TextTemplating {
     
@@ -152,7 +152,7 @@ namespace Microsoft.VisualStudio.TextTemplating {
         
         #line 9 """"
 
-baz \#>
+var s = ""baz \\#>"";
 
         #line default
         #line hidden
@@ -168,7 +168,7 @@ baz \#>
             
             #line 4 """"
 
-foo
+var foo = 5;
 
             
             #line default
