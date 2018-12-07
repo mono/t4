@@ -1,0 +1,4 @@
+<#@ output extension=".hello" #>
+<#@ assembly name="System.Xml" #>
+<#=5*10#>
+blah
