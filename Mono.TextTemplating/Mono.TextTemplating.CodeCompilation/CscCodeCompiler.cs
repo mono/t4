@@ -30,16 +30,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Mono.TextTemplating.CodeCompilation
 {
 	class CscCodeCompiler : CodeCompiler
 	{
-		readonly string cscPath;
+		readonly RuntimeInfo runtime;
 
-		public CscCodeCompiler (string cscPath)
+		public CscCodeCompiler (RuntimeInfo runtime)
 		{
-			this.cscPath = cscPath;
+			this.runtime = runtime;
 		}
 
 		static StreamWriter CreateTempTextFile (string extension, out string path)
@@ -51,7 +52,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				Directory.CreateDirectory (tempDir);
 
 				//this is how msbuild does it...
-				path = Path.Combine ($"tmp{Guid.NewGuid ():N}{extension}");
+				path = Path.Combine (tempDir, $"tmp{Guid.NewGuid ():N}{extension}");
 				if (!File.Exists (path)) {
 					return File.CreateText (path);
 				}
@@ -61,8 +62,41 @@ namespace Mono.TextTemplating.CodeCompilation
 			throw new Exception ("Failed to create temp file", ex);
 		}
 
+		//attempt to resolve refs into the runtime dir if the host didn't already do so
+		static string ResolveAssembly (RuntimeInfo runtime, string reference)
+		{
+			if (Path.IsPathRooted (reference) || File.Exists (reference)) {
+				return reference;
+			}
+
+			var resolved = Path.Combine (runtime.RuntimeDir, reference);
+			if (File.Exists (resolved)) {
+				return resolved;
+			}
+
+			if (runtime.Kind != RuntimeKind.NetCore) {
+				resolved = Path.Combine (runtime.RuntimeDir, "Facades", reference);
+				if (File.Exists (resolved)) {
+					return resolved;
+				}
+			}
+
+			return reference;
+		}
+
+		/// <summary>
+		/// Compiles the file.
+		/// </summary>
+		/// <returns>The file.</returns>
+		/// <param name="arguments">Arguments.</param>
+		/// <param name="token">Token.</param>
 		public override async Task<CodeCompilerResult> CompileFile (CodeCompilerArguments arguments, CancellationToken token)
 		{
+			var asmFileNames = new HashSet<string> (
+				arguments.AssemblyReferences.Select (Path.GetFileName),
+				StringComparer.OrdinalIgnoreCase
+			);
+
 			string rspPath;
 			using (var rsp = CreateTempTextFile (".rsp", out rspPath)) {
 				rsp.WriteLine ("-target:library");
@@ -71,9 +105,26 @@ namespace Mono.TextTemplating.CodeCompilation
 					rsp.WriteLine ("-debug");
 				}
 
+				void AddIfNotPresent (string asm)
+				{
+					if (!asmFileNames.Contains (asm)) {
+						rsp.Write ("-r:");
+						rsp.WriteLine (Path.Combine (runtime.RuntimeDir, asm));
+					}
+				}
+				AddIfNotPresent ("mscorlib.dll");
+
+				if (runtime.Kind == RuntimeKind.NetCore) {
+					AddIfNotPresent ("netstandard.dll");
+					AddIfNotPresent ("System.Runtime.dll");
+					//because we're referencing the impl not the ref asms, we end us
+					//having to ref internals
+					AddIfNotPresent ("System.Private.CoreLib.dll");
+				}
+
 				foreach (var reference in arguments.AssemblyReferences) {
 					rsp.Write ("-r:");
-					rsp.WriteLine (reference);
+					rsp.WriteLine (ResolveAssembly (runtime, reference));
 				}
 
 				foreach (var file in arguments.SourceFiles) {
@@ -84,13 +135,18 @@ namespace Mono.TextTemplating.CodeCompilation
 				rsp.WriteLine (arguments.OutputPath);
 			}
 
-			var psi = new System.Diagnostics.ProcessStartInfo (cscPath) {
+			var psi = new System.Diagnostics.ProcessStartInfo (runtime.CscPath) {
 				Arguments = $"-nologo -noconfig \"@{rspPath}\" {arguments.AdditionalArguments}",
 				CreateNoWindow = true,
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
 				UseShellExecute = false
 			};
+
+			if (runtime.Kind == RuntimeKind.NetCore) {
+				psi.Arguments = $"\"{psi.FileName}\" {psi.Arguments}";
+				psi.FileName = Path.GetFullPath (Path.Combine (runtime.RuntimeDir, "..", "..", "..", "dotnet"));
+			}
 
 			var stdout = new StringWriter ();
 			var stderr = new StringWriter ();
