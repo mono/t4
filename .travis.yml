@@ -7,3 +7,5 @@ install:
 script:
   - msbuild Mono.TextTemplating.sln -p:Configuration=Release
   - mono ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net461/Mono.TextTemplating.Tests.dll
+git:
+  depth: 1000
