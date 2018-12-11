@@ -44,23 +44,16 @@ namespace Mono.TextTemplating
 		TemplatingEngine engine;
 		
 		//per-run variables
-		string inputFile, outputFile;
+		string inputFile;
 		Encoding encoding;
-		
-		//host fields
-		readonly CompilerErrorCollection errors = new CompilerErrorCollection ();
-		readonly List<string> refs = new List<string> ();
-		readonly List<string> imports = new List<string> ();
-		readonly List<string> includePaths = new List<string> ();
-		readonly List<string> referencePaths = new List<string> ();
-		
+
 		//host properties for consumers to access
-		public CompilerErrorCollection Errors { get { return errors; } }
-		public List<string> Refs { get { return refs; } }
-		public List<string> Imports { get { return imports; } }
-		public List<string> IncludePaths { get { return includePaths; } }
-		public List<string> ReferencePaths { get { return referencePaths; } }
-		public string OutputFile { get { return outputFile; } }
+		public CompilerErrorCollection Errors { get; } = new CompilerErrorCollection ();
+		public List<string> Refs { get; } = new List<string> ();
+		public List<string> Imports { get; } = new List<string> ();
+		public List<string> IncludePaths { get; } = new List<string> ();
+		public List<string> ReferencePaths { get; } = new List<string> ();
+		public string OutputFile { get; private set; }
 		public bool UseRelativeLinePragmas { get; set; }
 		
 		public TemplateGenerator ()
@@ -75,7 +68,7 @@ namespace Mono.TextTemplating
 			if (string.IsNullOrEmpty (content))
 				throw new ArgumentNullException (nameof (content));
 
-			errors.Clear ();
+			Errors.Clear ();
 			encoding = Encoding.UTF8;
 			
 			return Engine.CompileTemplate (content, this);
@@ -100,7 +93,7 @@ namespace Mono.TextTemplating
 			try {
 				content = File.ReadAllText (inputFile);
 			} catch (IOException ex) {
-				errors.Clear ();
+				Errors.Clear ();
 				AddError ("Could not read input file '" + inputFile + "':\n" + ex);
 				return false;
 			}
@@ -108,26 +101,26 @@ namespace Mono.TextTemplating
 			ProcessTemplate (inputFile, content, ref outputFile, out var output);
 
 			try {
-				if (!errors.HasErrors)
+				if (!Errors.HasErrors)
 					File.WriteAllText (outputFile, output, encoding);
 			} catch (IOException ex) {
 				AddError ("Could not write output file '" + outputFile + "':\n" + ex);
 			}
 			
-			return !errors.HasErrors;
+			return !Errors.HasErrors;
 		}
 		
 		public bool ProcessTemplate (string inputFileName, string inputContent, ref string outputFileName, out string outputContent)
 		{
-			errors.Clear ();
+			Errors.Clear ();
 			encoding = Encoding.UTF8;
-			
-			outputFile = outputFileName;
+
+			OutputFile = outputFileName;
 			inputFile = inputFileName;
 			outputContent = Engine.ProcessTemplate (inputContent, this);
-			outputFileName = outputFile;
+			outputFileName = OutputFile;
 			
-			return !errors.HasErrors;
+			return !Errors.HasErrors;
 		}
 		
 		public bool PreprocessTemplate (string inputFile, string className, string classNamespace, 
@@ -145,7 +138,7 @@ namespace Mono.TextTemplating
 			try {
 				content = File.ReadAllText (inputFile);
 			} catch (IOException ex) {
-				errors.Clear ();
+				Errors.Clear ();
 				AddError ("Could not read input file '" + inputFile + "':\n" + ex);
 				return false;
 			}
@@ -154,31 +147,30 @@ namespace Mono.TextTemplating
 			PreprocessTemplate (inputFile, className, classNamespace, content, out language, out references, out output);
 			
 			try {
-				if (!errors.HasErrors)
+				if (!Errors.HasErrors)
 					File.WriteAllText (outputFile, output, encoding);
 			} catch (IOException ex) {
 				AddError ("Could not write output file '" + outputFile + "':\n" + ex);
 			}
 			
-			return !errors.HasErrors;
+			return !Errors.HasErrors;
 		}
 		
 		public bool PreprocessTemplate (string inputFileName, string className, string classNamespace, string inputContent, 
 			out string language, out string[] references, out string outputContent)
 		{
-			errors.Clear ();
+			Errors.Clear ();
 			encoding = Encoding.UTF8;
 			
 			inputFile = inputFileName;
 			outputContent = Engine.PreprocessTemplate (inputContent, this, className, classNamespace, out language, out references);
 			
-			return !errors.HasErrors;
+			return !Errors.HasErrors;
 		}
 		
 		CompilerError AddError (string error)
 		{
-			var err = new CompilerError ();
-			err.ErrorText = error;
+			var err = new CompilerError { ErrorText = error };
 			Errors.Add (err);
 			return err;
 		}
@@ -335,7 +327,7 @@ namespace Mono.TextTemplating
 			location = ResolvePath (requestFileName);
 			
 			if (location == null || !File.Exists (location)) {
-				foreach (string path in includePaths) {
+				foreach (string path in IncludePaths) {
 					string f = Path.Combine (path, requestFileName);
 					if (File.Exists (f)) {
 						location = f;
@@ -365,7 +357,7 @@ namespace Mono.TextTemplating
 		
 		void ITextTemplatingEngineHost.LogErrors (CompilerErrorCollection errors)
 		{
-			this.errors.AddRange (errors);
+			this.Errors.AddRange (errors);
 		}
 		
 		string ITextTemplatingEngineHost.ResolveAssemblyReference (string assemblyReference)
@@ -391,10 +383,10 @@ namespace Mono.TextTemplating
 		void ITextTemplatingEngineHost.SetFileExtension (string extension)
 		{
 			extension = extension.TrimStart ('.');
-			if (Path.HasExtension (outputFile)) {
-				outputFile = Path.ChangeExtension (outputFile, extension);
+			if (Path.HasExtension (OutputFile)) {
+				OutputFile = Path.ChangeExtension (OutputFile, extension);
 			} else {
-				outputFile = outputFile + "." + extension;
+				OutputFile = OutputFile + "." + extension;
 			}
 		}
 		
@@ -404,11 +396,11 @@ namespace Mono.TextTemplating
 		}
 		
 		IList<string> ITextTemplatingEngineHost.StandardAssemblyReferences {
-			get { return refs; }
+			get { return Refs; }
 		}
 		
 		IList<string> ITextTemplatingEngineHost.StandardImports {
-			get { return imports; }
+			get { return Imports; }
 		}
 		
 		string ITextTemplatingEngineHost.TemplateFile {

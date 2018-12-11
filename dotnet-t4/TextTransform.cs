@@ -267,7 +267,7 @@ namespace Mono.TextTemplating
 		static void ShowHelp (bool concise)
 		{
 			var name = Path.GetFileNameWithoutExtension (Assembly.GetExecutingAssembly ().Location);
-			Console.WriteLine ("T4 text template processor", name);
+			Console.WriteLine ("T4 text template processor");
 			Console.WriteLine ("Usage: {0} [options] input-file", name);
 			if (concise) {
 				Console.WriteLine ("Use --help to display options.");
