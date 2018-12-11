@@ -130,25 +130,38 @@ namespace Microsoft.VisualStudio.TextTemplating
 			members.Add (new CodeMemberField (typeRef, fieldName));
 			members.Add (property);
 			
-			string acquiredName = "_" + name + "Acquired";
 			var valRef = new CodeVariableReferenceExpression ("data");
 			var namePrimitive = new CodePrimitiveExpression (name);
 			var sessionRef = new CodePropertyReferenceExpression (thisRef, "Session");
 			var callContextTypeRefExpr = new CodeTypeReferenceExpression ("System.Runtime.Remoting.Messaging.CallContext");
 			var nullPrim = new CodePrimitiveExpression (null);
-			
+
+			bool hasAcquiredCheck = hostSpecific
+#if FEATURE_APPDOMAINS
+				|| true;
+#endif
+				;
+
+			string acquiredName = "_" + name + "Acquired";
 			var acquiredVariable = new CodeVariableDeclarationStatement (typeof (bool), acquiredName, new CodePrimitiveExpression (false));
 			var acquiredVariableRef = new CodeVariableReferenceExpression (acquiredVariable.Name);
-			this.postStatements.Add (acquiredVariable);
-			
+			if (hasAcquiredCheck) {
+				postStatements.Add (acquiredVariable);
+			}
+
 			//checks the local called "data" can be cast and assigned to the field, and if successful, sets acquiredVariable to true
 			var checkCastThenAssignVal = new CodeConditionStatement (
 				new CodeMethodInvokeExpression (
 					new CodeTypeOfExpression (typeRef), "IsAssignableFrom", new CodeMethodInvokeExpression (valRef, "GetType")),
-				new CodeStatement[] {
-					new CodeAssignStatement (fieldRef, new CodeCastExpression (typeRef, valRef)),
-					new CodeAssignStatement (acquiredVariableRef, new CodePrimitiveExpression (true)),
-				},
+				hasAcquiredCheck
+					? new CodeStatement[] {
+						new CodeAssignStatement (fieldRef, new CodeCastExpression (typeRef, valRef)),
+						new CodeAssignStatement (acquiredVariableRef, new CodePrimitiveExpression (true)),
+					}
+					: new CodeStatement [] {
+						new CodeAssignStatement (fieldRef, new CodeCastExpression (typeRef, valRef)),
+					}
+					,
 				new CodeStatement[] {
 					new CodeExpressionStatement (new CodeMethodInvokeExpression (thisRef, "Error",
 					new CodePrimitiveExpression ("The type '" + type + "' of the parameter '" + name + 
@@ -171,11 +184,14 @@ namespace Microsoft.VisualStudio.TextTemplating
 					BooleanAnd (IsFalse (acquiredVariableRef), NotNull (hostRef)),
 					new CodeVariableDeclarationStatement (typeof (string), "data",
 						new CodeMethodInvokeExpression (hostRef, "ResolveParameterValue", nullPrim, nullPrim,  namePrimitive)),
-					new CodeConditionStatement (NotNull (valRef), checkCastThenAssignVal));
+					new CodeConditionStatement (
+						NotNull (valRef),
+						checkCastThenAssignVal));
 				
 				this.postStatements.Add (checkHost);
 			}
-			
+
+#if FEATURE_APPDOMAINS
 			//if acquiredVariable is false, tries to gets the value from the call context
 			var checkCallContext = new CodeConditionStatement (
 				IsFalse (acquiredVariableRef),
@@ -184,6 +200,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 				new CodeConditionStatement (NotNull (valRef), checkCastThenAssignVal));
 			
 			this.postStatements.Add (checkCallContext);
+#endif
 		}
 		
 		static CodeBinaryOperatorExpression NotNull (CodeExpression reference)
