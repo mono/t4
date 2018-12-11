@@ -127,12 +127,13 @@ namespace Mono.TextTemplating.CodeCompilation
 					rsp.WriteLine (ResolveAssembly (runtime, reference));
 				}
 
+				rsp.Write ("-out:");
+				rsp.WriteLine (arguments.OutputPath);
+
+				//in older versions of csc, these must come last
 				foreach (var file in arguments.SourceFiles) {
 					rsp.WriteLine (file);
 				}
-
-				rsp.Write ("-out:");
-				rsp.WriteLine (arguments.OutputPath);
 			}
 
 			var psi = new System.Diagnostics.ProcessStartInfo (runtime.CscPath) {
