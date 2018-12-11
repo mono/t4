@@ -1,6 +1,6 @@
 language: csharp
 mono: latest
-dotnet: 2.1.4
+dotnet: 2.1.300
 install:
   - msbuild -t:Restore -p:Configuration=Release
   - nuget install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
