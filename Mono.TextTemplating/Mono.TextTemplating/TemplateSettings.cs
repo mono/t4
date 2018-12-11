@@ -63,6 +63,7 @@ namespace Mono.TextTemplating
 		public bool NoLinePragmas { get; set; }
 		public bool InternalVisibility { get; set; }
 		public Type HostType { get; set; }
+		public string GetFullName () => string.IsNullOrEmpty (Namespace) ? Name : Namespace + "." + Name;
 	}
 	
 	public class CustomDirective

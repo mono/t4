@@ -63,8 +63,6 @@ namespace Mono.TextTemplating
 				throw new ArgumentNullException (nameof (host));
 			if (className == null)
 				throw new ArgumentNullException (nameof (className));
-			if (classNamespace == null)
-				throw new ArgumentNullException (nameof (classNamespace));
 
 			language = null;
 			references = null;
@@ -142,8 +140,6 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			var templateClassFullName = settings.Namespace + "." + settings.Name;
-
 #if FEATURE_APPDOMAINS
 			var domain = host.ProvideTemplatingAppDomain (content);
 			if (domain != null) {
@@ -156,7 +152,7 @@ namespace Mono.TextTemplating
 			}
 #endif
 
-			return new CompiledTemplate (host, results, templateClassFullName, settings.Culture, references.ToArray ());
+			return new CompiledTemplate (host, results, settings.GetFullName (), settings.Culture, references.ToArray ());
 		}
 
 		static CompilerResults CompileCode2 (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
@@ -525,7 +521,7 @@ namespace Mono.TextTemplating
 
 			//prep the compile unit
 			var ccu = new CodeCompileUnit ();
-			var namespac = new CodeNamespace (settings.Namespace);
+			var namespac = string.IsNullOrEmpty (settings.Namespace)? new CodeNamespace () : new CodeNamespace (settings.Namespace);
 			ccu.Namespaces.Add (namespac);
 			
 			foreach (string ns in settings.Imports.Union (host.StandardImports))
