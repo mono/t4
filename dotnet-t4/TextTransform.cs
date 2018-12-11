@@ -31,13 +31,14 @@ namespace Mono.TextTemplating
 {
 	class TextTransform
 	{
-		static OptionSet optionSet;
+		static OptionSet optionSet, compatOptionSet;
 
 		public static int Main (string [] args)
 		{
 			try {
 				return MainInternal (args);
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				Console.Error.WriteLine (e);
 				return -1;
 			}
@@ -55,7 +56,7 @@ namespace Mono.TextTemplating
 			var parameters = new List<string> ();
 			string preprocessClassName = null;
 
-			optionSet = new OptionSet () {
+			optionSet = new OptionSet {
 				{
 					"o=|out=",
 					"Name or path of the output {<file>}. Defaults to the input filename with its " +
@@ -88,13 +89,29 @@ namespace Mono.TextTemplating
 					"Preprocess the template into class {<name>}",
 					(s) => preprocessClassName = s
 				},
-				{ "dp=", "Directive processor (name!class!assembly)", s => directives.Add (s) },
-				{ "a=|arg=", "Parameters (name=value) or ([processorName!][directiveName!]name!value)", s => parameters.Add (s) },
-				{ "h|?|help", "Show help", s => ShowHelp (false) },
+				{
+					"h|?|help",
+					"Show help",
+					s => ShowHelp (false)
+				},
 		//		{ "k=,", "Session {key},{value} pairs", (s, t) => session.Add (s, t) },
 			};
 
+			compatOptionSet = new OptionSet {
+				{
+					"dp=",
+					"Directive processor (name!class!assembly)",
+					s => directives.Add (s)
+				},
+				{
+					"a=",
+					"Parameters (name=value) or ([processorName!][directiveName!]name!value)",
+					s => parameters.Add (s)
+				},
+			};
+
 			var remainingArgs = optionSet.Parse (args);
+			remainingArgs = compatOptionSet.Parse (args);
 
 			string inputContent = null;
 			if (remainingArgs.Count != 1) {
@@ -255,9 +272,15 @@ namespace Mono.TextTemplating
 			if (concise) {
 				Console.WriteLine ("Use --help to display options.");
 			} else {
+				Console.WriteLine ();
 				Console.WriteLine ("Options:");
+				Console.WriteLine ();
 				optionSet.WriteOptionDescriptions (Console.Out);
 			}
+			Console.WriteLine ();
+			Console.WriteLine ("TextTransform.exe compatibility options (deprecated):");
+			Console.WriteLine ();
+			compatOptionSet.WriteOptionDescriptions (Console.Out);
 			Console.WriteLine ();
 			Environment.Exit (0);
 		}
