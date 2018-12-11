@@ -9,6 +9,7 @@
     <AssemblyName>t4</AssemblyName>
     <PackageId>dotnet-t4</PackageId>
     <ToolCommandName>t4</ToolCommandName>
+    <RootNamespace>Mono.TextTemplating</RootNamespace>
   </PropertyGroup>
   
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'Default' ">

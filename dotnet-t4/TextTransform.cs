@@ -54,6 +54,7 @@ namespace Mono.TextTemplating
 			string outputFile = null, inputFile = null;
 			var directives = new List<string> ();
 			var parameters = new List<string> ();
+			var properties = new Dictionary<string,string> ();
 			string preprocessClassName = null;
 
 			optionSet = new OptionSet {
@@ -90,11 +91,18 @@ namespace Mono.TextTemplating
 					(s) => preprocessClassName = s
 				},
 				{
+					"p:=",
+					"Add a {<name>}={<value>} key-value pair to the template's `Session' " +
+					"dictionary. These can also be accessed using strongly typed " +
+					"properties declared with `<#@ parameter name=\"<name>\" type=\"<type>\" #> " +
+					"directives.",
+					(k,v) => properties[k]=v
+				},
+				{
 					"h|?|help",
 					"Show help",
 					s => ShowHelp (false)
-				},
-		//		{ "k=,", "Session {key},{value} pairs", (s, t) => session.Add (s, t) },
+				}
 			};
 
 			compatOptionSet = new OptionSet {
@@ -139,6 +147,11 @@ namespace Mono.TextTemplating
 				} else {
 					outputFile = outputFile + ".txt";
 				}
+			}
+
+			foreach (var p in properties) {
+				var session = generator.CreateSession ();
+				session[p.Key] = p.Value;
 			}
 
 			foreach (var par in parameters) {
