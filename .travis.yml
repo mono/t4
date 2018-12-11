@@ -6,4 +6,4 @@ install:
   - nuget install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
 script:
   - msbuild Mono.TextTemplating.sln -p:Configuration=Release
-  - mono ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net45/Mono.TextTemplating.Tests.dll
+  - mono ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net461/Mono.TextTemplating.Tests.dll
