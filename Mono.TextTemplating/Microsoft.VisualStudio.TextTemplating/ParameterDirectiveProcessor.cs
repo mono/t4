@@ -101,17 +101,39 @@ namespace Microsoft.VisualStudio.TextTemplating
 		{
 			return directiveName == "parameter";
 		}
-		
+
+		readonly Dictionary<string, string> BuiltinTypesMap = new Dictionary<string, string> {
+			{ "bool", "System.Boolean" },
+			{ "byte", "System.Byte" },
+			{ "sbyte", "System.SByte" },
+			{ "char", "System.Char" },
+			{ "decimal", "System.Decimal" },
+			{ "double", "System.Double" },
+			{ "float ", "System.Single" },
+			{ "int", "System.Int32" },
+			{ "uint", "System.UInt32" },
+			{ "long", "System.Int64" },
+			{ "ulong", "System.UInt64" },
+			{ "object", "System.Object" },
+			{ "short", "System.Int16" },
+			{ "ushort", "System.UInt16" },
+			{ "string", "System.String" }
+		};
+
 		public override void ProcessDirective (string directiveName, IDictionary<string, string> arguments)
 		{
-			string name = arguments["name"];
-			if (string.IsNullOrEmpty (name))
+			if (!arguments.TryGetValue ("name", out string name) || string.IsNullOrEmpty (name)) {
 				throw new DirectiveProcessorException ("Parameter directive has no name argument");
+			}
 
 			if (!arguments.TryGetValue ("type", out string type)) {
 				type = "System.String";
-			} else if (string.IsNullOrEmpty (type)) {
-				throw new DirectiveProcessorException ("Parameter directive has no type argument");
+			} else {
+				if (BuiltinTypesMap.TryGetValue (type, out string mappedType)) {
+					type = mappedType;
+				} else if (string.IsNullOrEmpty(type)) {
+					throw new DirectiveProcessorException ("Parameter directive empty type argument");
+				}
 			}
 			
 			string fieldName = "_" + name + "Field";
