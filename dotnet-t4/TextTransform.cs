@@ -187,7 +187,7 @@ namespace Mono.TextTemplating
 			}
 
 			if (generator.Errors.HasErrors) {
-				Console.Error.WriteLine ("Processing '{0}' failed.", inputFile);
+				Console.Error.WriteLine (inputFile == null ? "Processing failed." : $"Processing '{inputFile}' failed.");
 			}
 
 			try {
