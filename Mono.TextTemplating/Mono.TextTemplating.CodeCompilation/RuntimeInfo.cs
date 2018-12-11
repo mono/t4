@@ -30,8 +30,20 @@ using System.Linq;
 
 namespace Mono.TextTemplating.CodeCompilation
 {
+	enum RuntimeKind
+	{
+		NetCore,
+		NetFramework,
+		Mono
+	}
+
 	class RuntimeInfo
 	{
+		RuntimeInfo (RuntimeKind kind) => Kind = kind;
+
+		static RuntimeInfo FromError (RuntimeKind kind, string error) => new RuntimeInfo (kind) { Error = error };
+
+		public RuntimeKind Kind { get; private set; }
 		public string Error { get; private set; }
 		public string RuntimeDir { get; private set; }
 		public string CscPath { get; private set; }
@@ -51,22 +63,22 @@ namespace Mono.TextTemplating.CodeCompilation
 			if (coreFx.IsValid) {
 				return coreFx;
 			}
-			return new RuntimeInfo { Error = "Could not find any valid runtime" };
+			return FromError (RuntimeKind.Mono, "Could not find any valid runtime" );
 		}
 
 		public static RuntimeInfo GetMonoRuntime ()
 		{
 			if (Type.GetType ("Mono.Runtime") == null) {
-				return new RuntimeInfo { Error = "Current runtime is not Mono" };
+				return FromError (RuntimeKind.Mono, "Current runtime is not Mono" );
 			}
 
 			var runtimeDir = Path.GetDirectoryName (typeof (int).Assembly.Location);
 			var csc = Path.Combine (runtimeDir, "csc.exe");
 			if (!File.Exists (csc)) {
-				return new RuntimeInfo { Error = "Could not find csc in host Mono installation" };
+				return FromError (RuntimeKind.Mono, "Could not find csc in host Mono installation" );
 			}
 
-			return new RuntimeInfo {
+			return new RuntimeInfo (RuntimeKind.Mono) {
 				CscPath = csc,
 				RuntimeDir = runtimeDir
 			};
@@ -77,9 +89,9 @@ namespace Mono.TextTemplating.CodeCompilation
 			var runtimeDir = Path.GetDirectoryName (typeof (int).Assembly.Location);
 			var csc = Path.Combine (runtimeDir, "csc.exe");
 			if (!File.Exists (csc)) {
-				return new RuntimeInfo { Error = "Could not find csc in host .NET Framework installation" };
+				return FromError (RuntimeKind.NetFramework, "Could not find csc in host .NET Framework installation");
 			}
-			return new RuntimeInfo {
+			return new RuntimeInfo (RuntimeKind.NetFramework) {
 				CscPath = csc,
 				RuntimeDir = runtimeDir
 			};
@@ -88,7 +100,7 @@ namespace Mono.TextTemplating.CodeCompilation
 		static string FindDotNetRoot ()
 		{
 			string dotnetRoot;
-			bool DotnetRootIsValid () => string.IsNullOrEmpty (dotnetRoot) || !File.Exists (Path.Combine (dotnetRoot, "dotnet"));
+			bool DotnetRootIsValid () => !string.IsNullOrEmpty (dotnetRoot) && File.Exists (Path.Combine (dotnetRoot, "dotnet"));
 
 			string FindInPath (string name) => (Environment.GetEnvironmentVariable ("PATH") ?? "")
 				.Split (new [] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries)
@@ -151,21 +163,21 @@ namespace Mono.TextTemplating.CodeCompilation
 		{
 			var dotnetRoot = FindDotNetRoot ();
 			if (dotnetRoot == null) {
-				return new RuntimeInfo { Error = "Could not find .NET Core installation" };
+				return FromError (RuntimeKind.NetCore, "Could not find .NET Core installation" );
 			}
 
 			string MakeCscPath (string d) => Path.Combine (d, "Roslyn", "bincore", "csc.dll");
 			var sdkDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "sdk"), d => File.Exists (MakeCscPath (d)));
 			if (sdkDir == null) {
-				return new RuntimeInfo { Error = "Could not find csc.dll in any .NET Core SDK" };
+				return FromError (RuntimeKind.NetCore, "Could not find csc.dll in any .NET Core SDK" );
 			}
 
-			var runtimeDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "shared"), d => File.Exists (Path.Combine (d, "System.Runtime.dll")));
+			var runtimeDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "shared", "Microsoft.NETCore.App"), d => File.Exists (Path.Combine (d, "System.Runtime.dll")));
 			if (runtimeDir == null) {
-				return new RuntimeInfo { Error = "Could not find System.Runtime.dll in any .NET shared runtime" };
+				return FromError (RuntimeKind.NetCore, "Could not find System.Runtime.dll in any .NET shared runtime" );
 			}
 
-			return new RuntimeInfo { RuntimeDir = runtimeDir, CscPath = MakeCscPath (sdkDir) };
+			return new RuntimeInfo (RuntimeKind.NetCore) { RuntimeDir = runtimeDir, CscPath = MakeCscPath (sdkDir) };
 		}
 	}
 }
