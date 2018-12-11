@@ -105,11 +105,14 @@ namespace Microsoft.VisualStudio.TextTemplating
 		public override void ProcessDirective (string directiveName, IDictionary<string, string> arguments)
 		{
 			string name = arguments["name"];
-			string type = arguments["type"];
 			if (string.IsNullOrEmpty (name))
 				throw new DirectiveProcessorException ("Parameter directive has no name argument");
-			if (string.IsNullOrEmpty (type))
+
+			if (!arguments.TryGetValue ("type", out string type)) {
+				type = "System.String";
+			} else if (string.IsNullOrEmpty (type)) {
 				throw new DirectiveProcessorException ("Parameter directive has no type argument");
+			}
 			
 			string fieldName = "_" + name + "Field";
 			var typeRef = new CodeTypeReference (type);
