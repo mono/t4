@@ -273,7 +273,7 @@ namespace Mono.TextTemplating
 						settings.Inherits = val;
 					val = dt.Extract ("culture");
 					if (val != null) {
-						System.Globalization.CultureInfo culture = System.Globalization.CultureInfo.GetCultureInfo (val);
+						var culture = System.Globalization.CultureInfo.GetCultureInfo (val);
 						if (culture == null)
 							pt.LogWarning ("Could not find culture '" + val + "'", dt.StartLocation);
 						else
@@ -450,20 +450,19 @@ namespace Mono.TextTemplating
 		
 		static void AddDirective (TemplateSettings settings, ITextTemplatingEngineHost host, string processorName, Directive directive)
 		{
-			IDirectiveProcessor processor;
-			if (!settings.DirectiveProcessors.TryGetValue (processorName, out processor)) {
+			if (!settings.DirectiveProcessors.TryGetValue (processorName, out IDirectiveProcessor processor)) {
 				switch (processorName) {
 				case "ParameterDirectiveProcessor":
 					processor = new ParameterDirectiveProcessor ();
 					break;
 				default:
 					Type processorType = host.ResolveDirectiveProcessor (processorName);
-					processor = (IDirectiveProcessor) Activator.CreateInstance (processorType);
+					processor = (IDirectiveProcessor)Activator.CreateInstance (processorType);
 					break;
 				}
 				if (!processor.IsDirectiveSupported (directive.Name))
 					throw new InvalidOperationException ("Directive processor '" + processorName + "' does not support directive '" + directive.Name + "'");
-				
+
 				settings.DirectiveProcessors [processorName] = processor;
 			}
 			settings.CustomDirectives.Add (new CustomDirective (processorName, directive));
@@ -526,10 +525,11 @@ namespace Mono.TextTemplating
 			
 			foreach (string ns in settings.Imports.Union (host.StandardImports))
 				namespac.Imports.Add (new CodeNamespaceImport (ns));
-			
+
 			//prep the type
-			var type = new CodeTypeDeclaration (settings.Name);
-			type.IsPartial = true;
+			var type = new CodeTypeDeclaration (settings.Name) {
+				IsPartial = true
+			};
 			if (settings.InternalVisibility) {
 				type.TypeAttributes = (type.TypeAttributes & ~TypeAttributes.VisibilityMask) | TypeAttributes.NotPublic;
 			}
@@ -1142,7 +1142,7 @@ namespace Mono.TextTemplating
 		//HACK: older versions of Mono don't implement GenerateCodeFromMember
 		// We have a workaround via reflection. First attempt to reflect the members we need to work around it.
 		// If they don't exist, we should be running on a version where it's fixed.
-		static bool useMonoHack = InitializeMonoHack ();
+		static readonly bool useMonoHack = InitializeMonoHack ();
 		static MethodInfo cgFieldGen, cgPropGen, cgMethGen;
 		static Action<CodeGenerator, StringWriter, CodeGeneratorOptions> initializeCodeGenerator;
 
@@ -1163,22 +1163,19 @@ namespace Mono.TextTemplating
 			var dummy = new CodeTypeDeclaration ("Foo");
 
 			foreach (CodeTypeMember member in members) {
-				var f = member as CodeMemberField;
-				if (f != null) {
+				if (member is CodeMemberField f) {
 					initializeCodeGenerator (generator, sw, options);
-					cgFieldGen.Invoke (generator, new object[] { f });
+					cgFieldGen.Invoke (generator, new object [] { f });
 					continue;
 				}
-				var p = member as CodeMemberProperty;
-				if (p != null) {
+				if (member is CodeMemberProperty p) {
 					initializeCodeGenerator (generator, sw, options);
-					cgPropGen.Invoke (generator, new object[] { p, dummy });
+					cgPropGen.Invoke (generator, new object [] { p, dummy });
 					continue;
 				}
-				var m = member as CodeMemberMethod;
-				if (m != null) {
+				if (member is CodeMemberMethod m) {
 					initializeCodeGenerator (generator, sw, options);
-					cgMethGen.Invoke (generator, new object[] { m, dummy });
+					cgMethGen.Invoke (generator, new object [] { m, dummy });
 					continue;
 				}
 			}

@@ -34,25 +34,20 @@ namespace Mono.TextTemplating
 {
 	public class ParsedTemplate
 	{
-		readonly List<ISegment> segments = new List<ISegment> ();
 		readonly List<ISegment> importedHelperSegments = new List<ISegment> ();
-		readonly CompilerErrorCollection errors = new CompilerErrorCollection ();
 		readonly string rootFileName;
 		
 		public ParsedTemplate (string rootFileName)
 		{
 			this.rootFileName = rootFileName;
 		}
-		
-		public List<ISegment> RawSegments {
-			get { return segments; }
-		}
-		
+
+		public List<ISegment> RawSegments { get; } = new List<ISegment> ();
+
 		public IEnumerable<Directive> Directives {
 			get {
-				foreach (ISegment seg in segments) {
-					var dir = seg as Directive;
-					if (dir != null)
+				foreach (ISegment seg in RawSegments) {
+					if (seg is Directive dir)
 						yield return dir;
 				}
 			}
@@ -60,21 +55,18 @@ namespace Mono.TextTemplating
 		
 		public IEnumerable<TemplateSegment> Content {
 			get {
-				foreach (ISegment seg in segments) {
-					var ts = seg as TemplateSegment;
-					if (ts != null)
+				foreach (ISegment seg in RawSegments) {
+					if (seg is TemplateSegment ts)
 						yield return ts;
 				}
 			}
 		}
-		
-		public CompilerErrorCollection Errors {
-			get { return errors; }
-		}
-		
+
+		public CompilerErrorCollection Errors { get; } = new CompilerErrorCollection ();
+
 		public static ParsedTemplate FromText (string content, ITextTemplatingEngineHost host)
 		{
-			ParsedTemplate template = new ParsedTemplate (host.TemplateFile);
+			var template = new ParsedTemplate (host.TemplateFile);
 			try {
 				template.Parse (host, new Tokeniser (host.TemplateFile, content));
 			} catch (ParserException ex) {
@@ -82,22 +74,13 @@ namespace Mono.TextTemplating
 			}
 			return template;
 		}
-		
-		public void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser)
-		{
-			Parse (host, tokeniser, true);
-		}
-		
-		public void ParseWithoutIncludes (Tokeniser tokeniser)
-		{
-			Parse (null, tokeniser, false);
-		}
-		
-		void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser, bool parseIncludes)
-		{
-			Parse (host, tokeniser, parseIncludes, false);
-		}
-		
+
+		public void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser) => Parse (host, tokeniser, true);
+
+		public void ParseWithoutIncludes (Tokeniser tokeniser) => Parse (null, tokeniser, false);
+
+		void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser, bool parseIncludes) => Parse (host, tokeniser, parseIncludes, false);
+
 		void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser, bool parseIncludes, bool isImport)
 		{
 			bool skip = false;
@@ -107,20 +90,20 @@ namespace Mono.TextTemplating
 				ISegment seg = null;	
 				switch (tokeniser.State) {
 				case State.Block:
-					if (!String.IsNullOrEmpty (tokeniser.Value))
+					if (!string.IsNullOrEmpty (tokeniser.Value))
 						seg = new TemplateSegment (SegmentType.Block, tokeniser.Value, tokeniser.Location);
 					break;
 				case State.Content:
-					if (!String.IsNullOrEmpty (tokeniser.Value))
+					if (!string.IsNullOrEmpty (tokeniser.Value))
 						seg = new TemplateSegment (SegmentType.Content, tokeniser.Value, tokeniser.Location);
 					break;
 				case State.Expression:
-					if (!String.IsNullOrEmpty (tokeniser.Value))
+					if (!string.IsNullOrEmpty (tokeniser.Value))
 						seg = new TemplateSegment (SegmentType.Expression, tokeniser.Value, tokeniser.Location);
 					break;
 				case State.Helper:
 					addToImportedHelpers = isImport;
-					if (!String.IsNullOrEmpty (tokeniser.Value))
+					if (!string.IsNullOrEmpty (tokeniser.Value))
 						seg = new TemplateSegment (SegmentType.Helper, tokeniser.Value, tokeniser.Location);
 					break;
 				case State.Directive:
@@ -130,10 +113,11 @@ namespace Mono.TextTemplating
 						switch (tokeniser.State) {
 						case State.DirectiveName:
 							if (directive == null) {
-								directive = new Directive (tokeniser.Value, tokeniser.Location);
-								directive.TagStartLocation = tokeniser.TagStartLocation;
+								directive = new Directive (tokeniser.Value, tokeniser.Location) {
+									TagStartLocation = tokeniser.TagStartLocation
+								};
 								if (!parseIncludes || !string.Equals (directive.Name, "include", StringComparison.OrdinalIgnoreCase))
-									segments.Add (directive);
+									RawSegments.Add (directive);
 							} else
 								attName = tokeniser.Value;
 							break;
@@ -165,7 +149,7 @@ namespace Mono.TextTemplating
 					if (addToImportedHelpers)
 						importedHelperSegments.Add (seg);
 					else
-						segments.Add (seg);
+						RawSegments.Add (seg);
 				}
 			}
 			if (!isImport)
@@ -186,9 +170,8 @@ namespace Mono.TextTemplating
 				if (File.Exists (possible))
 					fileName = Path.GetFullPath (possible);
 			}
-			
-			string content, resolvedName;
-			if (host.LoadIncludeText (fileName, out content, out resolvedName))
+
+			if (host.LoadIncludeText (fileName, out string content, out string resolvedName))
 				Parse (host, new Tokeniser (resolvedName, content), true, true);
 			else
 				LogError ("Could not resolve include file '" + fileName + "'.", includeDirective.StartLocation);
@@ -196,7 +179,7 @@ namespace Mono.TextTemplating
 		
 		void AppendAnyImportedHelperSegments ()
 		{
-			segments.AddRange (importedHelperSegments);
+			RawSegments.AddRange (importedHelperSegments);
 			importedHelperSegments.Clear ();
 		}
 		
@@ -212,28 +195,16 @@ namespace Mono.TextTemplating
 				err.FileName = rootFileName ?? string.Empty;
 			}
 			err.IsWarning = isWarning;
-			errors.Add (err);
+			Errors.Add (err);
 		}
-		
-		public void LogError (string message)
-		{
-			LogError (message, Location.Empty, false);
-		}
-		
-		public void LogWarning (string message)
-		{
-			LogError (message, Location.Empty, true);
-		}
-		
-		public void LogError (string message, Location location)
-		{
-			LogError (message, location, false);
-		}
-		
-		public void LogWarning (string message, Location location)
-		{
-			LogError (message, location, true);
-		}
+
+		public void LogError (string message) => LogError (message, Location.Empty, false);
+
+		public void LogWarning (string message) => LogError (message, Location.Empty, true);
+
+		public void LogError (string message, Location location) => LogError (message, location, false);
+
+		public void LogWarning (string message, Location location) => LogError (message, location, true);
 	}
 	
 	public interface ISegment
@@ -263,9 +234,9 @@ namespace Mono.TextTemplating
 	{
 		public Directive (string name, Location start)
 		{
-			this.Name = name;
-			this.Attributes = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
-			this.StartLocation = start;
+			Name = name;
+			Attributes = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
+			StartLocation = start;
 		}
 		
 		public string Name { get; private set; }
@@ -276,8 +247,7 @@ namespace Mono.TextTemplating
 		
 		public string Extract (string key)
 		{
-			string value;
-			if (!Attributes.TryGetValue (key, out value))
+			if (!Attributes.TryGetValue (key, out var value))
 				return null;
 			Attributes.Remove (key);
 			return value;
@@ -304,31 +274,17 @@ namespace Mono.TextTemplating
 		public int Line { get; private set; }
 		public int Column { get; private set; }
 		public string FileName { get; private set; }
-		
-		public static Location Empty {
-			get { return new Location (null, -1, -1); }
-		}
-		
-		public Location AddLine ()
-		{
-			return new Location (FileName, Line + 1, 1);
-		}
-		
-		public Location AddCol ()
-		{
-			return AddCols (1);
-		}
-		
-		public Location AddCols (int number)
-		{
-			return new Location (this.FileName, this.Line, this.Column + number);
-		}
-		
-		public override string ToString ()
-		{
-			return string.Format("[{0} ({1},{2})]", FileName, Line, Column);
-		}
-		
+
+		public static Location Empty => new Location (null, -1, -1);
+
+		public Location AddLine () => new Location (FileName, Line + 1, 1);
+
+		public Location AddCol () => AddCols (1);
+
+		public Location AddCols (int number) => new Location (FileName, Line, Column + number);
+
+		public override string ToString () => $"[{FileName} ({Line},{Column})]";
+
 		public bool Equals (Location other)
 		{
 			return other.Line == Line && other.Column == Column && other.FileName == FileName;

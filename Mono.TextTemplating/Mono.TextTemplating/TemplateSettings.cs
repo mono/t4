@@ -70,8 +70,8 @@ namespace Mono.TextTemplating
 	{
 		public CustomDirective (string processorName, Directive directive)
 		{
-			this.ProcessorName = processorName;
-			this.Directive = directive;
+			ProcessorName = processorName;
+			Directive = directive;
 		}
 		
 		public string ProcessorName { get; set; }

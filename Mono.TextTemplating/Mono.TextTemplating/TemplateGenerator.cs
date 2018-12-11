@@ -72,8 +72,8 @@ namespace Mono.TextTemplating
 		
 		public CompiledTemplate CompileTemplate (string content)
 		{
-			if (String.IsNullOrEmpty (content))
-				throw new ArgumentNullException ("content");
+			if (string.IsNullOrEmpty (content))
+				throw new ArgumentNullException (nameof (content));
 
 			errors.Clear ();
 			encoding = Encoding.UTF8;
@@ -91,10 +91,10 @@ namespace Mono.TextTemplating
 		
 		public bool ProcessTemplate (string inputFile, string outputFile)
 		{
-			if (String.IsNullOrEmpty (inputFile))
-				throw new ArgumentNullException ("inputFile");
-			if (String.IsNullOrEmpty (outputFile))
-				throw new ArgumentNullException ("outputFile");
+			if (string.IsNullOrEmpty (inputFile))
+				throw new ArgumentNullException (nameof (inputFile));
+			if (string.IsNullOrEmpty (outputFile))
+				throw new ArgumentNullException (nameof (outputFile));
 			
 			string content;
 			try {
@@ -104,10 +104,9 @@ namespace Mono.TextTemplating
 				AddError ("Could not read input file '" + inputFile + "':\n" + ex);
 				return false;
 			}
-			
-			string output;
-			ProcessTemplate (inputFile, content, ref outputFile, out output);
-			
+
+			ProcessTemplate (inputFile, content, ref outputFile, out var output);
+
 			try {
 				if (!errors.HasErrors)
 					File.WriteAllText (outputFile, output, encoding);
@@ -138,9 +137,9 @@ namespace Mono.TextTemplating
 			references = null;
 
 			if (string.IsNullOrEmpty (inputFile))
-				throw new ArgumentNullException ("inputFile");
+				throw new ArgumentNullException (nameof (inputFile));
 			if (string.IsNullOrEmpty (outputFile))
-				throw new ArgumentNullException ("outputFile");
+				throw new ArgumentNullException (nameof (outputFile));
 			
 			string content;
 			try {
@@ -222,8 +221,7 @@ namespace Mono.TextTemplating
 		protected virtual string ResolveParameterValue (string directiveId, string processorName, string parameterName)
 		{
 			var key = new ParameterKey (processorName, directiveId, parameterName);
-			string value;
-			if (parameters.TryGetValue (key, out value))
+			if (parameters.TryGetValue (key, out var value))
 				return value;
 			if (processorName != null || directiveId != null)
 				return ResolveParameterValue (null, null, parameterName);
@@ -232,8 +230,7 @@ namespace Mono.TextTemplating
 		
 		protected virtual Type ResolveDirectiveProcessor (string processorName)
 		{
-			KeyValuePair<string,string> value;
-			if (!directiveProcessors.TryGetValue (processorName, out value))
+			if (!directiveProcessors.TryGetValue (processorName, out KeyValuePair<string, string> value))
 				throw new Exception (string.Format ("No directive processor registered as '{0}'", processorName));
 			var asmPath = ResolveAssemblyReference (value.Value);
 			if (asmPath == null)
@@ -276,8 +273,7 @@ namespace Mono.TextTemplating
 		/// <param name="unparsedParameter">Parameter in name=value or processor!directive!name!value format.</param>
 		public bool TryAddParameter (string unparsedParameter)
 		{
-			string processor, directive, name, value;
-			if (TryParseParameter (unparsedParameter, out processor, out directive, out name, out value)) {
+			if (TryParseParameter (unparsedParameter, out string processor, out string directive, out string name, out string value)) {
 				AddParameter (processor, directive, name, value);
 				return true;
 			}
