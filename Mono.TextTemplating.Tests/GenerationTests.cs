@@ -29,6 +29,8 @@ using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using Microsoft.VisualStudio.TextTemplating;
+using System.Linq;
+using System.CodeDom.Compiler;
 
 namespace Mono.TextTemplating.Tests
 {
@@ -43,7 +45,7 @@ namespace Mono.TextTemplating.Tests
 			var gen = new TemplateGenerator ();
 			string tmp = null;
 			gen.ProcessTemplate (null, "<#@ template language=\"C#\" #>", ref tmp, out tmp);
-			Assert.AreEqual (0, gen.Errors.Count, "ProcessTemplate");
+			Assert.IsNull (gen.Errors.OfType<CompilerError> ().FirstOrDefault (), "ProcessTemplate");
 		}
 
 		[Test]
@@ -54,7 +56,7 @@ namespace Mono.TextTemplating.Tests
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (System.Linq.Enumerable).Assembly.Location));
 			gen.ProcessTemplate (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
-			Assert.AreEqual (0, gen.Errors.Count, "ImportReferencesTest");
+			Assert.IsNull (gen.Errors.OfType<CompilerError> ().FirstOrDefault (), "ProcessTemplate");
 		}
 
 		[Test]
