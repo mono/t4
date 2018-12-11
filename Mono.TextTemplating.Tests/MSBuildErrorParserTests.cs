@@ -38,7 +38,7 @@ namespace Mono.TextTemplating.Tests
 	public class MSBuildErrorParserTests
 	{
 		[Test, TestCaseSource (nameof (GetErrorParsingTestData))]
-		public void LogEventsFromTextOutput (string lineText, LogEvent expected)
+		public void TestErrorParsing (string lineText, LogEvent expected)
 		{
 			var result = CodeCompilation.MSBuildErrorParser.TryParseLine (lineText);
 			if (expected == null) {
@@ -360,6 +360,17 @@ namespace Mono.TextTemplating.Tests
 					Message = "stuff.",
 				}
 			).SetName ("SubcategoryNoOrigin");
+
+			yield return new TestCaseData (
+				"(10,14): error CS1009: Unrecognized escape sequence",
+				new LogEvent {
+					IsError = true,
+					Code = "CS1009",
+					Message = "Unrecognized escape sequence",
+					Line = 10,
+					Column = 14
+				}
+			).SetName ("LocationNoOrigin");
 		}
 
 		public class LogEvent

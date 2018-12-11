@@ -140,7 +140,7 @@ namespace Mono.TextTemplating.CodeCompilation
 			}
 
 			//scan back for matching (, assuming at least one char between them
-			int posStart = line.LastIndexOf ('(', end - 2, end - start - 2);
+			int posStart = line.LastIndexOf ('(', end - 2, end - start - 1);
 			if (posStart < 0)
 				return false;
 
@@ -152,7 +152,10 @@ namespace Mono.TextTemplating.CodeCompilation
 			end = posStart - 1;
 			MovePrevNonSpace (line, ref end, start);
 
-			result.Origin = line.Substring (start, end - start + 1);
+			//if there's an origin, capture it
+			if (end >= start) {
+				result.Origin = line.Substring (start, end - start + 1);
+			}
 			return true;
 		}
 
