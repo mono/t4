@@ -50,7 +50,7 @@ namespace Mono.TextTemplating
 				ShowHelp (true);
 			}
 
-			var generator = new TemplateGenerator ();
+			var generator = new ToolTemplateGenerator ();
 			string outputFile = null, inputFile = null;
 			var directives = new List<string> ();
 			var parameters = new List<string> ();
@@ -168,9 +168,13 @@ namespace Mono.TextTemplating
 
 			string outputContent;
 			if (preprocessClassName == null) {
-				Process (generator, inputFile, inputContent, ref outputFile, out outputContent);
+				generator.ProcessTemplate (inputFile, inputContent, ref outputFile, out outputContent);
 			} else {
-				Preprocess (generator, preprocessClassName, inputFile, inputContent, out outputContent);
+				generator.Preprocess (preprocessClassName, inputFile, inputContent, out outputContent);
+			}
+
+			if (generator.Errors.HasErrors) {
+				Console.Error.WriteLine ("Processing '{0}' failed.", inputFile);
 			}
 
 			try {
@@ -214,31 +218,6 @@ namespace Mono.TextTemplating
 				generator.AddDirectiveProcessor (split [0], split [1], split [2]);
 			}
 			return true;
-		}
-
-		static void Process (TemplateGenerator generator, string inputFile, string inputContent, ref string outputFile, out string outputContent)
-		{
-			generator.ProcessTemplate (inputFile, inputContent, ref outputFile, out outputContent);
-
-			if (generator.Errors.HasErrors) {
-				Console.Error.WriteLine ("Processing '{0}' failed.", inputFile);
-			}
-		}
-
-		static void Preprocess (TemplateGenerator generator, string className, string inputFile, string inputContent, out string outputContent)
-		{
-			string classNamespace = null;
-			int s = className.LastIndexOf ('.');
-			if (s > 0) {
-				classNamespace = className.Substring (0, s);
-				className = className.Substring (s + 1);
-			}
-
-			generator.PreprocessTemplate (inputFile, className, classNamespace, inputContent,
-				out string language, out string [] references, out outputContent);
-			if (generator.Errors.HasErrors) {
-				Console.Error.Write ("Preprocessing '{0}' into class '{1}.{2}' failed.", inputFile, classNamespace, className);
-			}
 		}
 
 		static void LogErrors (TemplateGenerator generator)
