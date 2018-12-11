@@ -135,7 +135,7 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			var results = CompileCode (references, settings, ccu);
+			var results = CompileCode2 (references, settings, ccu);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
@@ -177,7 +177,7 @@ namespace Mono.TextTemplating
 			File.Delete (tempFolder);
 			Directory.CreateDirectory (tempFolder);
 
-			var sourceFilename = Path.Combine (tempFolder, settings.Name + settings.Provider.FileExtension);
+			var sourceFilename = Path.Combine (tempFolder, settings.Name + "." + settings.Provider.FileExtension);
 			File.WriteAllText (sourceFilename, sourceText);
 
 			var args = new CodeCompilerArguments ();
@@ -195,6 +195,7 @@ namespace Mono.TextTemplating
 			r.TempFiles.AddFile (sourceFilename, false);
 			r.NativeCompilerReturnValue = result.ExitCode;
 			r.Output.AddRange (result.Output.ToArray ());
+			r.Errors.AddRange (result.Errors.Select (e => new CompilerError (e.Origin, e.Line, e.Column, e.Code, e.Message) { IsWarning = !e.IsError }).ToArray ());
 
 			if (result.Success) {
 				r.TempFiles.AddFile (args.OutputPath, true);
@@ -202,6 +203,8 @@ namespace Mono.TextTemplating
 					r.TempFiles.AddFile (Path.ChangeExtension (args.OutputPath, ".dll"), true);
 				}
 				r.PathToAssembly = args.OutputPath;
+			} else if (!r.Errors.HasErrors) {
+				r.Errors.Add (new CompilerError (null, 0, 0, null, $"The compiler exited with code {result.ExitCode}"));
 			}
 
 			if (!args.Debug) {
