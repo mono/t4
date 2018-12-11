@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using Mono.Options;
 
 namespace Mono.TextTemplating
@@ -52,13 +53,13 @@ namespace Mono.TextTemplating
 			string outputFile = null, inputFile = null;
 			var directives = new List<string> ();
 			var parameters = new List<string> ();
-			string preprocess = null;
+			string preprocessClassName = null;
 
 			optionSet = new OptionSet () {
 				{
 					"o=|out=",
 					"Name or path of the output {<file>}. Defaults to the input filename with its " +
-					"extension changed to `.txt'.",
+					"extension changed to `.txt'. Use `-' to output to stdout.",
 					s => outputFile = s
 				},
 				{
@@ -85,7 +86,7 @@ namespace Mono.TextTemplating
 				{
 					"c=|class=",
 					"Preprocess the template into class {<name>}",
-					(s) => preprocess = s
+					(s) => preprocessClassName = s
 				},
 				{ "dp=", "Directive processor (name!class!assembly)", s => directives.Add (s) },
 				{ "a=|arg=", "Parameters (name=value) or ([processorName!][directiveName!]name!value)", s => parameters.Add (s) },
@@ -95,18 +96,24 @@ namespace Mono.TextTemplating
 
 			var remainingArgs = optionSet.Parse (args);
 
+			string inputContent = null;
 			if (remainingArgs.Count != 1) {
-				Console.Error.WriteLine ("No input file specified.");
-				return -1;
+				if (Console.IsInputRedirected) {
+					inputContent = Console.In.ReadToEnd ();
+				} else {
+					Console.Error.WriteLine ("No input file specified.");
+					return 1;
+				}
+			} else {
+				inputFile = remainingArgs [0];
+				if (!File.Exists (inputFile)) {
+					Console.Error.WriteLine ("Input file '{0}' does not exist.", inputFile);
+					return 1;
+				}
 			}
-			inputFile = remainingArgs [0];
 
-			if (!File.Exists (inputFile)) {
-				Console.Error.WriteLine ("Input file '{0}' does not exist.", inputFile);
-				return -1;
-			}
-
-			if (string.IsNullOrEmpty (outputFile)) {
+			bool writeToStdout = outputFile == "-";
+			if (!writeToStdout && string.IsNullOrEmpty (outputFile)) {
 				outputFile = inputFile;
 				if (Path.HasExtension (outputFile)) {
 					var dir = Path.GetDirectoryName (outputFile);
@@ -120,16 +127,62 @@ namespace Mono.TextTemplating
 			foreach (var par in parameters) {
 				if (!generator.TryAddParameter (par)) {
 					Console.Error.WriteLine ("Parameter has incorrect format: {0}", par);
-					return -1;
+					return 1;
 				}
 			}
 
+			if (!AddDirectiveProcessors (generator, directives))
+				return 1;
+
+			if (inputFile != null) {
+				try {
+					inputContent = File.ReadAllText (inputFile);
+				}
+				catch (IOException ex) {
+					Console.Error.WriteLine ("Could not read input file '" + inputFile + "':\n" + ex);
+					return 1;
+				}
+			}
+
+			if (inputContent.Length == 0) {
+				Console.Error.WriteLine ("Input is empty");
+				return 1;
+			}
+
+			string outputContent;
+			if (preprocessClassName == null) {
+				Process (generator, inputFile, inputContent, ref outputFile, out outputContent);
+			} else {
+				Preprocess (generator, preprocessClassName, inputFile, inputContent, out outputContent);
+			}
+
+			try {
+				if (!generator.Errors.HasErrors) {
+					if (writeToStdout) {
+						Console.WriteLine (outputContent);
+					} else {
+						File.WriteAllText (outputFile, outputContent, Encoding.UTF8);
+					}
+				}
+			}
+			catch (IOException ex) {
+				Console.Error.WriteLine ("Could not write output file '" + outputFile + "':\n" + ex);
+				return 1;
+			}
+
+			LogErrors (generator);
+
+			return generator.Errors.HasErrors ? 1 : 0;
+		}
+
+		static bool AddDirectiveProcessors (TemplateGenerator generator, List<string> directives)
+		{
 			foreach (var dir in directives) {
 				var split = dir.Split ('!');
 
 				if (split.Length != 3) {
 					Console.Error.WriteLine ("Directive must have 3 values: {0}", dir);
-					return -1;
+					return false;
 				}
 
 				for (int i = 0; i < 3; i++) {
@@ -137,34 +190,42 @@ namespace Mono.TextTemplating
 					if (string.IsNullOrEmpty (s)) {
 						string kind = i == 0 ? "name" : (i == 1 ? "class" : "assembly");
 						Console.Error.WriteLine ("Directive has missing {0} value: {1}", kind, dir);
-						return -1;
+						return false;
 					}
 				}
 
 				generator.AddDirectiveProcessor (split [0], split [1], split [2]);
 			}
+			return true;
+		}
 
-			if (preprocess == null) {
-				generator.ProcessTemplate (inputFile, outputFile);
-				if (generator.Errors.HasErrors) {
-					Console.WriteLine ("Processing '{0}' failed.", inputFile);
-				}
-			} else {
-				string className = preprocess;
-				string classNamespace = null;
-				int s = preprocess.LastIndexOf ('.');
-				if (s > 0) {
-					classNamespace = preprocess.Substring (0, s);
-					className = preprocess.Substring (s + 1);
-				}
+		static void Process (TemplateGenerator generator, string inputFile, string inputContent, ref string outputFile, out string outputContent)
+		{
+			generator.ProcessTemplate (inputFile, inputContent, ref outputFile, out outputContent);
 
-				generator.PreprocessTemplate (inputFile, className, classNamespace, outputFile, System.Text.Encoding.UTF8,
-					out string language, out string [] references);
-				if (generator.Errors.HasErrors) {
-					Console.Write ("Preprocessing '{0}' into class '{1}.{2}' failed.", inputFile, classNamespace, className);
-				}
+			if (generator.Errors.HasErrors) {
+				Console.Error.WriteLine ("Processing '{0}' failed.", inputFile);
+			}
+		}
+
+		static void Preprocess (TemplateGenerator generator, string className, string inputFile, string inputContent, out string outputContent)
+		{
+			string classNamespace = null;
+			int s = className.LastIndexOf ('.');
+			if (s > 0) {
+				classNamespace = className.Substring (0, s);
+				className = className.Substring (s + 1);
 			}
 
+			generator.PreprocessTemplate (inputFile, className, classNamespace, inputContent,
+				out string language, out string [] references, out outputContent);
+			if (generator.Errors.HasErrors) {
+				Console.Error.Write ("Preprocessing '{0}' into class '{1}.{2}' failed.", inputFile, classNamespace, className);
+			}
+		}
+
+		static void LogErrors (TemplateGenerator generator)
+		{
 			foreach (System.CodeDom.Compiler.CompilerError err in generator.Errors) {
 				if (err.FileName != null) {
 					Console.Error.Write (err);
@@ -184,8 +245,6 @@ namespace Mono.TextTemplating
 				Console.Error.Write (err.IsWarning ? "WARNING: " : "ERROR: ");
 				Console.Error.WriteLine (err.ErrorText);
 			}
-
-			return generator.Errors.HasErrors ? -1 : 0;
 		}
 
 		static void ShowHelp (bool concise)
