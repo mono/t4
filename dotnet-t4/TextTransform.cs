@@ -236,8 +236,10 @@ namespace Mono.TextTemplating
 		static void LogErrors (TemplateGenerator generator)
 		{
 			foreach (System.CodeDom.Compiler.CompilerError err in generator.Errors) {
-				if (err.FileName != null) {
-					Console.Error.Write (err);
+				var oldColor = Console.ForegroundColor;
+				Console.ForegroundColor = err.IsWarning? ConsoleColor.Yellow : ConsoleColor.Red;
+				if (!string.IsNullOrEmpty (err.FileName)) {
+					Console.Error.Write (err.FileName);
 				}
 				if (err.Line > 0) {
 					Console.Error.Write ("(");
@@ -248,11 +250,12 @@ namespace Mono.TextTemplating
 					}
 					Console.Error.Write (")");
 				}
-				if (err.FileName != null || err.Line > 0) {
+				if (!string.IsNullOrEmpty (err.FileName) || err.Line > 0) {
 					Console.Error.Write (": ");
 				}
 				Console.Error.Write (err.IsWarning ? "WARNING: " : "ERROR: ");
 				Console.Error.WriteLine (err.ErrorText);
+				Console.ForegroundColor = oldColor;
 			}
 		}
 
