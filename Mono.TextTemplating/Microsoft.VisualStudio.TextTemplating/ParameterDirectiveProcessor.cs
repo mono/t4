@@ -102,7 +102,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 			return directiveName == "parameter";
 		}
 
-		readonly Dictionary<string, string> BuiltinTypesMap = new Dictionary<string, string> {
+		static readonly Dictionary<string, string> BuiltinTypesMap = new Dictionary<string, string> {
 			{ "bool", "System.Boolean" },
 			{ "byte", "System.Byte" },
 			{ "sbyte", "System.SByte" },
