@@ -32,8 +32,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using Microsoft.CSharp;
 using Microsoft.VisualStudio.TextTemplating;
+using Mono.TextTemplating.CodeCompilation;
 
 namespace Mono.TextTemplating
 {
@@ -61,9 +63,6 @@ namespace Mono.TextTemplating
 				throw new ArgumentNullException (nameof (host));
 			if (className == null)
 				throw new ArgumentNullException (nameof (className));
-			if (classNamespace == null)
-				throw new ArgumentNullException (nameof (classNamespace));
-
 			language = null;
 			references = null;
 
@@ -72,6 +71,29 @@ namespace Mono.TextTemplating
 				host.LogErrors (pt.Errors);
 				return null;
 			}
+			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references);
+		}
+
+		public string PreprocessTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
+			string classNamespace, out string language, out string [] references)
+		{
+			if (content == null)
+				throw new ArgumentNullException (nameof (content));
+			if (pt == null)
+				throw new ArgumentNullException (nameof (pt));
+			if (host == null)
+				throw new ArgumentNullException (nameof (host));
+			if (className == null)
+				throw new ArgumentNullException (nameof (className));
+
+			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references);
+		}
+
+		string PreprocessTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
+			string classNamespace, out string language, out string [] references)
+		{
+			language = null;
+			references = null;
 
 			var settings = GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
@@ -112,6 +134,21 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
+			return CompileTemplateInternal (pt, content, host);
+		}
+
+		public CompiledTemplate CompileTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host)
+		{
+			if (pt == null)
+				throw new ArgumentNullException (nameof (pt));
+			if (host == null)
+				throw new ArgumentNullException (nameof (host));
+
+			return CompileTemplateInternal (pt, content, host);
+		}
+
+		CompiledTemplate CompileTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host)
+		{
 			var settings = GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
@@ -133,14 +170,12 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			var results = GenerateCode (references, settings, ccu);
+			var results = CompileCode2 (references, settings, ccu);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
 				return null;
 			}
-
-			var templateClassFullName = settings.Namespace + "." + settings.Name;
 
 #if FEATURE_APPDOMAINS
 			var domain = host.ProvideTemplatingAppDomain (content);
@@ -154,10 +189,65 @@ namespace Mono.TextTemplating
 			}
 #endif
 
-			return new CompiledTemplate (host, results, templateClassFullName, settings.Culture, references.ToArray ());
+			return new CompiledTemplate (host, results, settings.GetFullName (), settings.Culture, references.ToArray ());
 		}
-		
-		static CompilerResults GenerateCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
+
+		static CompilerResults CompileCode2 (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
+		{
+			string sourceText;
+			var genOptions = new CodeGeneratorOptions ();
+			using (var sw = new StringWriter ()) {
+				settings.Provider.GenerateCodeFromCompileUnit (ccu, sw, genOptions);
+				sourceText = sw.ToString ();
+			}
+
+			var runtime = RuntimeInfo.GetRuntime ();
+			if (runtime.Error != null) {
+				throw new Exception (runtime.Error);
+			}
+
+			var tempFolder = Path.GetTempFileName ();
+			File.Delete (tempFolder);
+			Directory.CreateDirectory (tempFolder);
+
+			var sourceFilename = Path.Combine (tempFolder, settings.Name + "." + settings.Provider.FileExtension);
+			File.WriteAllText (sourceFilename, sourceText);
+
+			var args = new CodeCompilerArguments ();
+			args.AssemblyReferences.AddRange (references);
+			args.Debug = settings.Debug;
+			args.SourceFiles.Add (sourceFilename);
+			args.AdditionalArguments = settings.CompilerOptions;
+			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
+
+			var compiler = new CscCodeCompiler (runtime);
+
+			var result = compiler.CompileFile (args, CancellationToken.None).Result;
+
+			var r = new CompilerResults (new TempFileCollection ());
+			r.TempFiles.AddFile (sourceFilename, false);
+			r.NativeCompilerReturnValue = result.ExitCode;
+			r.Output.AddRange (result.Output.ToArray ());
+			r.Errors.AddRange (result.Errors.Select (e => new CompilerError (e.Origin ?? "", e.Line, e.Column, e.Code, e.Message) { IsWarning = !e.IsError }).ToArray ());
+
+			if (result.Success) {
+				r.TempFiles.AddFile (args.OutputPath, true);
+				if (args.Debug) {
+					r.TempFiles.AddFile (Path.ChangeExtension (args.OutputPath, ".dll"), true);
+				}
+				r.PathToAssembly = args.OutputPath;
+			} else if (!r.Errors.HasErrors) {
+				r.Errors.Add (new CompilerError (null, 0, 0, null, $"The compiler exited with code {result.ExitCode}"));
+			}
+
+			if (!args.Debug) {
+				r.TempFiles.Delete ();
+			}
+
+			return r;
+		}
+
+		static CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
 		{
 			var pars = new CompilerParameters {
 				GenerateExecutable = false,
@@ -220,7 +310,7 @@ namespace Mono.TextTemplating
 						settings.Inherits = val;
 					val = dt.Extract ("culture");
 					if (val != null) {
-						System.Globalization.CultureInfo culture = System.Globalization.CultureInfo.GetCultureInfo (val);
+						var culture = System.Globalization.CultureInfo.GetCultureInfo (val);
 						if (culture == null)
 							pt.LogWarning ("Could not find culture '" + val + "'", dt.StartLocation);
 						else
@@ -280,7 +370,7 @@ namespace Mono.TextTemplating
 					throw new InvalidOperationException ("Include is handled in the parser");
 					
 				case "parameter":
-					AddDirective (settings, host, "ParameterDirectiveProcessor", dt);
+					AddDirective (settings, host, nameof (ParameterDirectiveProcessor), dt);
 					continue;
 					
 				default:
@@ -397,20 +487,19 @@ namespace Mono.TextTemplating
 		
 		static void AddDirective (TemplateSettings settings, ITextTemplatingEngineHost host, string processorName, Directive directive)
 		{
-			IDirectiveProcessor processor;
-			if (!settings.DirectiveProcessors.TryGetValue (processorName, out processor)) {
+			if (!settings.DirectiveProcessors.TryGetValue (processorName, out IDirectiveProcessor processor)) {
 				switch (processorName) {
 				case "ParameterDirectiveProcessor":
 					processor = new ParameterDirectiveProcessor ();
 					break;
 				default:
 					Type processorType = host.ResolveDirectiveProcessor (processorName);
-					processor = (IDirectiveProcessor) Activator.CreateInstance (processorType);
+					processor = (IDirectiveProcessor)Activator.CreateInstance (processorType);
 					break;
 				}
 				if (!processor.IsDirectiveSupported (directive.Name))
 					throw new InvalidOperationException ("Directive processor '" + processorName + "' does not support directive '" + directive.Name + "'");
-				
+
 				settings.DirectiveProcessors [processorName] = processor;
 			}
 			settings.CustomDirectives.Add (new CustomDirective (processorName, directive));
@@ -468,15 +557,16 @@ namespace Mono.TextTemplating
 
 			//prep the compile unit
 			var ccu = new CodeCompileUnit ();
-			var namespac = new CodeNamespace (settings.Namespace);
+			var namespac = string.IsNullOrEmpty (settings.Namespace)? new CodeNamespace () : new CodeNamespace (settings.Namespace);
 			ccu.Namespaces.Add (namespac);
 			
 			foreach (string ns in settings.Imports.Union (host.StandardImports))
 				namespac.Imports.Add (new CodeNamespaceImport (ns));
-			
+
 			//prep the type
-			var type = new CodeTypeDeclaration (settings.Name);
-			type.IsPartial = true;
+			var type = new CodeTypeDeclaration (settings.Name) {
+				IsPartial = true
+			};
 			if (settings.InternalVisibility) {
 				type.TypeAttributes = (type.TypeAttributes & ~TypeAttributes.VisibilityMask) | TypeAttributes.NotPublic;
 			}
@@ -1089,7 +1179,7 @@ namespace Mono.TextTemplating
 		//HACK: older versions of Mono don't implement GenerateCodeFromMember
 		// We have a workaround via reflection. First attempt to reflect the members we need to work around it.
 		// If they don't exist, we should be running on a version where it's fixed.
-		static bool useMonoHack = InitializeMonoHack ();
+		static readonly bool useMonoHack = InitializeMonoHack ();
 		static MethodInfo cgFieldGen, cgPropGen, cgMethGen;
 		static Action<CodeGenerator, StringWriter, CodeGeneratorOptions> initializeCodeGenerator;
 
@@ -1110,22 +1200,19 @@ namespace Mono.TextTemplating
 			var dummy = new CodeTypeDeclaration ("Foo");
 
 			foreach (CodeTypeMember member in members) {
-				var f = member as CodeMemberField;
-				if (f != null) {
+				if (member is CodeMemberField f) {
 					initializeCodeGenerator (generator, sw, options);
-					cgFieldGen.Invoke (generator, new object[] { f });
+					cgFieldGen.Invoke (generator, new object [] { f });
 					continue;
 				}
-				var p = member as CodeMemberProperty;
-				if (p != null) {
+				if (member is CodeMemberProperty p) {
 					initializeCodeGenerator (generator, sw, options);
-					cgPropGen.Invoke (generator, new object[] { p, dummy });
+					cgPropGen.Invoke (generator, new object [] { p, dummy });
 					continue;
 				}
-				var m = member as CodeMemberMethod;
-				if (m != null) {
+				if (member is CodeMemberMethod m) {
 					initializeCodeGenerator (generator, sw, options);
-					cgMethGen.Invoke (generator, new object[] { m, dummy });
+					cgMethGen.Invoke (generator, new object [] { m, dummy });
 					continue;
 				}
 			}

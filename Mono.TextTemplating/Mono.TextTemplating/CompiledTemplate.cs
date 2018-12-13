@@ -58,7 +58,9 @@ namespace Mono.TextTemplating
 
 		void Load (CompilerResults results, string fullName)
 		{
-			var assembly = results.CompiledAssembly;
+			//results.CompiledAssembly doesn't work on .NET core, it throws a cryptic internal error
+			//use Assembly.LoadFile instead
+			var assembly = System.Reflection.Assembly.LoadFile (results.PathToAssembly);
 			Type transformType = assembly.GetType (fullName);
 			//MS Templating Engine does not look on the type itself, 
 			//it checks only that required methods are exists in the compiled type 
