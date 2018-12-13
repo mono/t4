@@ -28,6 +28,7 @@ using System.Text;
 using Mono.Options;
 using System.Linq;
 using Microsoft.VisualStudio.TextTemplating;
+using System.CodeDom.Compiler;
 
 namespace Mono.TextTemplating
 {
@@ -151,10 +152,6 @@ namespace Mono.TextTemplating
 				}
 			}
 
-			foreach (var p in properties) {
-				var session = generator.CreateSession ();
-				session[p.Key] = p.Value;
-			}
 			if (inputFile != null) {
 				try {
 					inputContent = File.ReadAllText (inputFile);
@@ -189,6 +186,10 @@ namespace Mono.TextTemplating
 
 			string outputContent = null;
 			if (!generator.Errors.HasErrors) {
+				AddCoercedSessionParameters (generator, pt, properties);
+			}
+
+			if (!generator.Errors.HasErrors) {
 				if (preprocessClassName == null) {
 					outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile);
 				} else {
@@ -217,6 +218,65 @@ namespace Mono.TextTemplating
 			LogErrors (generator);
 
 			return generator.Errors.HasErrors ? 1 : 0;
+		}
+
+		static void AddCoercedSessionParameters (ToolTemplateGenerator generator, ParsedTemplate pt, Dictionary<string, string> properties)
+		{
+			if (properties.Count == 0) {
+				return;
+			}
+
+			var session = generator.CreateSession ();
+
+			foreach (var p in properties) {
+				var directive = pt.Directives.FirstOrDefault (d =>
+					d.Name == "parameter" &&
+					d.Attributes.TryGetValue ("name", out string attVal) &&
+					attVal == p.Key);
+
+				if (directive != null) {
+					directive.Attributes.TryGetValue ("type", out string typeName);
+					var mappedType = ParameterDirectiveProcessor.MapTypeName (typeName);
+					if (mappedType != "System.String") {
+						if (ConvertType (mappedType, p.Value, out object converted)) {
+							session [p.Key] = converted;
+							continue;
+						}
+
+						generator.Errors.Add (
+							new CompilerError (
+								null, 0, 0, null,
+								$"Could not convert property '{p.Key}'='{p.Value}' to parameter type '{typeName}'"
+							)
+						);
+					}
+				}
+				session [p.Key] = p.Value;
+			}
+		}
+
+		static bool ConvertType (string typeName, string value, out object converted)
+		{
+			converted = null;
+			try {
+				var type = Type.GetType (typeName);
+				if (type == null) {
+					return false;
+				}
+				Type stringType = typeof (string);
+				if (type == stringType) {
+					return true;
+				}
+				var converter = System.ComponentModel.TypeDescriptor.GetConverter (type);
+				if (converter == null || !converter.CanConvertFrom (stringType)) {
+					return false;
+				}
+				converted = converter.ConvertFromString (value);
+				return true;
+			}
+			catch {
+			}
+			return false;
 		}
 
 		static bool AddDirectiveProcessors (TemplateGenerator generator, List<string> directives)
