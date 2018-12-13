@@ -53,7 +53,7 @@ namespace Mono.TextTemplating
 		public List<string> Imports { get; } = new List<string> ();
 		public List<string> IncludePaths { get; } = new List<string> ();
 		public List<string> ReferencePaths { get; } = new List<string> ();
-		public string OutputFile { get; private set; }
+		public string OutputFile { get; protected set; }
 		public bool UseRelativeLinePragmas { get; set; }
 		
 		public TemplateGenerator ()

@@ -26,6 +26,8 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using Mono.Options;
+using System.Linq;
+using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating
 {
@@ -153,17 +155,6 @@ namespace Mono.TextTemplating
 				var session = generator.CreateSession ();
 				session[p.Key] = p.Value;
 			}
-
-			foreach (var par in parameters) {
-				if (!generator.TryAddParameter (par)) {
-					Console.Error.WriteLine ("Parameter has incorrect format: {0}", par);
-					return 1;
-				}
-			}
-
-			if (!AddDirectiveProcessors (generator, directives))
-				return 1;
-
 			if (inputFile != null) {
 				try {
 					inputContent = File.ReadAllText (inputFile);
@@ -179,11 +170,30 @@ namespace Mono.TextTemplating
 				return 1;
 			}
 
-			string outputContent;
-			if (preprocessClassName == null) {
-				generator.ProcessTemplate (inputFile, inputContent, ref outputFile, out outputContent);
-			} else {
-				generator.Preprocess (preprocessClassName, inputFile, inputContent, out outputContent);
+			foreach (var par in parameters) {
+				if (!generator.TryAddParameter (par)) {
+					Console.Error.WriteLine ("Parameter has incorrect format: {0}", par);
+					return 1;
+				}
+			}
+
+			if (!AddDirectiveProcessors (generator, directives)) {
+				return 1;
+			}
+
+			var pt = ParsedTemplate.FromText (inputContent, generator);
+
+			if (pt.Errors.Count > 0) {
+				generator.Errors.AddRange (pt.Errors);
+			}
+
+			string outputContent = null;
+			if (!generator.Errors.HasErrors) {
+				if (preprocessClassName == null) {
+					outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile);
+				} else {
+					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, preprocessClassName);
+				}
 			}
 
 			if (generator.Errors.HasErrors) {

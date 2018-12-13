@@ -20,6 +20,7 @@
 // THE SOFTWARE.
 
 using Microsoft.VisualStudio.TextTemplating;
+using System;
 using System.CodeDom.Compiler;
 
 namespace Mono.TextTemplating
@@ -38,7 +39,7 @@ namespace Mono.TextTemplating
 			return Session = new ToolTemplateSession (this);
 		}
 
-		public void Preprocess (string className, string inputFile, string inputContent, out string outputContent)
+		public string PreprocessTemplate (ParsedTemplate pt, string inputFile, string inputContent, string className)
 		{
 			string classNamespace = null;
 			int s = className.LastIndexOf ('.');
@@ -47,7 +48,17 @@ namespace Mono.TextTemplating
 				className = className.Substring (s + 1);
 			}
 
-			PreprocessTemplate (inputFile, className, classNamespace, inputContent, out string language, out string [] references, out outputContent);
+			return Engine.PreprocessTemplate (pt, inputContent, this, className, classNamespace, out string language, out string [] references);
+		}
+
+		public string ProcessTemplate (ParsedTemplate pt, string inputFile, string inputContent, ref string outputFile)
+		{
+			OutputFile = outputFile;
+			using (var compiled = Engine.CompileTemplate (pt, inputContent, this)) {
+				var result = compiled?.Process ();
+				outputFile = OutputFile;
+				return result;
+			}
 		}
 	}
 }

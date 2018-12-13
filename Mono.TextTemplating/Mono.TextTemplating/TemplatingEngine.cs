@@ -63,7 +63,6 @@ namespace Mono.TextTemplating
 				throw new ArgumentNullException (nameof (host));
 			if (className == null)
 				throw new ArgumentNullException (nameof (className));
-
 			language = null;
 			references = null;
 
@@ -72,6 +71,29 @@ namespace Mono.TextTemplating
 				host.LogErrors (pt.Errors);
 				return null;
 			}
+			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references);
+		}
+
+		public string PreprocessTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
+			string classNamespace, out string language, out string [] references)
+		{
+			if (content == null)
+				throw new ArgumentNullException (nameof (content));
+			if (pt == null)
+				throw new ArgumentNullException (nameof (pt));
+			if (host == null)
+				throw new ArgumentNullException (nameof (host));
+			if (className == null)
+				throw new ArgumentNullException (nameof (className));
+
+			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references);
+		}
+
+		string PreprocessTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
+			string classNamespace, out string language, out string [] references)
+		{
+			language = null;
+			references = null;
 
 			var settings = GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
@@ -112,6 +134,21 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
+			return CompileTemplateInternal (pt, content, host);
+		}
+
+		public CompiledTemplate CompileTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host)
+		{
+			if (pt == null)
+				throw new ArgumentNullException (nameof (pt));
+			if (host == null)
+				throw new ArgumentNullException (nameof (host));
+
+			return CompileTemplateInternal (pt, content, host);
+		}
+
+		CompiledTemplate CompileTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host)
+		{
 			var settings = GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
@@ -333,7 +370,7 @@ namespace Mono.TextTemplating
 					throw new InvalidOperationException ("Include is handled in the parser");
 					
 				case "parameter":
-					AddDirective (settings, host, "ParameterDirectiveProcessor", dt);
+					AddDirective (settings, host, nameof (ParameterDirectiveProcessor), dt);
 					continue;
 					
 				default:
