@@ -102,7 +102,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 			return directiveName == "parameter";
 		}
 
-		readonly Dictionary<string, string> BuiltinTypesMap = new Dictionary<string, string> {
+		static readonly Dictionary<string, string> BuiltinTypesMap = new Dictionary<string, string> {
 			{ "bool", "System.Boolean" },
 			{ "byte", "System.Byte" },
 			{ "sbyte", "System.SByte" },
@@ -120,21 +120,25 @@ namespace Microsoft.VisualStudio.TextTemplating
 			{ "string", "System.String" }
 		};
 
+		public static string MapTypeName (string typeName)
+		{
+			if (string.IsNullOrEmpty (typeName)) {
+				return "System.String";
+			}
+			if (BuiltinTypesMap.TryGetValue (typeName, out string mappedType)) {
+				return mappedType;
+			}
+			return typeName;
+		}
+
 		public override void ProcessDirective (string directiveName, IDictionary<string, string> arguments)
 		{
 			if (!arguments.TryGetValue ("name", out string name) || string.IsNullOrEmpty (name)) {
 				throw new DirectiveProcessorException ("Parameter directive has no name argument");
 			}
 
-			if (!arguments.TryGetValue ("type", out string type)) {
-				type = "System.String";
-			} else {
-				if (BuiltinTypesMap.TryGetValue (type, out string mappedType)) {
-					type = mappedType;
-				} else if (string.IsNullOrEmpty(type)) {
-					throw new DirectiveProcessorException ("Parameter directive empty type argument");
-				}
-			}
+			arguments.TryGetValue ("type", out string type);
+			type = MapTypeName (type);
 			
 			string fieldName = "_" + name + "Field";
 			var typeRef = new CodeTypeReference (type);
