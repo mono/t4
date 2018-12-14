@@ -100,7 +100,7 @@ namespace Mono.TextTemplating.CodeCompilation
 		static string FindDotNetRoot ()
 		{
 			string dotnetRoot;
-			bool DotnetRootIsValid () => !string.IsNullOrEmpty (dotnetRoot) && File.Exists (Path.Combine (dotnetRoot, "dotnet"));
+			bool DotnetRootIsValid () => !string.IsNullOrEmpty (dotnetRoot) && (File.Exists (Path.Combine (dotnetRoot, "dotnet")) || File.Exists (Path.Combine (dotnetRoot, "dotnet.exe")));
 
 			string FindInPath (string name) => (Environment.GetEnvironmentVariable ("PATH") ?? "")
 				.Split (new [] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries)
@@ -120,7 +120,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				return dotnetRoot;
 			}
 
-			dotnetRoot = FindInPath (Path.DirectorySeparatorChar == '\\' ? "dotnet.exe" : "dotnet");
+			dotnetRoot = Path.GetDirectoryName (FindInPath (Path.DirectorySeparatorChar == '\\' ? "dotnet.exe" : "dotnet"));
 			if (DotnetRootIsValid ()) {
 				return dotnetRoot;
 			}
@@ -128,30 +128,15 @@ namespace Mono.TextTemplating.CodeCompilation
 			return null;
 		}
 
-		static int CompareVersions (uint aMaj, uint aMin, uint aPoint, uint bMaj, uint bMin, uint bPoint)
-		{
-			var delta = aMaj - (long)bMaj;
-			if (delta == 0) {
-				delta = aMin - (long)bMin;
-				if (delta == 0) {
-					delta = aPoint - (long)bPoint;
-				}
-			}
-			return (int)(delta / Math.Abs (delta));
-		}
-
 		static string FindHighestVersionedDirectory (string parentFolder, Func<string, bool> validate)
 		{
 			string bestMatch = null;
-			uint bestMajor = 0, bestMinor = 0, bestPoint = 0;
+			var bestVersion = new Version(0, 0, 0);
 			foreach (var dir in Directory.EnumerateDirectories (parentFolder)) {
 				var name = Path.GetFileName (dir);
-				var split = name.Split ('.');
-				if (split.Length == 3 && uint.TryParse (split [0], out uint major) && uint.TryParse (split [1], out uint minor) && uint.TryParse (split [2], out uint point)) {
-					if (CompareVersions (major, minor, point, bestMajor, bestMajor, bestPoint) > 0 && (validate == null || validate (dir))) {
-						bestMajor = major;
-						bestMinor = minor;
-						bestPoint = point;
+				if (Version.TryParse (name, out var version) && version.Build >= 0) {
+					if (version > bestVersion && (validate == null || validate (dir))) {
+						bestVersion = version;
 						bestMatch = dir;
 					}
 				}
