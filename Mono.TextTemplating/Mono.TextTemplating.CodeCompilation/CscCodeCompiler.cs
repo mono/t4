@@ -108,8 +108,9 @@ namespace Mono.TextTemplating.CodeCompilation
 				void AddIfNotPresent (string asm)
 				{
 					if (!asmFileNames.Contains (asm)) {
-						rsp.Write ("-r:");
-						rsp.WriteLine (Path.Combine (runtime.RuntimeDir, asm));
+						rsp.Write ("\"-r:");
+						rsp.Write (Path.Combine (runtime.RuntimeDir, asm));
+						rsp.WriteLine ("\"");
 					}
 				}
 				AddIfNotPresent ("mscorlib.dll");
@@ -123,8 +124,9 @@ namespace Mono.TextTemplating.CodeCompilation
 				}
 
 				foreach (var reference in arguments.AssemblyReferences) {
-					rsp.Write ("-r:");
-					rsp.WriteLine (ResolveAssembly (runtime, reference));
+					rsp.Write ("\"-r:");
+					rsp.Write (ResolveAssembly (runtime, reference));
+					rsp.WriteLine ("\"");
 				}
 
 				rsp.Write ("-out:");
