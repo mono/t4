@@ -100,7 +100,7 @@ namespace Mono.TextTemplating.CodeCompilation
 		static string FindDotNetRoot ()
 		{
 			string dotnetRoot;
-			bool DotnetRootIsValid () => !string.IsNullOrEmpty (dotnetRoot) && File.Exists (Path.Combine (dotnetRoot, "dotnet"));
+			bool DotnetRootIsValid () => !string.IsNullOrEmpty (dotnetRoot) && (File.Exists (Path.Combine (dotnetRoot, "dotnet")) || File.Exists (Path.Combine (dotnetRoot, "dotnet.exe")));
 
 			string FindInPath (string name) => (Environment.GetEnvironmentVariable ("PATH") ?? "")
 				.Split (new [] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries)
@@ -120,7 +120,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				return dotnetRoot;
 			}
 
-			dotnetRoot = FindInPath (Path.DirectorySeparatorChar == '\\' ? "dotnet.exe" : "dotnet");
+			dotnetRoot = Path.GetDirectoryName (FindInPath (Path.DirectorySeparatorChar == '\\' ? "dotnet.exe" : "dotnet"));
 			if (DotnetRootIsValid ()) {
 				return dotnetRoot;
 			}
@@ -135,6 +135,9 @@ namespace Mono.TextTemplating.CodeCompilation
 				delta = aMin - (long)bMin;
 				if (delta == 0) {
 					delta = aPoint - (long)bPoint;
+					if (delta == 0) {
+						return 0;
+					}
 				}
 			}
 			return (int)(delta / Math.Abs (delta));
