@@ -1,8 +1,8 @@
 {
   "version": "2.1.0-preview.{height}",
   "publicReleaseRefSpec": [
-    "^refs/heads/master$",
-    "^refs/heads/v\\d+(?:\\.\\d+)?$"
+    "^refs/tags/v\\d+\\.\\d+$",
+    "^refs/tags/v\\d+\\.\\d+\\.\\d+$"
   ],
   "cloudBuild": {
     "buildNumber": {
