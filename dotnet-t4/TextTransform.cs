@@ -341,13 +341,13 @@ namespace Mono.TextTemplating
 				Console.WriteLine ("Options:");
 				Console.WriteLine ();
 				optionSet.WriteOptionDescriptions (Console.Out);
+				Console.WriteLine ();
+				Console.WriteLine ("TextTransform.exe compatibility options (deprecated):");
+				Console.WriteLine ();
+				compatOptionSet.WriteOptionDescriptions (Console.Out);
+				Console.WriteLine ();
+				Environment.Exit (0);
 			}
-			Console.WriteLine ();
-			Console.WriteLine ("TextTransform.exe compatibility options (deprecated):");
-			Console.WriteLine ();
-			compatOptionSet.WriteOptionDescriptions (Console.Out);
-			Console.WriteLine ();
-			Environment.Exit (0);
 		}
 	}
 }
