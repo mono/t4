@@ -122,7 +122,7 @@ namespace Mono.TextTemplating
 			};
 
 			var remainingArgs = optionSet.Parse (args);
-			remainingArgs = compatOptionSet.Parse (args);
+			remainingArgs = compatOptionSet.Parse (remainingArgs);
 
 			string inputContent = null;
 			if (remainingArgs.Count != 1) {
