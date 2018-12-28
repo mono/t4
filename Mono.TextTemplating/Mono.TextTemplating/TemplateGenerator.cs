@@ -40,6 +40,21 @@ namespace Mono.TextTemplating
 #endif
 		ITextTemplatingEngineHost
 	{
+		static readonly Dictionary<string, string> KnownAssemblies = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase)
+		{
+			{ "System.Core.dll", typeof(System.Linq.Enumerable).Assembly.Location },
+			{ "System.Data.dll", typeof(System.Data.DataTable).Assembly.Location },
+			{ "System.Linq.dll", typeof(System.Linq.Enumerable).Assembly.Location },
+			{ "System.Xml.dll", typeof(System.Xml.XmlAttribute).Assembly.Location },
+			{ "System.Xml.Linq.dll", typeof(System.Xml.Linq.XDocument).Assembly.Location },
+
+			{ "System.Core", typeof(System.Linq.Enumerable).Assembly.Location },
+			{ "System.Data", typeof(System.Data.DataTable).Assembly.Location },
+			{ "System.Linq", typeof(System.Linq.Enumerable).Assembly.Location },
+			{ "System.Xml", typeof(System.Xml.XmlAttribute).Assembly.Location },
+			{ "System.Xml.Linq", typeof(System.Xml.Linq.XDocument).Assembly.Location }
+		};
+
 		//re-usable
 		TemplatingEngine engine;
 		
@@ -60,6 +75,8 @@ namespace Mono.TextTemplating
 		{
 			Refs.Add (typeof (TextTransformation).Assembly.Location);
 			Refs.Add (typeof(Uri).Assembly.Location);
+			Refs.Add (typeof (File).Assembly.Location);
+			Refs.Add (typeof (StringReader).Assembly.Location);
 			Imports.Add ("System");
 		}
 		
@@ -204,6 +221,10 @@ namespace Mono.TextTemplating
 			var assemblyName = new AssemblyName(assemblyReference);
 			if (assemblyName.Version != null)//Load via GAC and return full path
 				return Assembly.Load (assemblyName).Location;
+
+			if (KnownAssemblies.TryGetValue (assemblyReference, out string mappedAssemblyReference)) {
+				return mappedAssemblyReference;
+			}
 
 			if (!assemblyReference.EndsWith (".dll", StringComparison.OrdinalIgnoreCase) && !assemblyReference.EndsWith (".exe", StringComparison.OrdinalIgnoreCase))
 				return assemblyReference + ".dll";
