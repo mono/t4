@@ -124,17 +124,22 @@ namespace Mono.TextTemplating.CodeCompilation
 				}
 
 				foreach (var reference in arguments.AssemblyReferences) {
-					rsp.Write ("\"-r:");
+					rsp.Write ("-r:");
+					rsp.Write ("\"");
 					rsp.Write (ResolveAssembly (runtime, reference));
 					rsp.WriteLine ("\"");
 				}
 
 				rsp.Write ("-out:");
-				rsp.WriteLine (arguments.OutputPath);
+				rsp.Write ("\"");
+				rsp.Write (arguments.OutputPath);
+				rsp.WriteLine ("\"");
 
 				//in older versions of csc, these must come last
 				foreach (var file in arguments.SourceFiles) {
-					rsp.WriteLine (file);
+					rsp.Write ("\"");
+					rsp.Write (file);
+					rsp.WriteLine ("\"");
 				}
 			}
 
