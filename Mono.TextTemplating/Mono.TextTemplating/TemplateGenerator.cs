@@ -59,7 +59,6 @@ namespace Mono.TextTemplating
 		TemplatingEngine engine;
 		
 		//per-run variables
-		string inputFile;
 		Encoding encoding;
 
 		//host properties for consumers to access
@@ -69,6 +68,7 @@ namespace Mono.TextTemplating
 		public List<string> IncludePaths { get; } = new List<string> ();
 		public List<string> ReferencePaths { get; } = new List<string> ();
 		public string OutputFile { get; protected set; }
+		public string TemplateFile { get; protected set; }
 		public bool UseRelativeLinePragmas { get; set; }
 		
 		public TemplateGenerator ()
@@ -133,7 +133,7 @@ namespace Mono.TextTemplating
 			encoding = Encoding.UTF8;
 
 			OutputFile = outputFileName;
-			inputFile = inputFileName;
+			TemplateFile = inputFileName;
 			outputContent = Engine.ProcessTemplate (inputContent, this);
 			outputFileName = OutputFile;
 			
@@ -178,8 +178,8 @@ namespace Mono.TextTemplating
 		{
 			Errors.Clear ();
 			encoding = Encoding.UTF8;
-			
-			inputFile = inputFileName;
+
+			TemplateFile = inputFileName;
 			outputContent = Engine.PreprocessTemplate (inputContent, this, className, classNamespace, out language, out references);
 			
 			return !Errors.HasErrors;
@@ -257,7 +257,7 @@ namespace Mono.TextTemplating
 			path = Environment.ExpandEnvironmentVariables (path);
 			if (Path.IsPathRooted (path))
 				return path;
-			var dir = Path.GetDirectoryName (inputFile);
+			var dir = Path.GetDirectoryName (TemplateFile);
 			var test = Path.Combine (dir, path);
 			if (File.Exists (test) || Directory.Exists (test))
 				return test;
@@ -424,9 +424,6 @@ namespace Mono.TextTemplating
 			get { return Imports; }
 		}
 		
-		string ITextTemplatingEngineHost.TemplateFile {
-			get { return inputFile; }
-		}
 		
 		#endregion
 		

@@ -41,6 +41,7 @@ namespace Mono.TextTemplating
 
 		public string PreprocessTemplate (ParsedTemplate pt, string inputFile, string inputContent, string className)
 		{
+			TemplateFile = inputFile;
 			string classNamespace = null;
 			int s = className.LastIndexOf ('.');
 			if (s > 0) {
@@ -53,6 +54,7 @@ namespace Mono.TextTemplating
 
 		public string ProcessTemplate (ParsedTemplate pt, string inputFile, string inputContent, ref string outputFile)
 		{
+			TemplateFile = inputFile;
 			OutputFile = outputFile;
 			using (var compiled = Engine.CompileTemplate (pt, inputContent, this)) {
 				var result = compiled?.Process ();

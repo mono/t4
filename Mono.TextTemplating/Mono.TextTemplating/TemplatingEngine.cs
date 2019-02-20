@@ -233,7 +233,7 @@ namespace Mono.TextTemplating
 			if (result.Success) {
 				r.TempFiles.AddFile (args.OutputPath, true);
 				if (args.Debug) {
-					r.TempFiles.AddFile (Path.ChangeExtension (args.OutputPath, ".dll"), true);
+					r.TempFiles.AddFile (Path.ChangeExtension (args.OutputPath, ".pdb"), true);
 				}
 				r.PathToAssembly = args.OutputPath;
 			} else if (!r.Errors.HasErrors) {
