@@ -56,9 +56,9 @@ csharp_new_line_before_members_in_anonymous_types = true
 csharp_indent_switch_labels = false
 
 # Prefer "var" everywhere it's apparent
-csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_for_built_in_types = true:none
 csharp_style_var_when_type_is_apparent = true:suggestion
-csharp_style_var_elsewhere = false:suggestion
+csharp_style_var_elsewhere = false:none
 
 # Prefer method-like constructs to have a block body
 csharp_style_expression_bodied_methods = false:none
@@ -76,3 +76,5 @@ csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
 csharp_style_inlined_variable_declaration = true:suggestion
 csharp_style_throw_expression = true:suggestion
 csharp_style_conditional_delegate_call = true:suggestion
+
+dotnet_style_require_accessibility_modifiers = omit_if_default:warning

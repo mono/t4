@@ -5,9 +5,8 @@ image: Visual Studio 2017
 before_build:
 - cmd: msbuild /t:Restore
 build:
+  project: Mono.TextTemplating.sln
   parallel: true
   verbosity: minimal
-after_build:
-- cmd: msbuild /t:Pack
 artifacts:
 - path: packages\**\*.nupkg
