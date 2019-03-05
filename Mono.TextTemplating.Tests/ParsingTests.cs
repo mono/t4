@@ -40,12 +40,12 @@ namespace Mono.TextTemplating.Tests
 Line One
 Line Two
 <#
-foo
+var foo = 5;
 #>
 Line Three <#= bar #>
 Line Four
 <#+ 
-baz \#>
+var s = ""baz \\#>"";
 #>
 ";
 		
@@ -93,7 +93,7 @@ baz \#>
 			Assert.AreEqual (new Location (tf, 4, 3), tk.Location);
 			Assert.AreEqual (new Location (tf, 6, 3), tk.TagEndLocation);
 			Assert.AreEqual (State.Block, tk.State);
-			Assert.AreEqual ("\nfoo\n", tk.Value);
+			Assert.AreEqual ("\nvar foo = 5;\n", tk.Value);
 			
 			//line 7
 			Assert.IsTrue (tk.Advance ());
@@ -119,7 +119,7 @@ baz \#>
 			Assert.AreEqual (new Location (tf, 9, 4), tk.Location);
 			Assert.AreEqual (new Location (tf, 11, 3), tk.TagEndLocation);
 			Assert.AreEqual (State.Helper, tk.State);
-			Assert.AreEqual (" \nbaz \\#>\n", tk.Value);
+			Assert.AreEqual (" \nvar s = \"baz \\\\#>\";\n", tk.Value);
 			
 			//line 12
 			Assert.IsTrue (tk.Advance ());
@@ -157,11 +157,11 @@ baz \#>
 			Assert.AreEqual (new Location (tf, 1, 34), dirs[0].EndLocation);
 			
 			Assert.AreEqual ("Line One\nLine Two\n", content[0].Text);
-			Assert.AreEqual ("\nfoo\n", content[1].Text);
+			Assert.AreEqual ("\nvar foo = 5;\n", content[1].Text);
 			Assert.AreEqual ("Line Three ", content[2].Text);
 			Assert.AreEqual (" bar ", content[3].Text);
 			Assert.AreEqual ("\nLine Four\n", content[4].Text);
-			Assert.AreEqual (" \nbaz \\#>\n", content[5].Text);
+			Assert.AreEqual (" \nvar s = \"baz \\\\#>\";\n", content[5].Text);
 			
 			Assert.AreEqual (SegmentType.Content, content[0].Type);
 			Assert.AreEqual (SegmentType.Block, content[1].Type);

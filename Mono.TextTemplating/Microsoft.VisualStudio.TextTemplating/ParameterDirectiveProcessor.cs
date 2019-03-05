@@ -101,15 +101,44 @@ namespace Microsoft.VisualStudio.TextTemplating
 		{
 			return directiveName == "parameter";
 		}
-		
+
+		static readonly Dictionary<string, string> BuiltinTypesMap = new Dictionary<string, string> {
+			{ "bool", "System.Boolean" },
+			{ "byte", "System.Byte" },
+			{ "sbyte", "System.SByte" },
+			{ "char", "System.Char" },
+			{ "decimal", "System.Decimal" },
+			{ "double", "System.Double" },
+			{ "float ", "System.Single" },
+			{ "int", "System.Int32" },
+			{ "uint", "System.UInt32" },
+			{ "long", "System.Int64" },
+			{ "ulong", "System.UInt64" },
+			{ "object", "System.Object" },
+			{ "short", "System.Int16" },
+			{ "ushort", "System.UInt16" },
+			{ "string", "System.String" }
+		};
+
+		public static string MapTypeName (string typeName)
+		{
+			if (string.IsNullOrEmpty (typeName)) {
+				return "System.String";
+			}
+			if (BuiltinTypesMap.TryGetValue (typeName, out string mappedType)) {
+				return mappedType;
+			}
+			return typeName;
+		}
+
 		public override void ProcessDirective (string directiveName, IDictionary<string, string> arguments)
 		{
-			string name = arguments["name"];
-			string type = arguments["type"];
-			if (string.IsNullOrEmpty (name))
+			if (!arguments.TryGetValue ("name", out string name) || string.IsNullOrEmpty (name)) {
 				throw new DirectiveProcessorException ("Parameter directive has no name argument");
-			if (string.IsNullOrEmpty (type))
-				throw new DirectiveProcessorException ("Parameter directive has no type argument");
+			}
+
+			arguments.TryGetValue ("type", out string type);
+			type = MapTypeName (type);
 			
 			string fieldName = "_" + name + "Field";
 			var typeRef = new CodeTypeReference (type);
@@ -127,25 +156,38 @@ namespace Microsoft.VisualStudio.TextTemplating
 			members.Add (new CodeMemberField (typeRef, fieldName));
 			members.Add (property);
 			
-			string acquiredName = "_" + name + "Acquired";
 			var valRef = new CodeVariableReferenceExpression ("data");
 			var namePrimitive = new CodePrimitiveExpression (name);
 			var sessionRef = new CodePropertyReferenceExpression (thisRef, "Session");
 			var callContextTypeRefExpr = new CodeTypeReferenceExpression ("System.Runtime.Remoting.Messaging.CallContext");
 			var nullPrim = new CodePrimitiveExpression (null);
-			
+
+			bool hasAcquiredCheck = hostSpecific
+#if FEATURE_APPDOMAINS
+				|| true;
+#endif
+				;
+
+			string acquiredName = "_" + name + "Acquired";
 			var acquiredVariable = new CodeVariableDeclarationStatement (typeof (bool), acquiredName, new CodePrimitiveExpression (false));
 			var acquiredVariableRef = new CodeVariableReferenceExpression (acquiredVariable.Name);
-			this.postStatements.Add (acquiredVariable);
-			
+			if (hasAcquiredCheck) {
+				postStatements.Add (acquiredVariable);
+			}
+
 			//checks the local called "data" can be cast and assigned to the field, and if successful, sets acquiredVariable to true
 			var checkCastThenAssignVal = new CodeConditionStatement (
 				new CodeMethodInvokeExpression (
 					new CodeTypeOfExpression (typeRef), "IsAssignableFrom", new CodeMethodInvokeExpression (valRef, "GetType")),
-				new CodeStatement[] {
-					new CodeAssignStatement (fieldRef, new CodeCastExpression (typeRef, valRef)),
-					new CodeAssignStatement (acquiredVariableRef, new CodePrimitiveExpression (true)),
-				},
+				hasAcquiredCheck
+					? new CodeStatement[] {
+						new CodeAssignStatement (fieldRef, new CodeCastExpression (typeRef, valRef)),
+						new CodeAssignStatement (acquiredVariableRef, new CodePrimitiveExpression (true)),
+					}
+					: new CodeStatement [] {
+						new CodeAssignStatement (fieldRef, new CodeCastExpression (typeRef, valRef)),
+					}
+					,
 				new CodeStatement[] {
 					new CodeExpressionStatement (new CodeMethodInvokeExpression (thisRef, "Error",
 					new CodePrimitiveExpression ("The type '" + type + "' of the parameter '" + name + 
@@ -168,11 +210,14 @@ namespace Microsoft.VisualStudio.TextTemplating
 					BooleanAnd (IsFalse (acquiredVariableRef), NotNull (hostRef)),
 					new CodeVariableDeclarationStatement (typeof (string), "data",
 						new CodeMethodInvokeExpression (hostRef, "ResolveParameterValue", nullPrim, nullPrim,  namePrimitive)),
-					new CodeConditionStatement (NotNull (valRef), checkCastThenAssignVal));
+					new CodeConditionStatement (
+						NotNull (valRef),
+						checkCastThenAssignVal));
 				
 				this.postStatements.Add (checkHost);
 			}
-			
+
+#if FEATURE_APPDOMAINS
 			//if acquiredVariable is false, tries to gets the value from the call context
 			var checkCallContext = new CodeConditionStatement (
 				IsFalse (acquiredVariableRef),
@@ -181,6 +226,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 				new CodeConditionStatement (NotNull (valRef), checkCastThenAssignVal));
 			
 			this.postStatements.Add (checkCallContext);
+#endif
 		}
 		
 		static CodeBinaryOperatorExpression NotNull (CodeExpression reference)
