@@ -24,6 +24,7 @@ Package | Description
 --- | ---
 [Mono.TextTemplating](https://www.nuget.org/packages/Mono.TextTemplating) | T4 engine
 [dotnet-t4](https://www.nuget.org/packages/dotnet-t4/) | T4 command-line tool
+[dotnet-t4-project-tool](https://www.nuget.org/packages/dotnet-t4-project-tool/) | T4 command-line tool (DotNetCliToolReference version)
 
 ## Build Status
 
