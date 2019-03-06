@@ -35,7 +35,9 @@ using System.Text;
 using System.Threading;
 using Microsoft.CSharp;
 using Microsoft.VisualStudio.TextTemplating;
+#if FEATURE_ROSLYN
 using Mono.TextTemplating.CodeCompilation;
+#endif
 
 namespace Mono.TextTemplating
 {
@@ -170,7 +172,7 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			var results = CompileCode2 (references, settings, ccu);
+			var results = CompileCode (references, settings, ccu);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
@@ -192,7 +194,8 @@ namespace Mono.TextTemplating
 			return new CompiledTemplate (host, results, settings.GetFullName (), settings.Culture, references.ToArray ());
 		}
 
-		static CompilerResults CompileCode2 (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
+#if FEATURE_ROSLYN
+		static CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
 		{
 			string sourceText;
 			var genOptions = new CodeGeneratorOptions ();
@@ -246,7 +249,7 @@ namespace Mono.TextTemplating
 
 			return r;
 		}
-
+#else
 		static CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
 		{
 			var pars = new CompilerParameters {
@@ -267,6 +270,7 @@ namespace Mono.TextTemplating
 				pars.CompilerOptions = "/noconfig " + pars.CompilerOptions;
 			return settings.Provider.CompileAssemblyFromDom (pars, ccu);
 		}
+#endif
 
 		static string [] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)
 		{
