@@ -15,7 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dotnet-t4", "dotnet-t4\dotnet-t4.csproj", "{6AA924D8-7119-4593-9B56-11D17AC3578E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dotnet-t4-project-tool", "dotnet-t4\dotnet-t4-project-tool.csproj", "{AE33E36D-D7B8-4ECF-86AC-09655B1BC779}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dotnet-t4-project-tool", "dotnet-t4-project-tool\dotnet-t4-project-tool.csproj", "{114B7AEF-61DA-453A-9A84-6DDEA13460B7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,10 +39,10 @@ Global
 		{6AA924D8-7119-4593-9B56-11D17AC3578E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6AA924D8-7119-4593-9B56-11D17AC3578E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6AA924D8-7119-4593-9B56-11D17AC3578E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AE33E36D-D7B8-4ECF-86AC-09655B1BC779}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AE33E36D-D7B8-4ECF-86AC-09655B1BC779}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AE33E36D-D7B8-4ECF-86AC-09655B1BC779}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AE33E36D-D7B8-4ECF-86AC-09655B1BC779}.Release|Any CPU.Build.0 = Release|Any CPU
+		{114B7AEF-61DA-453A-9A84-6DDEA13460B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{114B7AEF-61DA-453A-9A84-6DDEA13460B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{114B7AEF-61DA-453A-9A84-6DDEA13460B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{114B7AEF-61DA-453A-9A84-6DDEA13460B7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

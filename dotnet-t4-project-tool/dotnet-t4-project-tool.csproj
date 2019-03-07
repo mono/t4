@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
     <PackageType>DotNetCliTool</PackageType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -19,5 +19,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
     <Compile Include="..\TextTransform\Options.cs" Link="Options.cs" />
+    <Compile Include="..\dotnet-t4\*.cs" />
   </ItemGroup>
 </Project>
