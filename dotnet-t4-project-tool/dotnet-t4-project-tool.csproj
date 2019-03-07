@@ -5,7 +5,7 @@
     <PackageType>DotNetCliTool</PackageType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <AssemblyName>t4</AssemblyName>
+    <AssemblyName>dotnet-t4</AssemblyName>
     <PackageId>dotnet-t4-project-tool</PackageId>
     <Description>
     T4 text transformation commandline tool.
