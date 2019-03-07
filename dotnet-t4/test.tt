@@ -1,4 +1,33 @@
 <#@ output extension=".hello" #>
-<#@ assembly name="System.Xml" #>
-<#=5*10#>
-blah
+<#@ assembly name="System.Core.dll" #>
+<#@ assembly name="System.Xml.dll" #>
+<#@ assembly name="System.Xml.Linq.dll" #>
+<#
+    // Test System.IO
+   var fileContent = System.IO.File.Exists("C:/temp/test_non_existent_file.txt");
+
+   // Test System.Xml.Linq
+   var xml = System.Xml.Linq.XDocument.Parse("<xml><hello><world /></hello></xml>");
+
+   // Test System.Xml
+   var settings = new System.Xml.XmlReaderSettings();
+   string rootName;
+   using(var reader = System.Xml.XmlReader.Create(new System.IO.StringReader("<xml><hello><world /></hello></xml>"), settings))
+   {
+        rootName = reader.Read() ? reader.Name : string.Empty;
+   }
+
+   // Test System.Linq
+   var even = string.Join(",",
+                System.Linq.Enumerable.Where(
+                System.Linq.Enumerable.Range(1,10),
+                x => x % 2 == 0
+                ));
+#>
+File exists: <#= fileContent #>
+
+Parsed xml: <#= xml #>
+
+Root name: <#= rootName #>
+
+Even numbers: <#= even #>

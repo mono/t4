@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <PackageType>DotNetCliTool</PackageType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <AssemblyName>dotnet-t4</AssemblyName>
+    <PackageId>dotnet-t4-project-tool</PackageId>
+    <Description>
+    T4 text transformation commandline tool.
+    This package is project-installable via `DotNetCliToolReference`.
+    For the dotnet global tool, see `dotnet-t4`.
+    For the app-embeddable engine, see `Mono.TextTemplating`.
+    </Description>
+    <RootNamespace>Mono.TextTemplating</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
+    <Compile Include="..\TextTransform\Options.cs" Link="Options.cs" />
+    <Compile Include="..\dotnet-t4\*.cs" />
+  </ItemGroup>
+</Project>

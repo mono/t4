@@ -40,11 +40,25 @@ namespace Mono.TextTemplating
 #endif
 		ITextTemplatingEngineHost
 	{
+		static readonly Dictionary<string, string> KnownAssemblies = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase)
+		{
+			{ "System.Core.dll", typeof(System.Linq.Enumerable).Assembly.Location },
+			{ "System.Data.dll", typeof(System.Data.DataTable).Assembly.Location },
+			{ "System.Linq.dll", typeof(System.Linq.Enumerable).Assembly.Location },
+			{ "System.Xml.dll", typeof(System.Xml.XmlAttribute).Assembly.Location },
+			{ "System.Xml.Linq.dll", typeof(System.Xml.Linq.XDocument).Assembly.Location },
+
+			{ "System.Core", typeof(System.Linq.Enumerable).Assembly.Location },
+			{ "System.Data", typeof(System.Data.DataTable).Assembly.Location },
+			{ "System.Linq", typeof(System.Linq.Enumerable).Assembly.Location },
+			{ "System.Xml", typeof(System.Xml.XmlAttribute).Assembly.Location },
+			{ "System.Xml.Linq", typeof(System.Xml.Linq.XDocument).Assembly.Location }
+		};
+
 		//re-usable
 		TemplatingEngine engine;
 		
 		//per-run variables
-		string inputFile;
 		Encoding encoding;
 
 		//host properties for consumers to access
@@ -54,12 +68,15 @@ namespace Mono.TextTemplating
 		public List<string> IncludePaths { get; } = new List<string> ();
 		public List<string> ReferencePaths { get; } = new List<string> ();
 		public string OutputFile { get; protected set; }
+		public string TemplateFile { get; protected set; }
 		public bool UseRelativeLinePragmas { get; set; }
 		
 		public TemplateGenerator ()
 		{
 			Refs.Add (typeof (TextTransformation).Assembly.Location);
 			Refs.Add (typeof(Uri).Assembly.Location);
+			Refs.Add (typeof (File).Assembly.Location);
+			Refs.Add (typeof (StringReader).Assembly.Location);
 			Imports.Add ("System");
 		}
 		
@@ -116,7 +133,7 @@ namespace Mono.TextTemplating
 			encoding = Encoding.UTF8;
 
 			OutputFile = outputFileName;
-			inputFile = inputFileName;
+			TemplateFile = inputFileName;
 			outputContent = Engine.ProcessTemplate (inputContent, this);
 			outputFileName = OutputFile;
 			
@@ -161,8 +178,8 @@ namespace Mono.TextTemplating
 		{
 			Errors.Clear ();
 			encoding = Encoding.UTF8;
-			
-			inputFile = inputFileName;
+
+			TemplateFile = inputFileName;
 			outputContent = Engine.PreprocessTemplate (inputContent, this, className, classNamespace, out language, out references);
 			
 			return !Errors.HasErrors;
@@ -205,6 +222,10 @@ namespace Mono.TextTemplating
 			if (assemblyName.Version != null)//Load via GAC and return full path
 				return Assembly.Load (assemblyName).Location;
 
+			if (KnownAssemblies.TryGetValue (assemblyReference, out string mappedAssemblyReference)) {
+				return mappedAssemblyReference;
+			}
+
 			if (!assemblyReference.EndsWith (".dll", StringComparison.OrdinalIgnoreCase) && !assemblyReference.EndsWith (".exe", StringComparison.OrdinalIgnoreCase))
 				return assemblyReference + ".dll";
 			return assemblyReference;
@@ -236,7 +257,7 @@ namespace Mono.TextTemplating
 			path = Environment.ExpandEnvironmentVariables (path);
 			if (Path.IsPathRooted (path))
 				return path;
-			var dir = Path.GetDirectoryName (inputFile);
+			var dir = Path.GetDirectoryName (TemplateFile);
 			var test = Path.Combine (dir, path);
 			if (File.Exists (test) || Directory.Exists (test))
 				return test;
@@ -403,9 +424,6 @@ namespace Mono.TextTemplating
 			get { return Imports; }
 		}
 		
-		string ITextTemplatingEngineHost.TemplateFile {
-			get { return inputFile; }
-		}
 		
 		#endregion
 		

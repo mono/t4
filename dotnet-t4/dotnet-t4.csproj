@@ -5,20 +5,26 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <PackAsTool>true</PackAsTool>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>   
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <AssemblyName>t4</AssemblyName>
     <PackageId>dotnet-t4</PackageId>
+    <Description>
+    Commandline T4 text transformation tool.
+    This package can be installed as a dotnet global tool.
+    For the project-installable `DotNetCliToolReference` version, see `dotnet-t4-project-tool`.
+    For the app-embeddable engine, see `Mono.TextTemplating`.
+    </Description>
     <ToolCommandName>t4</ToolCommandName>
     <RootNamespace>Mono.TextTemplating</RootNamespace>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'Default' ">
     <StartAction>Project</StartAction>
     <StartArguments>test.tt</StartArguments>
     <StartWorkingDirectory>.</StartWorkingDirectory>
     <ExternalConsole>false</ExternalConsole>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
     <Compile Include="..\TextTransform\Options.cs" Link="Options.cs" />

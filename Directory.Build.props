@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
-    <PackageLicenseUrl>http://opensource.org/licenses/MIT</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/mono/t4</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Authors>mhutch</Authors>
     <PackageTags>T4, templating</PackageTags>
     <PackageOutputPath>$(MSBuildThisFileDirectory)packages\$(Configuration)</PackageOutputPath>

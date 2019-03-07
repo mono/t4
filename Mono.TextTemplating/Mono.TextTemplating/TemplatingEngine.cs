@@ -1,21 +1,21 @@
-// 
+//
 // Engine.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,7 +35,9 @@ using System.Text;
 using System.Threading;
 using Microsoft.CSharp;
 using Microsoft.VisualStudio.TextTemplating;
+#if FEATURE_ROSLYN
 using Mono.TextTemplating.CodeCompilation;
+#endif
 
 namespace Mono.TextTemplating
 {
@@ -170,7 +172,7 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			var results = CompileCode2 (references, settings, ccu);
+			var results = CompileCode (references, settings, ccu);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
@@ -192,7 +194,8 @@ namespace Mono.TextTemplating
 			return new CompiledTemplate (host, results, settings.GetFullName (), settings.Culture, references.ToArray ());
 		}
 
-		static CompilerResults CompileCode2 (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
+#if FEATURE_ROSLYN
+		static CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
 		{
 			string sourceText;
 			var genOptions = new CodeGeneratorOptions ();
@@ -233,7 +236,7 @@ namespace Mono.TextTemplating
 			if (result.Success) {
 				r.TempFiles.AddFile (args.OutputPath, true);
 				if (args.Debug) {
-					r.TempFiles.AddFile (Path.ChangeExtension (args.OutputPath, ".dll"), true);
+					r.TempFiles.AddFile (Path.ChangeExtension (args.OutputPath, ".pdb"), true);
 				}
 				r.PathToAssembly = args.OutputPath;
 			} else if (!r.Errors.HasErrors) {
@@ -246,7 +249,7 @@ namespace Mono.TextTemplating
 
 			return r;
 		}
-
+#else
 		static CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
 		{
 			var pars = new CompilerParameters {
@@ -255,18 +258,19 @@ namespace Mono.TextTemplating
 				IncludeDebugInformation = settings.Debug,
 				GenerateInMemory = false,
 			};
-			
+
 			foreach (var r in references)
 				pars.ReferencedAssemblies.Add (r);
-			
+
 			if (settings.Debug)
 				pars.TempFiles.KeepFiles = true;
-			if (string.IsNullOrWhiteSpace (pars.CompilerOptions))
+			if (StringUtil.IsNullOrWhiteSpace (pars.CompilerOptions))
 				pars.CompilerOptions = "/noconfig";
 			else if (!pars.CompilerOptions.Contains ("/noconfig"))
 				pars.CompilerOptions = "/noconfig " + pars.CompilerOptions;
 			return settings.Provider.CompileAssemblyFromDom (pars, ccu);
 		}
+#endif
 
 		static string [] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)
 		{
@@ -289,13 +293,13 @@ namespace Mono.TextTemplating
 			}
 			return resolved.Values.ToArray ();
 		}
-		
+
 		public static TemplateSettings GetSettings (ITextTemplatingEngineHost host, ParsedTemplate pt)
 		{
 			var settings = new TemplateSettings ();
 
 			bool relativeLinePragmas = host.GetHostOption ("UseRelativeLinePragmas") as bool? ?? false;
-			
+
 			foreach (Directive dt in pt.Directives) {
 				switch (dt.Name.ToLowerInvariant ()) {
 				case "template":
@@ -342,7 +346,7 @@ namespace Mono.TextTemplating
 						settings.InternalVisibility = string.Compare (val, "internal", StringComparison.OrdinalIgnoreCase) == 0;
 					}
 					break;
-					
+
 				case "assembly":
 					string name = dt.Extract ("name");
 					if (name == null)
@@ -350,7 +354,7 @@ namespace Mono.TextTemplating
 					else
 						settings.Assemblies.Add (name);
 					break;
-					
+
 				case "import":
 					string namespac = dt.Extract ("namespace");
 					if (namespac == null)
@@ -358,26 +362,26 @@ namespace Mono.TextTemplating
 					else
 						settings.Imports.Add (namespac);
 					break;
-					
+
 				case "output":
 					settings.Extension = dt.Extract ("extension");
 					string encoding = dt.Extract ("encoding");
 					if (encoding != null)
 						settings.Encoding = Encoding.GetEncoding (encoding);
 					break;
-				
+
 				case "include":
 					throw new InvalidOperationException ("Include is handled in the parser");
-					
+
 				case "parameter":
 					AddDirective (settings, host, nameof (ParameterDirectiveProcessor), dt);
 					continue;
-					
+
 				default:
 					string processorName = dt.Extract ("Processor");
 					if (processorName == null)
 						throw new InvalidOperationException ("Custom directive '" + dt.Name + "' does not specify a processor");
-					
+
 					AddDirective (settings, host, processorName, dt);
 					continue;
 				}
@@ -396,7 +400,7 @@ namespace Mono.TextTemplating
 					settings.DirectiveProcessors [processor.GetType ().FullName] = processor;
 				}
 			}
-			
+
 			//initialize the custom processors
 			foreach (var kv in settings.DirectiveProcessors) {
 				kv.Value.Initialize (host);
@@ -417,17 +421,17 @@ namespace Mono.TextTemplating
 				if (hs != null)
 					hs.SetProcessingRunIsHostSpecific (settings.HostSpecific);
 			}
-			
+
 			if (settings.Name == null)
 				settings.Name = string.Format ("GeneratedTextTransformation{0:x}", new Random ().Next ());
 			if (settings.Namespace == null)
 				settings.Namespace = typeof (TextTransformation).Namespace;
-			
+
 			//resolve the CodeDOM provider
 			if (String.IsNullOrEmpty (settings.Language)) {
 				settings.Language = "C#";
 			}
-			
+
 			if (settings.Language == "C#v3.5") {
 				var providerOptions = new Dictionary<string, string> ();
 				providerOptions.Add ("CompilerVersion", "v3.5");
@@ -436,14 +440,14 @@ namespace Mono.TextTemplating
 			else {
 				settings.Provider = CodeDomProvider.CreateProvider (settings.Language);
 			}
-			
+
 			if (settings.Provider == null) {
 				pt.LogError ("A provider could not be found for the language '" + settings.Language + "'");
 				return settings;
 			}
 
 			settings.RelativeLinePragmas = relativeLinePragmas;
-			
+
 			return settings;
 		}
 
@@ -484,7 +488,7 @@ namespace Mono.TextTemplating
 				builder.Append (text);
 			return builder.ToString ();
 		}
-		
+
 		static void AddDirective (TemplateSettings settings, ITextTemplatingEngineHost host, string processorName, Directive directive)
 		{
 			if (!settings.DirectiveProcessors.TryGetValue (processorName, out IDirectiveProcessor processor)) {
@@ -504,7 +508,7 @@ namespace Mono.TextTemplating
 			}
 			settings.CustomDirectives.Add (new CustomDirective (processorName, directive));
 		}
-		
+
 		static bool ComplainExcessAttributes (Directive dt, ParsedTemplate pt)
 		{
 			if (dt.Attributes.Count == 0)
@@ -525,21 +529,21 @@ namespace Mono.TextTemplating
 			pt.LogWarning (sb.ToString (), dt.StartLocation);
 			return false;
 		}
-		
+
 		static void ProcessDirectives (string content, ParsedTemplate pt, TemplateSettings settings)
 		{
 			foreach (var processor in settings.DirectiveProcessors.Values) {
 				processor.StartProcessingRun (settings.Provider, content, pt.Errors);
 			}
-			
+
 			foreach (var dt in settings.CustomDirectives) {
 				var processor = settings.DirectiveProcessors[dt.ProcessorName];
 				processor.ProcessDirective (dt.Directive.Name, dt.Directive.Attributes);
 			}
-			
+
 			foreach (var processor in settings.DirectiveProcessors.Values) {
 				processor.FinishProcessingRun ();
-				
+
 				var imports = processor.GetImportsForProcessingRun ();
 				if (imports != null)
 					settings.Imports.UnionWith (imports);
@@ -548,7 +552,7 @@ namespace Mono.TextTemplating
 					settings.Assemblies.UnionWith (references);
 			}
 		}
-		
+
 		public static CodeCompileUnit GenerateCompileUnit (ITextTemplatingEngineHost host, string content, ParsedTemplate pt, TemplateSettings settings)
 		{
 			ProcessDirectives (content, pt, settings);
@@ -559,7 +563,7 @@ namespace Mono.TextTemplating
 			var ccu = new CodeCompileUnit ();
 			var namespac = string.IsNullOrEmpty (settings.Namespace)? new CodeNamespace () : new CodeNamespace (settings.Namespace);
 			ccu.Namespaces.Add (namespac);
-			
+
 			foreach (string ns in settings.Imports.Union (host.StandardImports))
 				namespac.Imports.Add (new CodeNamespaceImport (ns));
 
@@ -578,7 +582,7 @@ namespace Mono.TextTemplating
 				type.BaseTypes.Add (new CodeTypeReference (settings.Name + "Base"));
 			}
 			namespac.Types.Add (type);
-			
+
 			//prep the transform method
 			var transformMeth = new CodeMemberMethod {
 				Name = "TransformText",
@@ -587,11 +591,11 @@ namespace Mono.TextTemplating
 			};
 			if (!settings.IncludePreprocessingHelpers)
 				transformMeth.Attributes |= MemberAttributes.Override;
-			
+
 			transformMeth.Statements.Add (new CodeAssignStatement (
 				new CodePropertyReferenceExpression (new CodeThisReferenceExpression (), "GenerationEnvironment"),
 				new CodePrimitiveExpression (null)));
-			
+
 			CodeExpression toStringHelper;
 			if (settings.IsPreprocessed) {
 				toStringHelper = new CodePropertyReferenceExpression (new CodeThisReferenceExpression (), "ToStringHelper");
@@ -599,12 +603,12 @@ namespace Mono.TextTemplating
 				toStringHelper = new CodeTypeReferenceExpression (
 				new CodeTypeReference (typeof (ToStringHelper), CodeTypeReferenceOptions.GlobalReference));
 			}
-			
+
 			//method references that will need to be used multiple times
 			var writeMeth = new CodeMethodReferenceExpression (new CodeThisReferenceExpression (), "Write");
 			var toStringMeth = new CodeMethodReferenceExpression (toStringHelper, "ToStringWithCulture");
 			bool helperMode = false;
-			
+
 			//build the code from the segments
 			foreach (TemplateSegment seg in pt.Content) {
 				CodeStatement st = null;
@@ -655,7 +659,7 @@ namespace Mono.TextTemplating
 					}
 				}
 			}
-			
+
 			//complete the transform method
 			transformMeth.Statements.Add (new CodeMethodReturnStatement (
 				new CodeMethodInvokeExpression (
@@ -664,7 +668,7 @@ namespace Mono.TextTemplating
 						"GenerationEnvironment"),
 						"ToString")));
 			type.Members.Add (transformMeth);
-			
+
 			//class code and attributes from processors
 			foreach (var processor in settings.DirectiveProcessors.Values) {
 				string classCode = processor.GetClassCodeForProcessingRun ();
@@ -677,14 +681,14 @@ namespace Mono.TextTemplating
 					type.CustomAttributes.AddRange (atts);
 				}
 			}
-			
+
 			//generate the Host property if needed
 			if (settings.HostSpecific && !settings.HostPropertyOnBase) {
 				GenerateHostProperty (type, settings.HostType);
 			}
-			
+
 			GenerateInitializationMethod (type, settings);
-			
+
 			if (settings.IncludePreprocessingHelpers) {
 				var baseClass = new CodeTypeDeclaration (settings.Name + "Base");
 				GenerateProcessingHelpers (baseClass, settings);
@@ -705,19 +709,19 @@ namespace Mono.TextTemplating
 				LinePragma = location
 			};
 		}
-		
+
 		static void GenerateHostProperty (CodeTypeDeclaration type, Type hostType)
 		{
 			var hostTypeRef = new CodeTypeReference (hostType, CodeTypeReferenceOptions.GlobalReference);
 			var hostField = new CodeMemberField (hostTypeRef, "hostValue");
 			hostField.Attributes = (hostField.Attributes & ~MemberAttributes.AccessMask) | MemberAttributes.Private;
 			type.Members.Add (hostField);
-			
+
 			var hostProp = GenerateGetterSetterProperty ("Host", hostField);
 			hostProp.Attributes = MemberAttributes.Public | MemberAttributes.Final;
 			type.Members.Add (hostProp);
 		}
-		
+
 		static void GenerateInitializationMethod (CodeTypeDeclaration type, TemplateSettings settings)
 		{
 			//initialization method
@@ -766,14 +770,14 @@ namespace Mono.TextTemplating
 					));
 				}
 			}
-			
+
 			//pre-init code from processors
 			foreach (var processor in settings.DirectiveProcessors.Values) {
 				string code = processor.GetPreInitializationCodeForProcessingRun ();
 				if (code != null)
 					initializeMeth.Statements.Add (new CodeSnippetStatement (code));
 			}
-			
+
 			//base call
 			if (!settings.IncludePreprocessingHelpers) {
 				initializeMeth.Statements.Add (
@@ -782,42 +786,42 @@ namespace Mono.TextTemplating
 							new CodeBaseReferenceExpression (),
 							"Initialize")));
 			}
-			
+
 			//post-init code from processors
 			foreach (var processor in settings.DirectiveProcessors.Values) {
 				string code = processor.GetPostInitializationCodeForProcessingRun ();
 				if (code != null)
 					initializeMeth.Statements.Add (new CodeSnippetStatement (code));
 			}
-			
+
 			type.Members.Add (initializeMeth);
 		}
-		
+
 		static void GenerateProcessingHelpers (CodeTypeDeclaration type, TemplateSettings settings)
 		{
 			var thisRef = new CodeThisReferenceExpression ();
 			var sbTypeRef = TypeRef<StringBuilder> ();
-			
+
 			var sessionField = PrivateField (TypeRef<IDictionary<string,object>> (), "session");
 			var sessionProp = GenerateGetterSetterProperty ("Session", sessionField);
 			sessionProp.Attributes = MemberAttributes.Public;
-			
+
 			var builderField = PrivateField (sbTypeRef, "builder");
 			var builderFieldRef = new CodeFieldReferenceExpression (thisRef, builderField.Name);
-			
+
 			var generationEnvironmentProp = GenerateGetterSetterProperty ("GenerationEnvironment", builderField);
 			AddPropertyGetterInitializationIfFieldIsNull (generationEnvironmentProp, builderFieldRef, TypeRef<StringBuilder> ());
-			
+
 			type.Members.Add (builderField);
 			type.Members.Add (sessionField);
 			type.Members.Add (sessionProp);
 			type.Members.Add (generationEnvironmentProp);
-			
+
 			AddErrorHelpers (type);
 			AddIndentHelpers (type);
 			AddWriteHelpers (type);
 		}
-		
+
 		static void AddPropertyGetterInitializationIfFieldIsNull (CodeMemberProperty property, CodeFieldReferenceExpression fieldRef, CodeTypeReference typeRef)
 		{
 			var fieldInit = FieldInitializationIfNull (fieldRef, typeRef);
@@ -831,7 +835,7 @@ namespace Mono.TextTemplating
 					CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression (null)),
 				new CodeAssignStatement (fieldRef, new CodeObjectCreateExpression (typeRef)));
 		}
-		
+
 		static void AddErrorHelpers (CodeTypeDeclaration type)
 		{
 			var cecTypeRef = TypeRef<CompilerErrorCollection> ();
@@ -839,16 +843,16 @@ namespace Mono.TextTemplating
 			var stringTypeRef = TypeRef<string> ();
 			var nullPrim = new CodePrimitiveExpression (null);
 			var minusOnePrim = new CodePrimitiveExpression (-1);
-			
+
 			var errorsField = PrivateField (cecTypeRef, "errors");
 			var errorsFieldRef = new CodeFieldReferenceExpression (thisRef, errorsField.Name);
-			
+
 			var errorsProp = GenerateGetterProperty ("Errors", errorsField);
 			errorsProp.Attributes = MemberAttributes.Family | MemberAttributes.Final;
 			errorsProp.GetStatements.Insert (0, FieldInitializationIfNull (errorsFieldRef, TypeRef<CompilerErrorCollection>()));
-			
+
 			var errorsPropRef = new CodePropertyReferenceExpression (new CodeThisReferenceExpression (), "Errors");
-			
+
 			var compilerErrorTypeRef = TypeRef<CompilerError> ();
 			var errorMeth = new CodeMemberMethod {
 				Name = "Error",
@@ -858,7 +862,7 @@ namespace Mono.TextTemplating
 			errorMeth.Statements.Add (new CodeMethodInvokeExpression (errorsPropRef, "Add",
 				new CodeObjectCreateExpression (compilerErrorTypeRef, nullPrim, minusOnePrim, minusOnePrim, nullPrim,
 					new CodeArgumentReferenceExpression ("message"))));
-			
+
 			var warningMeth = new CodeMemberMethod {
 				Name = "Warning",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
@@ -871,13 +875,13 @@ namespace Mono.TextTemplating
 				new CodeVariableReferenceExpression ("val"), "IsWarning"), new CodePrimitiveExpression (true)));
 			warningMeth.Statements.Add (new CodeMethodInvokeExpression (errorsPropRef, "Add",
 				new CodeVariableReferenceExpression ("val")));
-			
+
 			type.Members.Add (errorsField);
 			type.Members.Add (errorMeth);
 			type.Members.Add (warningMeth);
 			type.Members.Add (errorsProp);
 		}
-		
+
 		static void AddIndentHelpers (CodeTypeDeclaration type)
 		{
 			var stringTypeRef = TypeRef<string> ();
@@ -886,20 +890,20 @@ namespace Mono.TextTemplating
 			var stringEmptyRef = new CodeFieldReferenceExpression (new CodeTypeReferenceExpression (stringTypeRef), "Empty");
 			var intTypeRef = TypeRef<int> ();
 			var stackIntTypeRef = TypeRef<Stack<int>> ();
-			
+
 			var indentsField = PrivateField (stackIntTypeRef, "indents");
 			var indentsFieldRef = new CodeFieldReferenceExpression (thisRef, indentsField.Name);
-			
+
 			var indentsProp = GenerateGetterProperty ("Indents", indentsField);
 			indentsProp.Attributes = MemberAttributes.Private;
 			AddPropertyGetterInitializationIfFieldIsNull (indentsProp, indentsFieldRef, TypeRef<Stack<int>> ());
-			
+
 			var indentsPropRef = new CodeFieldReferenceExpression (thisRef, indentsProp.Name);
-			
+
 			var currentIndentField = PrivateField (stringTypeRef, "currentIndent");
 			currentIndentField.InitExpression = stringEmptyRef;
 			var currentIndentFieldRef = new CodeFieldReferenceExpression (thisRef, currentIndentField.Name);
-			
+
 			var popIndentMeth = new CodeMemberMethod {
 				Name = "PopIndent",
 				ReturnType = stringTypeRef,
@@ -919,7 +923,7 @@ namespace Mono.TextTemplating
 			popIndentMeth.Statements.Add (new CodeAssignStatement (currentIndentFieldRef,
 				new CodeMethodInvokeExpression (currentIndentFieldRef, "Substring", zeroPrim, new CodeVariableReferenceExpression ("lastPos"))));
 			popIndentMeth.Statements.Add (new CodeMethodReturnStatement (new CodeVariableReferenceExpression ("last")));
-			
+
 			var pushIndentMeth = new CodeMemberMethod {
 				Name = "PushIndent",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
@@ -929,14 +933,14 @@ namespace Mono.TextTemplating
 				new CodePropertyReferenceExpression (new CodeArgumentReferenceExpression ("indent"), "Length")));
 			pushIndentMeth.Statements.Add (new CodeAssignStatement (currentIndentFieldRef,
 				new CodeBinaryOperatorExpression (currentIndentFieldRef, CodeBinaryOperatorType.Add, new CodeArgumentReferenceExpression ("indent"))));
-			
+
 			var clearIndentMeth = new CodeMemberMethod {
 				Name = "ClearIndent",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
 			clearIndentMeth.Statements.Add (new CodeAssignStatement (currentIndentFieldRef, stringEmptyRef));
 			clearIndentMeth.Statements.Add (new CodeMethodInvokeExpression (indentsPropRef, "Clear"));
-			
+
 			var currentIndentProp = GenerateGetterProperty ("CurrentIndent", currentIndentField);
 			type.Members.Add (currentIndentField);
 			type.Members.Add (indentsField);
@@ -946,30 +950,30 @@ namespace Mono.TextTemplating
 			type.Members.Add (currentIndentProp);
 			type.Members.Add (indentsProp);
 		}
-		
+
 		static void AddWriteHelpers (CodeTypeDeclaration type)
 		{
 			var stringTypeRef = TypeRef<string> ();
 			var thisRef = new CodeThisReferenceExpression ();
 			var genEnvPropRef = new CodePropertyReferenceExpression (thisRef, "GenerationEnvironment");
 			var currentIndentFieldRef = new CodeFieldReferenceExpression (thisRef, "currentIndent");
-			
+
 			var textToAppendParam = new CodeParameterDeclarationExpression (stringTypeRef, "textToAppend");
 			var formatParam = new CodeParameterDeclarationExpression (stringTypeRef, "format");
 			var argsParam = new CodeParameterDeclarationExpression (TypeRef<object[]> (), "args");
 			argsParam.CustomAttributes.Add (new CodeAttributeDeclaration (TypeRef<ParamArrayAttribute> ()));
-			
+
 			var textToAppendParamRef = new CodeArgumentReferenceExpression ("textToAppend");
 			var formatParamRef = new CodeArgumentReferenceExpression ("format");
 			var argsParamRef = new CodeArgumentReferenceExpression ("args");
-			
+
 			var writeMeth = new CodeMemberMethod {
 				Name = "Write",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
 			};
 			writeMeth.Parameters.Add (textToAppendParam);
 			writeMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "Append", new CodeArgumentReferenceExpression ("textToAppend")));
-			
+
 			var writeArgsMeth = new CodeMemberMethod {
 				Name = "Write",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
@@ -977,7 +981,7 @@ namespace Mono.TextTemplating
 			writeArgsMeth.Parameters.Add (formatParam);
 			writeArgsMeth.Parameters.Add (argsParam);
 			writeArgsMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "AppendFormat", formatParamRef, argsParamRef));
-			
+
 			var writeLineMeth = new CodeMemberMethod {
 				Name = "WriteLine",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
@@ -985,7 +989,7 @@ namespace Mono.TextTemplating
 			writeLineMeth.Parameters.Add (textToAppendParam);
 			writeLineMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "Append", currentIndentFieldRef));
 			writeLineMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "AppendLine", textToAppendParamRef));
-			
+
 			var writeLineArgsMeth = new CodeMemberMethod {
 				Name = "WriteLine",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
@@ -995,31 +999,31 @@ namespace Mono.TextTemplating
 			writeLineArgsMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "Append", currentIndentFieldRef));
 			writeLineArgsMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "AppendFormat", formatParamRef, argsParamRef));
 			writeLineArgsMeth.Statements.Add (new CodeMethodInvokeExpression (genEnvPropRef, "AppendLine"));
-			
+
 			type.Members.Add (writeMeth);
 			type.Members.Add (writeArgsMeth);
 			type.Members.Add (writeLineMeth);
 			type.Members.Add (writeLineArgsMeth);
 		}
-		
+
 		static void AddToStringHelper (CodeTypeDeclaration type, TemplateSettings settings)
 		{
 			var helperCls = new CodeTypeDeclaration ("ToStringInstanceHelper") {
 				IsClass = true,
 				TypeAttributes = TypeAttributes.NestedPublic,
 			};
-			
+
 			var formatProviderField = PrivateField (TypeRef<IFormatProvider> (), "formatProvider");
 			formatProviderField.InitExpression = new CodePropertyReferenceExpression (
 				new CodeTypeReferenceExpression (TypeRef<System.Globalization.CultureInfo> ()), "InvariantCulture");
 			var formatProviderFieldRef = new CodeFieldReferenceExpression (new CodeThisReferenceExpression (), formatProviderField.Name);
-			
+
 			var formatProviderProp = GenerateGetterSetterProperty ("FormatProvider", formatProviderField);
 			MakeSimpleSetterIgnoreNull (formatProviderProp);
-			
+
 			helperCls.Members.Add (formatProviderField);
 			helperCls.Members.Add (formatProviderProp);
-			
+
 			var meth = new CodeMemberMethod {
 				Name = "ToStringWithCulture",
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
@@ -1027,23 +1031,23 @@ namespace Mono.TextTemplating
 			};
 			meth.Parameters.Add (new CodeParameterDeclarationExpression (TypeRef<object> (), "objectToConvert"));
 			var paramRef = new CodeArgumentReferenceExpression ("objectToConvert");
-			
+
 			meth.Statements.Add (NullCheck (paramRef, paramRef.ParameterName));
-			
+
 			var typeLocal = new CodeVariableDeclarationStatement (TypeRef<Type> (), "type", new CodeMethodInvokeExpression (paramRef, "GetType"));
 			var typeLocalRef = new CodeVariableReferenceExpression (typeLocal.Name);
 			meth.Statements.Add (typeLocal);
-			
+
 			var iConvertibleTypeLocal = new CodeVariableDeclarationStatement (TypeRef<Type> (), "iConvertibleType",
 				new CodeTypeOfExpression (TypeRef<IConvertible> ()));
 			var iConvertibleTypeLocalRef = new CodeVariableReferenceExpression (iConvertibleTypeLocal.Name);
 			meth.Statements.Add (iConvertibleTypeLocal);
-			
+
 			meth.Statements.Add (new CodeConditionStatement (
 				new CodeMethodInvokeExpression (iConvertibleTypeLocalRef, "IsAssignableFrom", typeLocalRef),
 				new CodeMethodReturnStatement (new CodeMethodInvokeExpression (
 					new CodeCastExpression (TypeRef<IConvertible> (), paramRef), "ToString", formatProviderFieldRef))));
-			
+
 			var methInfoLocal = new CodeVariableDeclarationStatement (TypeRef<MethodInfo> (), "methInfo",
 				new CodeMethodInvokeExpression (typeLocalRef, "GetMethod",
 					new CodePrimitiveExpression ("ToString"),
@@ -1055,12 +1059,12 @@ namespace Mono.TextTemplating
 					new CodeMethodInvokeExpression (
 					methInfoLocalRef, "Invoke", paramRef,
 					new CodeArrayCreateExpression (TypeRef<object> (), new CodeExpression [] { formatProviderFieldRef } ))))));
-			
+
 			meth.Statements.Add (new CodeMethodReturnStatement (new CodeMethodInvokeExpression (paramRef, "ToString")));
-			
+
 			helperCls.Members.Add (meth);
-			
-			
+
+
 			var helperFieldName = settings.Provider.CreateValidIdentifier ("_toStringHelper");
 			var helperField = PrivateField (new CodeTypeReference (helperCls.Name), helperFieldName);
 			helperField.InitExpression = new CodeObjectCreateExpression (helperField.Type);
@@ -1068,14 +1072,14 @@ namespace Mono.TextTemplating
 			type.Members.Add (GenerateGetterProperty ("ToStringHelper", helperField));
 			type.Members.Add (helperCls);
 		}
-		
+
 #region CodeDom helpers
-		
+
 		static CodeTypeReference TypeRef<T> ()
 		{
 			return new CodeTypeReference (typeof (T), CodeTypeReferenceOptions.GlobalReference);
 		}
-		
+
 		static CodeMemberProperty GenerateGetterSetterProperty (string propertyName, CodeMemberField field)
 		{
 			var prop = new CodeMemberProperty {
@@ -1088,7 +1092,7 @@ namespace Mono.TextTemplating
 			AddSetter (prop, fieldRef);
 			return prop;
 		}
-		
+
 		static CodeMemberProperty GenerateGetterProperty (string propertyName, CodeMemberField field)
 		{
 			var prop = new CodeMemberProperty {
@@ -1101,19 +1105,19 @@ namespace Mono.TextTemplating
 			AddGetter (prop, fieldRef);
 			return prop;
 		}
-		
+
 		static void AddSetter (CodeMemberProperty property, CodeFieldReferenceExpression fieldRef)
 		{
 			property.HasSet = true;
 			property.SetStatements.Add (new CodeAssignStatement (fieldRef, new CodePropertySetValueReferenceExpression ()));
 		}
-		
+
 		static void AddGetter (CodeMemberProperty property, CodeFieldReferenceExpression fieldRef)
 		{
 			property.HasGet = true;
 			property.GetStatements.Add (new CodeMethodReturnStatement (fieldRef));
 		}
-		
+
 		static void MakeGetterLazy (CodeMemberProperty property, CodeFieldReferenceExpression fieldRef, CodeExpression initExpression)
 		{
 			property.GetStatements.Insert (0, new CodeConditionStatement (
@@ -1128,7 +1132,7 @@ namespace Mono.TextTemplating
 				NotNull (new CodePropertySetValueReferenceExpression ()),
 				property.SetStatements [0]);
 		}
-		
+
 		static CodeStatement NullCheck (CodeExpression expr, string exceptionMessage)
 		{
 			return new CodeConditionStatement (
@@ -1138,27 +1142,27 @@ namespace Mono.TextTemplating
 				new CodePrimitiveExpression (exceptionMessage)))
 			);
 		}
-		
+
 		static CodeBinaryOperatorExpression NotNull (CodeExpression reference)
 		{
 			return new CodeBinaryOperatorExpression (reference, CodeBinaryOperatorType.IdentityInequality, new CodePrimitiveExpression (null));
 		}
-		
+
 		static CodeBinaryOperatorExpression IsNull (CodeExpression reference)
 		{
 			return new CodeBinaryOperatorExpression (reference, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression (null));
 		}
-		
+
 		static CodeBinaryOperatorExpression IsFalse (CodeExpression expr)
 		{
 			return new CodeBinaryOperatorExpression (expr, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression (false));
 		}
-		
+
 		static CodeBinaryOperatorExpression BooleanAnd (CodeExpression expr1, CodeExpression expr2)
 		{
 			return new CodeBinaryOperatorExpression (expr1, CodeBinaryOperatorType.BooleanAnd, expr2);
 		}
-		
+
 		static CodeStatement ArgNullCheck (CodeExpression value, params CodeExpression[] argNullExcArgs)
 		{
 			return new CodeConditionStatement (
@@ -1166,7 +1170,7 @@ namespace Mono.TextTemplating
 					CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression (null)),
 				new CodeThrowExceptionStatement (new CodeObjectCreateExpression (typeof (ArgumentNullException), argNullExcArgs)));
 		}
-		
+
 		static CodeMemberField PrivateField (CodeTypeReference typeRef, string name)
 		{
 			return new CodeMemberField (typeRef, name) {
