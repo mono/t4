@@ -257,7 +257,7 @@ namespace Mono.TextTemplating
 			path = Environment.ExpandEnvironmentVariables (path);
 			if (Path.IsPathRooted (path))
 				return path;
-			var dir = Path.GetDirectoryName (TemplateFile);
+			var dir = Path.GetDirectoryName (TemplateFile) ?? string.Empty;
 			var test = Path.Combine (dir, path);
 			if (File.Exists (test) || Directory.Exists (test))
 				return test;
