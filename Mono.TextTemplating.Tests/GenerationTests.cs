@@ -60,6 +60,16 @@ namespace Mono.TextTemplating.Tests
 		}
 
 		[Test]
+		public void IncludeFileThatDoesNotExistTest ()
+		{
+			var gen = new TemplateGenerator ();
+			string tmp = null;
+			gen.ProcessTemplate (null, "<#@ include file=\"none.tt\" #>", ref tmp, out tmp);
+			Assert.IsTrue (gen.Errors.OfType<CompilerError> ().First ().ErrorText
+				.StartsWith ("Could not read included file 'none.tt'"));
+		}
+
+		[Test]
 		public void Generate ()
 		{
 			string Input = ParsingTests.ParseSample1;
