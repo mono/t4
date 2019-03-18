@@ -11,7 +11,7 @@
     <DefineConstants Condition="'$(TargetFramework)'!='netstandard2.0'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
     <DefineConstants Condition="'$(TargetFramework)'!='net35'">$(DefineConstants);FEATURE_ROSLYN</DefineConstants>
     <DefaultItemExcludes Condition="'$(TargetFramework)'=='net35'">$(DefaultItemExcludes);Mono.TextTemplating.CodeCompilation\**</DefaultItemExcludes>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net35'">$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Client</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net35' AND '$(OS)' == 'Windows_NT'">$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Client</FrameworkPathOverride>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.CodeDom" Version="4.4.0" Condition="'$(TargetFramework)'=='netstandard2.0'" />
