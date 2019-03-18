@@ -184,10 +184,10 @@ namespace Mono.TextTemplating
 			var templateClassFullName = string.Concat(settings.Namespace, ".", settings.Name);
 			if (domain != null) {
 				var type = typeof(CompiledTemplate);
-				var obj = domain.CreateInstanceFromAndUnwrap (type.Assembly.Location, type.FullName, false,
-					BindingFlags.Default, null,
-					new object[] { host, results, templateClassFullName, settings.Culture, references.ToArray () },
-					null, null);
+				var obj = domain.CreateInstanceFromAndUnwrap (type.Assembly.Location,
+					type.FullName,
+					new object[] { host, results, templateClassFullName, settings.Culture, references.ToArray () });
+				
 				return (CompiledTemplate)obj;
 			}
 #endif
