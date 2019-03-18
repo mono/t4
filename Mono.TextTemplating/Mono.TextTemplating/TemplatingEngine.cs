@@ -181,6 +181,7 @@ namespace Mono.TextTemplating
 
 #if FEATURE_APPDOMAINS
 			var domain = host.ProvideTemplatingAppDomain (content);
+			var templateClassFullName = string.Concat(settings.Namespace, ".", settings.Name);
 			if (domain != null) {
 				var type = typeof(CompiledTemplate);
 				var obj = domain.CreateInstanceFromAndUnwrap (type.Assembly.Location, type.FullName, false,
