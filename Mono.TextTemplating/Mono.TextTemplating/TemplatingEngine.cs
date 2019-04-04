@@ -222,6 +222,10 @@ namespace Mono.TextTemplating
 			File.Delete (tempFolder);
 			Directory.CreateDirectory (tempFolder);
 
+			if (settings.Log != null) {
+				settings.Log.WriteLine ($"Generating code in '{tempFolder}'");
+			}
+
 			var sourceFilename = Path.Combine (tempFolder, settings.Name + "." + settings.Provider.FileExtension);
 			File.WriteAllText (sourceFilename, sourceText);
 
@@ -235,7 +239,7 @@ namespace Mono.TextTemplating
 
 			var compiler = new CscCodeCompiler (runtime);
 
-			var result = compiler.CompileFile (args, CancellationToken.None).Result;
+			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
 
 			var r = new CompilerResults (new TempFileCollection ());
 			r.TempFiles.AddFile (sourceFilename, false);

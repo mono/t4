@@ -21,14 +21,14 @@
 // THE SOFTWARE.
 
 using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
-using Mono.Options;
-using System.Linq;
 using Microsoft.VisualStudio.TextTemplating;
-using System.CodeDom.Compiler;
+using Mono.Options;
 
 namespace Mono.TextTemplating
 {
@@ -60,6 +60,7 @@ namespace Mono.TextTemplating
 			var properties = new Dictionary<string,string> ();
 			string preprocessClassName = null;
 			bool debug = false;
+			bool verbose = false;
 
 			optionSet = new OptionSet {
 				{
@@ -106,6 +107,11 @@ namespace Mono.TextTemplating
 					"debug",
 					"Generate debug symbols and keep temp files",
 					s => debug = true
+				},
+				{
+					"v|verbose",
+					"Generate debug symbols and keep temp files",
+					s => verbose = true
 				},
 				{
 					"h|?|help",
@@ -189,6 +195,9 @@ namespace Mono.TextTemplating
 			TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
 			if (debug) {
 				settings.Debug = true;
+			}
+			if (verbose) {
+				settings.Log = Console.Out;
 			}
 
 			if (pt.Errors.Count > 0) {

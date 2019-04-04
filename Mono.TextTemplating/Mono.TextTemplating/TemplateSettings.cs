@@ -28,6 +28,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TextTemplating;
+using System.IO;
 
 namespace Mono.TextTemplating
 {
@@ -44,6 +45,7 @@ namespace Mono.TextTemplating
 		public bool HostSpecific { get; set; }
 		public bool HostPropertyOnBase { get; set; }
 		public bool Debug { get; set; }
+		public TextWriter Log { get; set; }
 		public string Inherits { get; set; }
 		public string Name { get; set; }
 		public string Namespace { get; set; }
