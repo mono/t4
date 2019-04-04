@@ -77,7 +77,7 @@ namespace Mono.TextTemplating
 		}
 
 		public string PreprocessTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
-			string classNamespace, out string language, out string [] references)
+			string classNamespace, out string language, out string [] references, TemplateSettings settings = null)
 		{
 			if (content == null)
 				throw new ArgumentNullException (nameof (content));
@@ -88,16 +88,16 @@ namespace Mono.TextTemplating
 			if (className == null)
 				throw new ArgumentNullException (nameof (className));
 
-			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references);
+			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references, settings);
 		}
 
 		string PreprocessTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
-			string classNamespace, out string language, out string [] references)
+			string classNamespace, out string language, out string [] references, TemplateSettings settings = null)
 		{
 			language = null;
 			references = null;
 
-			var settings = GetSettings (host, pt);
+			settings = settings ?? GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
@@ -139,19 +139,27 @@ namespace Mono.TextTemplating
 			return CompileTemplateInternal (pt, content, host);
 		}
 
-		public CompiledTemplate CompileTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host)
+		public CompiledTemplate CompileTemplate (
+			ParsedTemplate pt,
+			string content,
+			ITextTemplatingEngineHost host,
+			TemplateSettings settings = null)
 		{
 			if (pt == null)
 				throw new ArgumentNullException (nameof (pt));
 			if (host == null)
 				throw new ArgumentNullException (nameof (host));
 
-			return CompileTemplateInternal (pt, content, host);
+			return CompileTemplateInternal (pt, content, host, settings);
 		}
 
-		CompiledTemplate CompileTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host)
+		CompiledTemplate CompileTemplateInternal (
+			ParsedTemplate pt,
+			string content,
+			ITextTemplatingEngineHost host,
+			TemplateSettings settings = null)
 		{
-			var settings = GetSettings (host, pt);
+			settings = settings ?? GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
