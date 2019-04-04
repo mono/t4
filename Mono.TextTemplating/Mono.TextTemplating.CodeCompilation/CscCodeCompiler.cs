@@ -118,7 +118,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				if (runtime.Kind == RuntimeKind.NetCore) {
 					AddIfNotPresent ("netstandard.dll");
 					AddIfNotPresent ("System.Runtime.dll");
-					//because we're referencing the impl not the ref asms, we end us
+					//because we're referencing the impl not the ref asms, we end up
 					//having to ref internals
 					AddIfNotPresent ("System.Private.CoreLib.dll");
 				}
@@ -186,7 +186,8 @@ namespace Mono.TextTemplating.CodeCompilation
 				Success = result == 0,
 				Errors = errors,
 				ExitCode = result,
-				Output = outputList
+				Output = outputList,
+				ResponseFile = rspPath
 			};
 		}
 	}

@@ -238,6 +238,7 @@ namespace Mono.TextTemplating
 
 			var r = new CompilerResults (new TempFileCollection ());
 			r.TempFiles.AddFile (sourceFilename, false);
+			r.TempFiles.AddFile (result.ResponseFile, false);
 			r.NativeCompilerReturnValue = result.ExitCode;
 			r.Output.AddRange (result.Output.ToArray ());
 			r.Errors.AddRange (result.Errors.Select (e => new CompilerError (e.Origin ?? "", e.Line, e.Column, e.Code, e.Message) { IsWarning = !e.IsError }).ToArray ());
