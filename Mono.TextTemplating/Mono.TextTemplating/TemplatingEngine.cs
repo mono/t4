@@ -77,7 +77,7 @@ namespace Mono.TextTemplating
 		}
 
 		public string PreprocessTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
-			string classNamespace, out string language, out string [] references)
+			string classNamespace, out string language, out string [] references, TemplateSettings settings = null)
 		{
 			if (content == null)
 				throw new ArgumentNullException (nameof (content));
@@ -88,16 +88,16 @@ namespace Mono.TextTemplating
 			if (className == null)
 				throw new ArgumentNullException (nameof (className));
 
-			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references);
+			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references, settings);
 		}
 
 		string PreprocessTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
-			string classNamespace, out string language, out string [] references)
+			string classNamespace, out string language, out string [] references, TemplateSettings settings = null)
 		{
 			language = null;
 			references = null;
 
-			var settings = GetSettings (host, pt);
+			settings = settings ?? GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
@@ -139,19 +139,27 @@ namespace Mono.TextTemplating
 			return CompileTemplateInternal (pt, content, host);
 		}
 
-		public CompiledTemplate CompileTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host)
+		public CompiledTemplate CompileTemplate (
+			ParsedTemplate pt,
+			string content,
+			ITextTemplatingEngineHost host,
+			TemplateSettings settings = null)
 		{
 			if (pt == null)
 				throw new ArgumentNullException (nameof (pt));
 			if (host == null)
 				throw new ArgumentNullException (nameof (host));
 
-			return CompileTemplateInternal (pt, content, host);
+			return CompileTemplateInternal (pt, content, host, settings);
 		}
 
-		CompiledTemplate CompileTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host)
+		CompiledTemplate CompileTemplateInternal (
+			ParsedTemplate pt,
+			string content,
+			ITextTemplatingEngineHost host,
+			TemplateSettings settings = null)
 		{
-			var settings = GetSettings (host, pt);
+			settings = settings ?? GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
@@ -181,12 +189,13 @@ namespace Mono.TextTemplating
 
 #if FEATURE_APPDOMAINS
 			var domain = host.ProvideTemplatingAppDomain (content);
+			var templateClassFullName = string.Concat(settings.Namespace, ".", settings.Name);
 			if (domain != null) {
 				var type = typeof(CompiledTemplate);
-				var obj = domain.CreateInstanceFromAndUnwrap (type.Assembly.Location, type.FullName, false,
-					BindingFlags.Default, null,
-					new object[] { host, results, templateClassFullName, settings.Culture, references.ToArray () },
-					null, null);
+				var obj = domain.CreateInstanceFromAndUnwrap (type.Assembly.Location,
+					type.FullName,
+					new object[] { host, results, templateClassFullName, settings.Culture, references.ToArray () });
+				
 				return (CompiledTemplate)obj;
 			}
 #endif
@@ -213,6 +222,10 @@ namespace Mono.TextTemplating
 			File.Delete (tempFolder);
 			Directory.CreateDirectory (tempFolder);
 
+			if (settings.Log != null) {
+				settings.Log.WriteLine ($"Generating code in '{tempFolder}'");
+			}
+
 			var sourceFilename = Path.Combine (tempFolder, settings.Name + "." + settings.Provider.FileExtension);
 			File.WriteAllText (sourceFilename, sourceText);
 
@@ -222,13 +235,15 @@ namespace Mono.TextTemplating
 			args.SourceFiles.Add (sourceFilename);
 			args.AdditionalArguments = settings.CompilerOptions;
 			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
+			args.TempDirectory = tempFolder;
 
 			var compiler = new CscCodeCompiler (runtime);
 
-			var result = compiler.CompileFile (args, CancellationToken.None).Result;
+			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
 
 			var r = new CompilerResults (new TempFileCollection ());
 			r.TempFiles.AddFile (sourceFilename, false);
+			r.TempFiles.AddFile (result.ResponseFile, false);
 			r.NativeCompilerReturnValue = result.ExitCode;
 			r.Output.AddRange (result.Output.ToArray ());
 			r.Errors.AddRange (result.Errors.Select (e => new CompilerError (e.Origin ?? "", e.Line, e.Column, e.Code, e.Message) { IsWarning = !e.IsError }).ToArray ());

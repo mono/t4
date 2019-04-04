@@ -254,13 +254,27 @@ namespace Mono.TextTemplating
 		
 		protected virtual string ResolvePath (string path)
 		{
-			path = Environment.ExpandEnvironmentVariables (path);
-			if (Path.IsPathRooted (path))
-				return path;
-			var dir = Path.GetDirectoryName (TemplateFile);
+			if (!string.IsNullOrEmpty(path)) {
+				path = Environment.ExpandEnvironmentVariables (path);
+				if (Path.IsPathRooted (path))
+					return path;
+			}
+
+			// Get the template directory, or working directory if there is no file.
+			// This can happen if the template text is passed in on the commandline.
+			var dir = string.IsNullOrEmpty (TemplateFile)
+				? Environment.CurrentDirectory
+				: Path.GetDirectoryName (Path.GetFullPath (TemplateFile));
+
+			// if the user passed in null or string.empty, they just want the directory.
+			if (string.IsNullOrEmpty (path)) {
+				return dir;
+			}
+
 			var test = Path.Combine (dir, path);
 			if (File.Exists (test) || Directory.Exists (test))
 				return test;
+
 			return path;
 		}
 		

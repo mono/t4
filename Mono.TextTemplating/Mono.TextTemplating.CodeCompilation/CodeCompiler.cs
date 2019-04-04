@@ -26,6 +26,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,6 +34,6 @@ namespace Mono.TextTemplating.CodeCompilation
 {
 	abstract class CodeCompiler
 	{
-		public abstract Task<CodeCompilerResult> CompileFile (CodeCompilerArguments arguments, CancellationToken token);
+		public abstract Task<CodeCompilerResult> CompileFile (CodeCompilerArguments arguments, TextWriter log, CancellationToken token);
 	}
 }

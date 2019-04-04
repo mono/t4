@@ -34,5 +34,6 @@ namespace Mono.TextTemplating.CodeCompilation
 		public List<CodeCompilerError> Errors { get; internal set; }
 		public int ExitCode { get; internal set; }
 		public List<string> Output { get; internal set; }
+		public string ResponseFile { get; internal set; }
 	}
 }

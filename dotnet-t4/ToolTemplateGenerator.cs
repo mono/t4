@@ -39,7 +39,12 @@ namespace Mono.TextTemplating
 			return Session = new ToolTemplateSession (this);
 		}
 
-		public string PreprocessTemplate (ParsedTemplate pt, string inputFile, string inputContent, string className)
+		public string PreprocessTemplate (
+			ParsedTemplate pt,
+			string inputFile,
+			string inputContent,
+			string className,
+			TemplateSettings settings = null)
 		{
 			TemplateFile = inputFile;
 			string classNamespace = null;
@@ -49,14 +54,19 @@ namespace Mono.TextTemplating
 				className = className.Substring (s + 1);
 			}
 
-			return Engine.PreprocessTemplate (pt, inputContent, this, className, classNamespace, out string language, out string [] references);
+			return Engine.PreprocessTemplate (pt, inputContent, this, className, classNamespace, out string language, out string [] references, settings);
 		}
 
-		public string ProcessTemplate (ParsedTemplate pt, string inputFile, string inputContent, ref string outputFile)
+		public string ProcessTemplate (
+			ParsedTemplate pt,
+			string inputFile,
+			string inputContent,
+			ref string outputFile,
+			TemplateSettings settings = null)
 		{
 			TemplateFile = inputFile;
 			OutputFile = outputFile;
-			using (var compiled = Engine.CompileTemplate (pt, inputContent, this)) {
+			using (var compiled = Engine.CompileTemplate (pt, inputContent, this, settings)) {
 				var result = compiled?.Process ();
 				outputFile = OutputFile;
 				return result;

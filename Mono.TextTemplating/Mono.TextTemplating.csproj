@@ -8,9 +8,10 @@
     <PackageId>Mono.TextTemplating</PackageId>
     <Description>Open-source implementation of the T4 templating engine.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <DefineSymbols Condition="'$(TargetFramework)'!='netstandard2.0'">$(DefineSymbols);FEATURE_APPDOMAINS</DefineSymbols>
-    <DefineSymbols Condition="'$(TargetFramework)'!='net35'">$(DefineSymbols);FEATURE_ROSLYN</DefineSymbols>
+    <DefineConstants Condition="'$(TargetFramework)'!='netstandard2.0'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
+    <DefineConstants Condition="'$(TargetFramework)'!='net35'">$(DefineConstants);FEATURE_ROSLYN</DefineConstants>
     <DefaultItemExcludes Condition="'$(TargetFramework)'=='net35'">$(DefaultItemExcludes);Mono.TextTemplating.CodeCompilation\**</DefaultItemExcludes>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net35' AND '$(OS)' == 'Windows_NT'">$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Client</FrameworkPathOverride>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.CodeDom" Version="4.4.0" Condition="'$(TargetFramework)'=='netstandard2.0'" />

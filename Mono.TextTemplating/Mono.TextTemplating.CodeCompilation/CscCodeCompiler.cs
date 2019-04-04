@@ -31,6 +31,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Text;
 
 namespace Mono.TextTemplating.CodeCompilation
 {
@@ -90,7 +91,7 @@ namespace Mono.TextTemplating.CodeCompilation
 		/// <returns>The file.</returns>
 		/// <param name="arguments">Arguments.</param>
 		/// <param name="token">Token.</param>
-		public override async Task<CodeCompilerResult> CompileFile (CodeCompilerArguments arguments, CancellationToken token)
+		public override async Task<CodeCompilerResult> CompileFile (CodeCompilerArguments arguments, TextWriter log, CancellationToken token)
 		{
 			var asmFileNames = new HashSet<string> (
 				arguments.AssemblyReferences.Select (Path.GetFileName),
@@ -98,7 +99,15 @@ namespace Mono.TextTemplating.CodeCompilation
 			);
 
 			string rspPath;
-			using (var rsp = CreateTempTextFile (".rsp", out rspPath)) {
+			StreamWriter rsp;
+			if (arguments.TempDirectory != null) {
+				rspPath = Path.Combine (arguments.TempDirectory, "response.rsp");
+				rsp = File.CreateText (rspPath);
+			} else {
+				rsp = CreateTempTextFile (".rsp", out rspPath);
+			}
+
+			using (rsp) {
 				rsp.WriteLine ("-target:library");
 
 				if (arguments.Debug) {
@@ -118,7 +127,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				if (runtime.Kind == RuntimeKind.NetCore) {
 					AddIfNotPresent ("netstandard.dll");
 					AddIfNotPresent ("System.Runtime.dll");
-					//because we're referencing the impl not the ref asms, we end us
+					//because we're referencing the impl not the ref asms, we end up
 					//having to ref internals
 					AddIfNotPresent ("System.Private.CoreLib.dll");
 				}
@@ -151,6 +160,10 @@ namespace Mono.TextTemplating.CodeCompilation
 				UseShellExecute = false
 			};
 
+			if (log != null) {
+				log.WriteLine ($"{psi.FileName} {psi.Arguments}");
+			}
+
 			if (runtime.Kind == RuntimeKind.NetCore) {
 				psi.Arguments = $"\"{psi.FileName}\" {psi.Arguments}";
 				psi.FileName = Path.GetFullPath (Path.Combine (runtime.RuntimeDir, "..", "..", "..", "dotnet"));
@@ -158,7 +171,14 @@ namespace Mono.TextTemplating.CodeCompilation
 
 			var stdout = new StringWriter ();
 			var stderr = new StringWriter ();
-			var process = ProcessUtils.StartProcess (psi, stdout, stderr, token);
+
+			TextWriter outWriter = stderr, errWriter = stderr;
+			if (log != null) {
+				outWriter = new SplitOutputWriter (log, outWriter);
+				errWriter = new SplitOutputWriter (log, errWriter);
+			}
+
+			var process = ProcessUtils.StartProcess (psi, outWriter, errWriter, token);
 
 			var result = await process;
 
@@ -182,12 +202,44 @@ namespace Mono.TextTemplating.CodeCompilation
 			ConsumeOutput (stdout.ToString ());
 			ConsumeOutput (stderr.ToString ());
 
+			if (log != null) {
+				log.WriteLine ($"{psi.FileName} {psi.Arguments}");
+			}
+
 			return new CodeCompilerResult {
 				Success = result == 0,
 				Errors = errors,
 				ExitCode = result,
-				Output = outputList
+				Output = outputList,
+				ResponseFile = rspPath
 			};
+		}
+
+		//we know that ProcessUtils.StartProcess only uses WriteLine and Write(string)
+		class SplitOutputWriter : TextWriter
+		{
+			readonly TextWriter a;
+			readonly TextWriter b;
+
+			public SplitOutputWriter (TextWriter a, TextWriter b)
+			{
+				this.a = a;
+				this.b = b;
+			}
+
+			public override Encoding Encoding => Encoding.UTF8;
+
+			public override void WriteLine ()
+			{
+				a.WriteLine ();
+				b.WriteLine ();
+			}
+
+			public override void Write (string value)
+			{
+				a.Write (value);
+				b.Write (value);
+			}
 		}
 	}
 }

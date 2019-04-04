@@ -21,14 +21,14 @@
 // THE SOFTWARE.
 
 using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
-using Mono.Options;
-using System.Linq;
 using Microsoft.VisualStudio.TextTemplating;
-using System.CodeDom.Compiler;
+using Mono.Options;
 
 namespace Mono.TextTemplating
 {
@@ -59,6 +59,8 @@ namespace Mono.TextTemplating
 			var parameters = new List<string> ();
 			var properties = new Dictionary<string,string> ();
 			string preprocessClassName = null;
+			bool debug = false;
+			bool verbose = false;
 
 			optionSet = new OptionSet {
 				{
@@ -100,6 +102,16 @@ namespace Mono.TextTemplating
 					"properties declared with `<#@ parameter name=\"<name>\" type=\"<type>\" #> " +
 					"directives.",
 					(k,v) => properties[k]=v
+				},
+				{
+					"debug",
+					"Generate debug symbols and keep temp files",
+					s => debug = true
+				},
+				{
+					"v|verbose",
+					"Generate debug symbols and keep temp files",
+					s => verbose = true
 				},
 				{
 					"h|?|help",
@@ -180,6 +192,14 @@ namespace Mono.TextTemplating
 
 			var pt = ParsedTemplate.FromText (inputContent, generator);
 
+			TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
+			if (debug) {
+				settings.Debug = true;
+			}
+			if (verbose) {
+				settings.Log = Console.Out;
+			}
+
 			if (pt.Errors.Count > 0) {
 				generator.Errors.AddRange (pt.Errors);
 			}
@@ -191,9 +211,9 @@ namespace Mono.TextTemplating
 
 			if (!generator.Errors.HasErrors) {
 				if (preprocessClassName == null) {
-					outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile);
+					outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile, settings);
 				} else {
-					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, preprocessClassName);
+					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, preprocessClassName, settings);
 				}
 			}
 
