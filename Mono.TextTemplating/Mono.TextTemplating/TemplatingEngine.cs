@@ -231,6 +231,7 @@ namespace Mono.TextTemplating
 			args.SourceFiles.Add (sourceFilename);
 			args.AdditionalArguments = settings.CompilerOptions;
 			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
+			args.TempDirectory = tempFolder;
 
 			var compiler = new CscCodeCompiler (runtime);
 

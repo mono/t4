@@ -98,7 +98,15 @@ namespace Mono.TextTemplating.CodeCompilation
 			);
 
 			string rspPath;
-			using (var rsp = CreateTempTextFile (".rsp", out rspPath)) {
+			StreamWriter rsp;
+			if (arguments.TempDirectory != null) {
+				rspPath = Path.Combine (arguments.TempDirectory, "response.rsp");
+				rsp = File.CreateText (rspPath);
+			} else {
+				rsp = CreateTempTextFile (".rsp", , out rspPath)
+			}
+
+			using (rsp) {
 				rsp.WriteLine ("-target:library");
 
 				if (arguments.Debug) {
