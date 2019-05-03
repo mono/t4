@@ -38,7 +38,8 @@ namespace Mono.TextTemplating
 #if FEATURE_APPDOMAINS
 		MarshalByRefObject,
 #endif
-		ITextTemplatingEngineHost
+		ITextTemplatingEngineHost,
+		ITextTemplatingSessionHost // manhlx.hpg@vnpt.vn Add session support
 	{
 		static readonly Dictionary<string, string> KnownAssemblies = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase)
 		{
@@ -78,6 +79,8 @@ namespace Mono.TextTemplating
 			Refs.Add (typeof (File).Assembly.Location);
 			Refs.Add (typeof (StringReader).Assembly.Location);
 			Imports.Add ("System");
+			
+		    Session = CreateSession(); // manhlx.hpg@vnpt.vn Add session support
 		}
 		
 		public CompiledTemplate CompileTemplate (string content)
@@ -486,5 +489,20 @@ namespace Mono.TextTemplating
 		{
 			yield break;
 		}
+		
+		/// <summary>
+		/// Create TextTemplatingSession and return it.
+		/// manhlx.hpg@vnpt.vn Add session support
+		/// </summary>
+        public ITextTemplatingSession CreateSession()
+        {
+            return new TextTemplatingSession();
+        }
+
+		/// <summary>
+		/// Use Session to pass parameter to template with template directive
+		/// manhlx.hpg@vnpt.vn Add session support
+		/// </summary>
+        public ITextTemplatingSession Session { get; set; }
 	}
 }
