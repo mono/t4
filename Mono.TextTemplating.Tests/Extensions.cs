@@ -1,10 +1,10 @@
 //
-// Test.cs
+// Extensions.cs
 //
 // Author:
-//       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
+//       Atif Aziz
 //
-// Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
+// Copyright (c) 2019 Atif Aziz
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,49 +24,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.IO;
-
 namespace Mono.TextTemplating.Tests
 {
-	public static class TemplatingEngineHelper
+	using System;
+	using System.Collections.Generic;
+	using System.IO;
+	using System.Text;
+
+	static class Extensions
 	{
-		/// <summary>
-		/// Cleans CodeDOM generated code so that Windows/Mac and Mono/.NET output can be compared.
-		/// </summary>
-		public static string CleanCodeDom (string input, string newLine, bool dontTrimTrailingWhiteSpace = false)
+		public static IEnumerable<string> SplitIntoLines(this string s)
 		{
-			using (var writer = new StringWriter ()) {
-				using (var reader = new StringReader (input)) {
+			if (s == null) throw new ArgumentNullException (nameof (s));
 
-					bool afterLineDirective = true;
-					bool stripHeader = true;
+			return Iterator ();
 
+			IEnumerable<string> Iterator ()
+			{
+				using (var reader = new StringReader (s)) {
 					string line;
 					while ((line = reader.ReadLine ()) != null) {
-
-						if (stripHeader) {
-							if (line.StartsWith ("//", StringComparison.Ordinal) || StringUtil.IsNullOrWhiteSpace (line))
-								continue;
-							stripHeader = false;
-						}
-
-						if (afterLineDirective) {
-							if (StringUtil.IsNullOrWhiteSpace (line))
-								continue;
-							afterLineDirective = false;
-						}
-
-						if (line.Contains ("#line")) {
-							afterLineDirective = true;
-						}
-
-						writer.Write (dontTrimTrailingWhiteSpace ? line : line.TrimEnd(' ', '\t'));
-						writer.Write (newLine);
+						yield return line;
 					}
 				}
-				return writer.ToString ();
 			}
+		}
+
+		public static string RenormalizeLineEndingsTo(this string s, string eol)
+		{
+			if (s == null) throw new ArgumentNullException (nameof(s));
+
+			var sb = new StringBuilder ();
+			foreach (var line in s.SplitIntoLines ()) {
+				sb.Append (line).Append (eol);
+			}
+			return sb.ToString ();
 		}
 	}
 }

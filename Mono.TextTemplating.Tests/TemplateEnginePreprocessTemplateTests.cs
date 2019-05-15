@@ -27,7 +27,6 @@
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
-using System.IO;
 using NUnit.Framework;
 using Microsoft.VisualStudio.TextTemplating;
 
@@ -56,7 +55,7 @@ namespace Mono.TextTemplating.Tests
 			DummyHost host = CreateDummyHostForControlBlockAfterIncludedTemplateWithClassFeatureBlockTest ();
 
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock, "\n");
-			string output = Preprocess (input, host);
+			string output = Preprocess (input, host).Replace (@"\r", string.Empty);
 
 			Assert.AreEqual (expectedOutput, output, output);
 		}
@@ -64,7 +63,7 @@ namespace Mono.TextTemplating.Tests
 		[Test]
 		public void CaptureEncodingAndExtension ()
 		{
-			string input = InputTemplate_CaptureEncodingAndExtension;
+			string input = InputTemplate_CaptureEncodingAndExtension.RenormalizeLineEndingsTo ("\n");
 			string output = Preprocess (input);
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_CaptureEncodingAndExtension, "\n");
 

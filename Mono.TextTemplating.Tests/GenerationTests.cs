@@ -80,16 +80,16 @@ namespace Mono.TextTemplating.Tests
 		[Test]
 		public void GenerateMacNewlines ()
 		{
-			string MacInput = ParsingTests.ParseSample1.Replace ("\n", "\r");
-			string MacOutput = OutputSample1.Replace ("\\n", "\\r").Replace ("\n", "\r");;
+			string MacInput = ParsingTests.ParseSample1.RenormalizeLineEndingsTo ("\r");
+			string MacOutput = OutputSample1.Replace ("\\n", "\\r").RenormalizeLineEndingsTo ("\r");;
 			Generate (MacInput, MacOutput, "\r");
 		}
 
 		[Test]
 		public void GenerateWindowsNewlines ()
 		{
-			string WinInput = ParsingTests.ParseSample1.Replace ("\n", "\r\n");
-			string WinOutput = OutputSample1.Replace ("\\n", "\\r\\n").Replace ("\n", "\r\n");
+			string WinInput = ParsingTests.ParseSample1.RenormalizeLineEndingsTo ("\r\n");
+			string WinOutput = OutputSample1.Replace ("\\n", "\\r\\n").RenormalizeLineEndingsTo ("\r\n");
 			Generate (WinInput, WinOutput, "\r\n");
 		}
 
@@ -110,7 +110,7 @@ namespace Mono.TextTemplating.Tests
 		{
 			DummyHost host = new DummyHost ();
 			string className = "GeneratedTextTransformation4f504ca0";
-			string code = GenerateCode (host, input, className, newline);
+			string code = GenerateCode (host, input.RenormalizeLineEndingsTo (newline), className, newline);
 			Assert.AreEqual (0, host.Errors.Count);
 
 			var generated = TemplatingEngineHelper.CleanCodeDom (code, newline);
