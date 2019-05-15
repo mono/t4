@@ -1,21 +1,21 @@
-// 
+//
 // Tokeniser.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,7 +28,7 @@ using System;
 
 namespace Mono.TextTemplating
 {
-	
+
 	public class Tokeniser
 	{
 		readonly string content;
@@ -37,14 +37,14 @@ namespace Mono.TextTemplating
 		State nextState = State.Content;
 		Location nextStateLocation;
 		Location nextStateTagStartLocation;
-		
+
 		public Tokeniser (string fileName, string content)
 		{
 			State = State.Content;
 			this.content = content;
 			this.Location = this.nextStateLocation = this.nextStateTagStartLocation = new Location (fileName, 1, 1);
 		}
-		
+
 		public bool Advance ()
 		{
 			value = null;
@@ -56,7 +56,7 @@ namespace Mono.TextTemplating
 			nextState = GetNextStateAndCurrentValue ();
 			return true;
 		}
-		
+
 		State GetNextStateAndCurrentValue ()
 		{
 			switch (State) {
@@ -64,24 +64,24 @@ namespace Mono.TextTemplating
 			case State.Expression:
 			case State.Helper:
 				return GetBlockEnd ();
-			
+
 			case State.Directive:
 				return NextStateInDirective ();
-				
+
 			case State.Content:
 				return NextStateInContent ();
-				
+
 			case State.DirectiveName:
 				return GetDirectiveName ();
-				
+
 			case State.DirectiveValue:
 				return GetDirectiveValue ();
-				
+
 			default:
 				throw new InvalidOperationException ("Unexpected state '" + State + "'");
 			}
 		}
-		
+
 		State GetBlockEnd ()
 		{
 			int start = position;
@@ -99,7 +99,7 @@ namespace Mono.TextTemplating
 					value = content.Substring (start, position - start - 1);
 					position++;
 					TagEndLocation = nextStateLocation;
-					
+
 					//skip newlines directly after blocks, unless they're expressions
 					if (State != State.Expression && (position += IsNewLine()) > 0) {
 						nextStateLocation = nextStateLocation.AddLine ();
@@ -109,7 +109,7 @@ namespace Mono.TextTemplating
 			}
 			throw new ParserException ("Unexpected end of file.", nextStateLocation);
 		}
-		
+
 		State GetDirectiveName ()
 		{
 			int start = position;
@@ -123,7 +123,7 @@ namespace Mono.TextTemplating
 			}
 			throw new ParserException ("Unexpected end of file.", nextStateLocation);
 		}
-		
+
 		State GetDirectiveValue ()
 		{
 			int start = position;
@@ -154,7 +154,7 @@ namespace Mono.TextTemplating
 			}
 			throw new ParserException ("Unexpected end of file.", nextStateLocation);
 		}
-		
+
 		State NextStateInContent ()
 		{
 			int start = position;
@@ -211,7 +211,7 @@ namespace Mono.TextTemplating
 			}
 			return found;
 		}
-		
+
 		State NextStateInDirective () {
 			for (; position < content.Length; position++) {
 				char c = content[position];
@@ -226,12 +226,12 @@ namespace Mono.TextTemplating
 				} else if (c == '=') {
 					nextStateLocation = nextStateLocation.AddCol ();
 					position++;
-					return State.DirectiveValue;	
+					return State.DirectiveValue;
 				} else if (c == '#' && position + 1 < content.Length && content[position+1] == '>') {
 					position+=2;
 					TagEndLocation = nextStateLocation.AddCols (2);
 					nextStateLocation = nextStateLocation.AddCols (3);
-					
+
 					//skip newlines directly after directives
 					if ((position += IsNewLine()) > 0) {
 						nextStateLocation = nextStateLocation.AddLine();
@@ -246,28 +246,28 @@ namespace Mono.TextTemplating
 			}
 			throw new ParserException ("Unexpected end of file.", nextStateLocation);
 		}
-		
+
 		public State State {
 			get; private set;
 		}
-		
+
 		public int Position {
 			get { return position; }
 		}
-		
+
 		public string Content {
 			get { return content; }
 		}
-		
+
 		public string Value {
 			get { return value; }
 		}
-		
+
 		public Location Location { get; private set; }
 		public Location TagStartLocation { get; private set; }
 		public Location TagEndLocation { get; private set; }
 	}
-	
+
 	public enum State
 	{
 		Content = 0,
@@ -280,14 +280,14 @@ namespace Mono.TextTemplating
 		Name,
 		EOF
 	}
-	
+
 	public class ParserException : Exception
 	{
 		public ParserException (string message, Location location) : base (message)
 		{
 			Location = location;
 		}
-		
+
 		public Location Location { get; private set; }
 	}
 }

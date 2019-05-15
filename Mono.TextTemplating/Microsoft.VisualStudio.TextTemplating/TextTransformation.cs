@@ -1,21 +1,21 @@
-// 
+//
 // TextTransformation.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,31 +38,31 @@ namespace Microsoft.VisualStudio.TextTemplating
 		CompilerErrorCollection errors;
 		StringBuilder builder;
 		bool endsWithNewline;
-		
+
 		public TextTransformation ()
 		{
 		}
-		
+
 		public virtual void Initialize ()
 		{
 		}
-		
+
 		public abstract string TransformText ();
-		
+
 		public virtual IDictionary<string, object> Session { get; set; }
-		
+
 		#region Errors
-		
+
 		public void Error (string message)
 		{
 			Errors.Add (new CompilerError ("", 0, 0, "", message));
 		}
-		
+
 		public void Warning (string message)
 		{
 			Errors.Add (new CompilerError ("", 0, 0, "", message) { IsWarning = true });
 		}
-		
+
 		protected internal CompilerErrorCollection Errors {
 			get {
 				if (errors == null)
@@ -70,7 +70,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 				return errors;
 			}
 		}
-		
+
 		Stack<int> Indents {
 			get {
 				if (indents == null)
@@ -78,11 +78,11 @@ namespace Microsoft.VisualStudio.TextTemplating
 				return indents;
 			}
 		}
-		
+
 		#endregion
-		
+
 		#region Indents
-		
+
 		public string PopIndent ()
 		{
 			if (Indents.Count == 0)
@@ -90,9 +90,9 @@ namespace Microsoft.VisualStudio.TextTemplating
 			int lastPos = currentIndent.Length - Indents.Pop ();
 			string last = currentIndent.Substring (lastPos);
 			currentIndent = currentIndent.Substring (0, lastPos);
-			return last; 
+			return last;
 		}
-		
+
 		public void PushIndent (string indent)
 		{
 			if (indent == null)
@@ -100,21 +100,21 @@ namespace Microsoft.VisualStudio.TextTemplating
 			Indents.Push (indent.Length);
 			currentIndent += indent;
 		}
-		
+
 		public void ClearIndent ()
 		{
 			currentIndent = string.Empty;
 			Indents.Clear ();
 		}
-		
+
 		public string CurrentIndent {
 			get { return currentIndent; }
 		}
-		
+
 		#endregion
-		
+
 		#region Writing
-		
+
 		protected StringBuilder GenerationEnvironment {
 			get {
 				if (builder == null)
@@ -125,27 +125,27 @@ namespace Microsoft.VisualStudio.TextTemplating
 				builder = value;
 			}
 		}
-		
+
 		public void Write (string textToAppend)
 		{
 			if (string.IsNullOrEmpty (textToAppend))
 				return;
-			
+
 			if ((GenerationEnvironment.Length == 0 || endsWithNewline) && CurrentIndent.Length > 0) {
 				GenerationEnvironment.Append (CurrentIndent);
 			}
 			endsWithNewline = false;
-			
+
 			char last = textToAppend[textToAppend.Length-1];
 			if (last == '\n' || last == '\r') {
 				endsWithNewline = true;
 			}
-			
+
 			if (CurrentIndent.Length == 0) {
 				GenerationEnvironment.Append (textToAppend);
 				return;
 			}
-			
+
 			//insert CurrentIndent after every newline (\n, \r, \r\n)
 			//but if there's one at the end of the string, ignore it, it'll be handled next time thanks to endsWithNewline
 			int lastNewline = 0;
@@ -173,43 +173,43 @@ namespace Microsoft.VisualStudio.TextTemplating
 			else
 				GenerationEnvironment.Append (textToAppend);
 		}
-		
+
 		public void Write (string format, params object[] args)
 		{
 			Write (string.Format (format, args));
 		}
-		
+
 		public void WriteLine (string textToAppend)
 		{
 			Write (textToAppend);
 			GenerationEnvironment.AppendLine ();
 			endsWithNewline = true;
 		}
-		
+
 		public void WriteLine (string format, params object[] args)
 		{
 			WriteLine (string.Format (format, args));
 		}
 
 		#endregion
-		
+
 		#region Dispose
-		
+
 		public void Dispose ()
 		{
 			Dispose (true);
 			GC.SuppressFinalize (this);
 		}
-		
+
 		protected virtual void Dispose (bool disposing)
 		{
 		}
-		
+
 		~TextTransformation ()
 		{
 			Dispose (false);
 		}
-		
+
 		#endregion
 
 	}

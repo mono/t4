@@ -94,10 +94,10 @@ namespace Mono.TextTemplating.Tests
 			}
 		}
 
-		public static string MethodAndFieldGeneratedOutput = 
-@"        
+		public static string MethodAndFieldGeneratedOutput =
+@"
         private bool myField;
-        
+
         private bool MyProperty {
             get {
                 return true;

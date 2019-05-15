@@ -1,21 +1,21 @@
-// 
+//
 // ParameterDirectiveProcessor.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2010 Novell, Inc.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,11 +35,11 @@ namespace Microsoft.VisualStudio.TextTemplating
 	public sealed class ParameterDirectiveProcessor : DirectiveProcessor, IRecognizeHostSpecific
 	{
 		CodeDomProvider provider;
-		
+
 		bool hostSpecific;
 		readonly List<CodeStatement> postStatements = new List<CodeStatement> ();
 		readonly List<CodeTypeMember> members = new List<CodeTypeMember> ();
-		
+
 		public override void StartProcessingRun (CodeDomProvider languageProvider, string templateContents, CompilerErrorCollection errors)
 		{
 			base.StartProcessingRun (languageProvider, templateContents, errors);
@@ -47,7 +47,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 			postStatements.Clear ();
 			members.Clear ();
 		}
-		
+
 		public override void FinishProcessingRun ()
 		{
 			var statement = new CodeConditionStatement (
@@ -57,31 +57,31 @@ namespace Microsoft.VisualStudio.TextTemplating
 					CodeBinaryOperatorType.ValueEquality,
 					new CodePrimitiveExpression (false)),
 				postStatements.ToArray ());
-			
+
 			postStatements.Clear ();
 			postStatements.Add (statement);
 		}
-		
+
 		public override string GetClassCodeForProcessingRun ()
 		{
 			return TemplatingEngine.GenerateIndentedClassCode (provider, members);
 		}
-		
+
 		public override string[] GetImportsForProcessingRun ()
 		{
 			return null;
 		}
-		
+
 		public override string GetPostInitializationCodeForProcessingRun ()
 		{
 			return TemplatingEngine.IndentSnippetText (provider, StatementsToCode (postStatements), "            ");
 		}
-		
+
 		public override string GetPreInitializationCodeForProcessingRun ()
 		{
 			return null;
 		}
-		
+
 		string StatementsToCode (List<CodeStatement> statements)
 		{
 			var options = new CodeGeneratorOptions ();
@@ -91,12 +91,12 @@ namespace Microsoft.VisualStudio.TextTemplating
 				return sw.ToString ();
 			}
 		}
-		
+
 		public override string[] GetReferencesForProcessingRun ()
 		{
 			return null;
 		}
-		
+
 		public override bool IsDirectiveSupported (string directiveName)
 		{
 			return directiveName == "parameter";
@@ -139,12 +139,12 @@ namespace Microsoft.VisualStudio.TextTemplating
 
 			arguments.TryGetValue ("type", out string type);
 			type = MapTypeName (type);
-			
+
 			string fieldName = "_" + name + "Field";
 			var typeRef = new CodeTypeReference (type);
 			var thisRef = new CodeThisReferenceExpression ();
 			var fieldRef = new CodeFieldReferenceExpression (thisRef, fieldName);
-			
+
 			var property = new CodeMemberProperty () {
 				Name = name,
 				Attributes = MemberAttributes.Public | MemberAttributes.Final,
@@ -155,7 +155,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 			property.GetStatements.Add (new CodeMethodReturnStatement (fieldRef));
 			members.Add (new CodeMemberField (typeRef, fieldName));
 			members.Add (property);
-			
+
 			var valRef = new CodeVariableReferenceExpression ("data");
 			var namePrimitive = new CodePrimitiveExpression (name);
 			var sessionRef = new CodePropertyReferenceExpression (thisRef, "Session");
@@ -190,19 +190,19 @@ namespace Microsoft.VisualStudio.TextTemplating
 					,
 				new CodeStatement[] {
 					new CodeExpressionStatement (new CodeMethodInvokeExpression (thisRef, "Error",
-					new CodePrimitiveExpression ("The type '" + type + "' of the parameter '" + name + 
+					new CodePrimitiveExpression ("The type '" + type + "' of the parameter '" + name +
 						"' did not match the type passed to the template"))),
 				});
-			
+
 			//tries to gets the value from the session
 			var checkSession = new CodeConditionStatement (
 				new CodeBinaryOperatorExpression (NotNull (sessionRef), CodeBinaryOperatorType.BooleanAnd,
 					new CodeMethodInvokeExpression (sessionRef, "ContainsKey", namePrimitive)),
 				new CodeVariableDeclarationStatement (typeof (object), "data", new CodeIndexerExpression (sessionRef, namePrimitive)),
 				checkCastThenAssignVal);
-			
+
 			this.postStatements.Add (checkSession);
-			
+
 			//if acquiredVariable is false, tries to gets the value from the host
 			if (hostSpecific) {
 				var hostRef = new CodePropertyReferenceExpression (thisRef, "Host");
@@ -213,7 +213,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 					new CodeConditionStatement (
 						NotNull (valRef),
 						checkCastThenAssignVal));
-				
+
 				this.postStatements.Add (checkHost);
 			}
 
@@ -224,26 +224,26 @@ namespace Microsoft.VisualStudio.TextTemplating
 				new CodeVariableDeclarationStatement (typeof (object), "data",
 					new CodeMethodInvokeExpression (callContextTypeRefExpr, "LogicalGetData", namePrimitive)),
 				new CodeConditionStatement (NotNull (valRef), checkCastThenAssignVal));
-			
+
 			this.postStatements.Add (checkCallContext);
 #endif
 		}
-		
+
 		static CodeBinaryOperatorExpression NotNull (CodeExpression reference)
 		{
 			return new CodeBinaryOperatorExpression (reference, CodeBinaryOperatorType.IdentityInequality, new CodePrimitiveExpression (null));
 		}
-		
+
 		static CodeBinaryOperatorExpression IsFalse (CodeExpression expr)
 		{
 			return new CodeBinaryOperatorExpression (expr, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression (false));
 		}
-		
+
 		static CodeBinaryOperatorExpression BooleanAnd (CodeExpression expr1, CodeExpression expr2)
 		{
 			return new CodeBinaryOperatorExpression (expr1, CodeBinaryOperatorType.BooleanAnd, expr2);
 		}
-		
+
 		void IRecognizeHostSpecific.SetProcessingRunIsHostSpecific (bool hostSpecific)
 		{
 			this.hostSpecific = hostSpecific;

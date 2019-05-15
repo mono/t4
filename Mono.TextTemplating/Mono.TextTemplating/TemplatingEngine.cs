@@ -195,7 +195,7 @@ namespace Mono.TextTemplating
 				var obj = domain.CreateInstanceFromAndUnwrap (type.Assembly.Location,
 					type.FullName,
 					new object[] { host, results, templateClassFullName, settings.Culture, references.ToArray () });
-				
+
 				return (CompiledTemplate)obj;
 			}
 #endif

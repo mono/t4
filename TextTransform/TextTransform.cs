@@ -1,21 +1,21 @@
-// 
+//
 // Main.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -52,13 +52,13 @@ namespace Mono.TextTemplating
 			if (args.Length == 0) {
 				ShowHelp (true);
 			}
-			
+
 			var generator = new TemplateGenerator ();
 			string outputFile = null, inputFile = null;
 			var directives = new List<string> ();
 			var parameters = new List<string> ();
 			string preprocess = null;
-			
+
 			optionSet = new OptionSet () {
 				{ "o=|out=", "The name of the output {file}", s => outputFile = s },
 				{ "r=", "Assemblies to reference", s => generator.Refs.Add (s) },
@@ -71,20 +71,20 @@ namespace Mono.TextTemplating
 		//		{ "k=,", "Session {key},{value} pairs", (s, t) => session.Add (s, t) },
 				{ "c=", "Preprocess the template into {0:class}", (s) => preprocess = s },
 			};
-			
+
 			var remainingArgs = optionSet.Parse (args);
-			
+
 			if (remainingArgs.Count != 1) {
 				Console.Error.WriteLine ("No input file specified.");
 				return -1;
 			}
 			inputFile = remainingArgs [0];
-			
+
 			if (!File.Exists (inputFile)) {
 				Console.Error.WriteLine ("Input file '{0}' does not exist.", inputFile);
 				return -1;
 			}
-			
+
 			if (string.IsNullOrEmpty (outputFile)) {
 				outputFile = inputFile;
 				if (Path.HasExtension (outputFile)) {
@@ -102,7 +102,7 @@ namespace Mono.TextTemplating
 					return -1;
 				}
 			}
-			
+
 			foreach (var dir in directives) {
 				var split = dir.Split ('!');
 
@@ -122,7 +122,7 @@ namespace Mono.TextTemplating
 
 				generator.AddDirectiveProcessor (split[0], split[1], split[2]);
 			}
-			
+
 			if (preprocess == null) {
 				generator.ProcessTemplate (inputFile, outputFile);
 				if (generator.Errors.HasErrors) {
@@ -136,21 +136,21 @@ namespace Mono.TextTemplating
 					classNamespace = preprocess.Substring (0, s);
 					className = preprocess.Substring (s + 1);
 				}
-				
+
 				generator.PreprocessTemplate (inputFile, className, classNamespace, outputFile, System.Text.Encoding.UTF8,
 					out string language, out string[] references);
 				if (generator.Errors.HasErrors) {
 					Console.Write ("Preprocessing '{0}' into class '{1}.{2}' failed.", inputFile, classNamespace, className);
 				}
 			}
-			
+
 			foreach (System.CodeDom.Compiler.CompilerError err in generator.Errors)
 				Console.Error.WriteLine ("{0}({1},{2}): {3} {4}", err.FileName, err.Line, err.Column,
 				                   err.IsWarning? "WARNING" : "ERROR", err.ErrorText);
-			
+
 			return generator.Errors.HasErrors? -1 : 0;
 		}
-		
+
 		static void ShowHelp (bool concise)
 		{
 			Console.WriteLine ("TextTransform command line T4 processor");

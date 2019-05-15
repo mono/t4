@@ -1,22 +1,22 @@
-// 
+//
 // RecyclableAppDomain.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
 // Copyright (c) 2012 Xamarin Inc. (http://xamarin.com_
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,17 +36,17 @@ namespace Mono.TextTemplating
 	{
 		const int DEFAULT_TIMEOUT_MS = 2 * 60 * 1000;
 		const int DEFAULT_MAX_USES = 20;
-		
+
 		readonly string name;
 		readonly object lockObj = new object ();
-		
+
 		RecyclableAppDomain domain;
-		
+
 		public TemplatingAppDomainRecycler (string name)
 		{
 			this.name = name;
 		}
-		
+
 		public TemplatingAppDomainRecycler.Handle GetHandle ()
 		{
 			lock (lockObj) {
@@ -56,18 +56,18 @@ namespace Mono.TextTemplating
 				return domain.GetHandle ();
 			}
 		}
-		
+
 		internal class RecyclableAppDomain
 		{
 			//TODO: implement timeout based recycling
 			//DateTime lastUsed;
-			
+
 			AppDomain domain;
             DomainAssemblyLoader assemblyMap;
-			
+
 			int liveHandles;
 			int unusedHandles = DEFAULT_MAX_USES;
-			
+
 			public RecyclableAppDomain (string name)
 			{
 				var info = new AppDomainSetup () {
@@ -93,16 +93,16 @@ namespace Mono.TextTemplating
                     return a;
                 return null;
             }
-			
+
 			public int UnusedHandles { get { return unusedHandles; } }
 			public int LiveHandles { get { return liveHandles; } }
 			public AppDomain Domain { get { return domain; } }
-			
+
 			public void AddAssembly (System.Reflection.Assembly assembly)
 			{
 				assemblyMap.Add (assembly.FullName, assembly.Location);
 			}
-			
+
 			public Handle GetHandle ()
 			{
 				lock (this) {
@@ -114,7 +114,7 @@ namespace Mono.TextTemplating
 				}
 				return new Handle (this);
 			}
-			
+
 			public void ReleaseHandle ()
 			{
 				int lh;
@@ -123,13 +123,13 @@ namespace Mono.TextTemplating
 					lh = liveHandles;
 				}
 				//We must unload domain every time after using it for generation
-				//Otherwise we could not load new version of the project-generated 
+				//Otherwise we could not load new version of the project-generated
 				//assemblies into it. So remove checking for unusedHandles == 0
 				if (lh == 0) {
 					UnloadDomain ();
 				}
 			}
-			
+
 			void UnloadDomain ()
 			{
 				AppDomain.Unload (domain);
@@ -137,27 +137,27 @@ namespace Mono.TextTemplating
 				assemblyMap = null;
 				GC.SuppressFinalize (this);
 			}
-			
+
 			~RecyclableAppDomain ()
 			{
 				if (liveHandles != 0)
 					Console.WriteLine ("WARNING: recyclable AppDomain's handles were not all disposed");
 			}
 		}
-		
+
 		public class Handle : IDisposable
 		{
 			RecyclableAppDomain parent;
-			
+
 			internal Handle (RecyclableAppDomain parent)
 			{
 				this.parent = parent;
 			}
-			
+
 			public AppDomain Domain {
 				get { return parent.Domain; }
 			}
-			
+
 			public void Dispose ()
 			{
 				if (parent == null)
@@ -170,22 +170,22 @@ namespace Mono.TextTemplating
 				}
 				p.ReleaseHandle ();
 			}
-			
+
 			public void AddAssembly (System.Reflection.Assembly assembly)
 			{
 				parent.AddAssembly (assembly);
 			}
 		}
-		
+
 		[Serializable]
         class DomainAssemblyLoader : MarshalByRefObject
 		{
             readonly Dictionary<string, string> map = new Dictionary<string, string>();
-			
+
 			public DomainAssemblyLoader ()
 			{
 			}
-			
+
 			public System.Reflection.Assembly Resolve (object sender, ResolveEventArgs args)
 			{
 				var assemblyFile = ResolveAssembly (args.Name);
