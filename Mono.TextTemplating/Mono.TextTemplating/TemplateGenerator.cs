@@ -86,7 +86,7 @@ namespace Mono.TextTemplating
 				throw new ArgumentNullException (nameof (content));
 
 			Errors.Clear ();
-			encoding = Encoding.UTF8;
+			encoding = Utf8.BomlessEncoding;
 
 			return Engine.CompileTemplate (content, this);
 		}
@@ -130,7 +130,7 @@ namespace Mono.TextTemplating
 		public bool ProcessTemplate (string inputFileName, string inputContent, ref string outputFileName, out string outputContent)
 		{
 			Errors.Clear ();
-			encoding = Encoding.UTF8;
+			encoding = Utf8.BomlessEncoding;
 
 			OutputFile = outputFileName;
 			TemplateFile = inputFileName;
@@ -177,7 +177,7 @@ namespace Mono.TextTemplating
 			out string language, out string[] references, out string outputContent)
 		{
 			Errors.Clear ();
-			encoding = Encoding.UTF8;
+			encoding = Utf8.BomlessEncoding;
 
 			TemplateFile = inputFileName;
 			outputContent = Engine.PreprocessTemplate (inputContent, this, className, classNamespace, out language, out references);
