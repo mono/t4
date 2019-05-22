@@ -2,9 +2,9 @@
 // Utf8.cs
 //
 // Author:
-//       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
+//       Atif Aziz
 //
-// Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
+// Copyright (c) 2019 Atif Aziz
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
