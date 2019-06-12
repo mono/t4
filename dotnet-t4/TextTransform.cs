@@ -246,7 +246,7 @@ namespace Mono.TextTemplating
 				return;
 			}
 
-			var session = generator.CreateSession ();
+			var session = generator.GetOrCreateSession ();
 
 			foreach (var p in properties) {
 				var directive = pt.Directives.FirstOrDefault (d =>

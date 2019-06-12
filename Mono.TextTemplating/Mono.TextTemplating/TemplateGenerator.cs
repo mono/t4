@@ -38,7 +38,7 @@ namespace Mono.TextTemplating
 #if FEATURE_APPDOMAINS
 		MarshalByRefObject,
 #endif
-		ITextTemplatingEngineHost
+		ITextTemplatingEngineHost, ITextTemplatingSessionHost
 	{
 		static readonly Dictionary<string, string> KnownAssemblies = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase)
 		{
@@ -437,10 +437,32 @@ namespace Mono.TextTemplating
 		IList<string> ITextTemplatingEngineHost.StandardImports {
 			get { return Imports; }
 		}
-		
-		
+
 		#endregion
-		
+
+		#region ITextTemplatingSession
+
+		ITextTemplatingSession session;
+
+		/// <summary>
+		/// Returns the current session instance, creating it if necessary.
+		/// </summary>
+		public ITextTemplatingSession GetOrCreateSession () => session ?? (session = CreateSession ());
+
+		/// <summary>
+		/// Called to create a session instance.
+		/// Can be overridden to return a different <see cref="ITextTemplatingSession"/> implementation.
+		/// </summary>
+		protected virtual ITextTemplatingSession CreateSession () => new TextTemplatingSession ();
+
+
+		// Implement the session host interface for the template to use but hide the
+		// API so we can expose a better one
+		ITextTemplatingSession ITextTemplatingSessionHost.Session { get => session; set => session = value; }
+		ITextTemplatingSession ITextTemplatingSessionHost.CreateSession () => session = CreateSession ();
+
+		#endregion ITextTemplatingSession
+
 		struct ParameterKey : IEquatable<ParameterKey>
 		{
 			public ParameterKey (string processorName, string directiveName, string parameterName)

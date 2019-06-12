@@ -25,19 +25,14 @@ using System.CodeDom.Compiler;
 
 namespace Mono.TextTemplating
 {
-	class ToolTemplateGenerator : TemplateGenerator, ITextTemplatingSessionHost
+	class ToolTemplateGenerator : TemplateGenerator
 	{
 		public ToolTemplateGenerator ()
 		{
 			Refs.Add (typeof (CompilerErrorCollection).Assembly.Location);
 		}
 
-		public ITextTemplatingSession Session { get; set; }
-
-		public ITextTemplatingSession CreateSession ()
-		{
-			return Session = new ToolTemplateSession (this);
-		}
+		protected override ITextTemplatingSession CreateSession () => new ToolTemplateSession (this);
 
 		public string PreprocessTemplate (
 			ParsedTemplate pt,
