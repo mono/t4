@@ -226,7 +226,7 @@ namespace Mono.TextTemplating
 					if (writeToStdout) {
 						Console.WriteLine (outputContent);
 					} else {
-						File.WriteAllText (outputFile, outputContent, Encoding.UTF8);
+						File.WriteAllText (outputFile, outputContent, new UTF8Encoding (encoderShouldEmitUTF8Identifier: false));
 					}
 				}
 			}
@@ -246,7 +246,7 @@ namespace Mono.TextTemplating
 				return;
 			}
 
-			var session = generator.CreateSession ();
+			var session = generator.GetOrCreateSession ();
 
 			foreach (var p in properties) {
 				var directive = pt.Directives.FirstOrDefault (d =>

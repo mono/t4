@@ -52,6 +52,23 @@ namespace Mono.TextTemplating.Tests
 
 			Assert.AreEqual (guid, session.Id);
 		}
+
+		class TestHost : TemplateGenerator { }
+
+		[Test]
+		public void TestCustomHost ()
+		{
+			var gen = new TestHost ();
+			var outFilename = "test.txt";
+			var success = gen.ProcessTemplate (
+				"test.tt",
+				"<#@ template hostspecific=\"true\" #><#=Host.GetType().Name#>",
+				ref outFilename,
+				out var outContent
+				);
+			Assert.True (success);
+			Assert.AreEqual ("TestHost", outContent);
+		}
 	}
 }
 

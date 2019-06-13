@@ -136,8 +136,8 @@ namespace Mono.TextTemplating
 					classNamespace = preprocess.Substring (0, s);
 					className = preprocess.Substring (s + 1);
 				}
-				
-				generator.PreprocessTemplate (inputFile, className, classNamespace, outputFile, System.Text.Encoding.UTF8,
+
+				generator.PreprocessTemplate (inputFile, className, classNamespace, outputFile, new System.Text.UTF8Encoding (encoderShouldEmitUTF8Identifier: false),
 					out string language, out string[] references);
 				if (generator.Errors.HasErrors) {
 					Console.Write ("Preprocessing '{0}' into class '{1}.{2}' failed.", inputFile, classNamespace, className);
