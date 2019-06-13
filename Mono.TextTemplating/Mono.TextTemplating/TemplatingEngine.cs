@@ -403,17 +403,15 @@ namespace Mono.TextTemplating
 				ComplainExcessAttributes (dt, pt);
 			}
 
-			var gen = host as TemplateGenerator;
-			if (gen != null) {
+			if (host is TemplateGenerator gen) {
 				settings.HostType = gen.SpecificHostType;
-				if (settings.HostType != null) {
-					settings.Assemblies.Add (settings.HostType.Assembly.Location);
-				} else {
-					settings.HostType = typeof(ITextTemplatingEngineHost);
-				}
 				foreach (var processor in gen.GetAdditionalDirectiveProcessors ()) {
 					settings.DirectiveProcessors [processor.GetType ().FullName] = processor;
 				}
+			}
+
+			if (settings.HostType != null) {
+				settings.Assemblies.Add (settings.HostType.Assembly.Location);
 			}
 
 			//initialize the custom processors
@@ -727,6 +725,8 @@ namespace Mono.TextTemplating
 
 		static void GenerateHostProperty (CodeTypeDeclaration type, Type hostType)
 		{
+			hostType = hostType ?? typeof (ITextTemplatingEngineHost);
+
 			var hostTypeRef = new CodeTypeReference (hostType, CodeTypeReferenceOptions.GlobalReference);
 			var hostField = new CodeMemberField (hostTypeRef, "hostValue");
 			hostField.Attributes = (hostField.Attributes & ~MemberAttributes.AccessMask) | MemberAttributes.Private;
