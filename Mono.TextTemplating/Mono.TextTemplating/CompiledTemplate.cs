@@ -47,9 +47,7 @@ namespace Mono.TextTemplating
 		public CompiledTemplate (ITextTemplatingEngineHost host, CompilerResults results, string fullName, CultureInfo culture,
 			string [] assemblyFiles)
 		{
-#if FEATURE_APPDOMAINS
 			AppDomain.CurrentDomain.AssemblyResolve += ResolveReferencedAssemblies;
-#endif
 			this.host = host;
 			this.culture = culture;
 			this.assemblyFiles = assemblyFiles;
@@ -145,12 +143,10 @@ namespace Mono.TextTemplating
 
 		public void Dispose ()
 		{
-#if FEATURE_APPDOMAINS
 			if (host != null) {
 				host = null;
 				AppDomain.CurrentDomain.AssemblyResolve -= ResolveReferencedAssemblies;
 			}
-#endif
 		}
 	}
 }
