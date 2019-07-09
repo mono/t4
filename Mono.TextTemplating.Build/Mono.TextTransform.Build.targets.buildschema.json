@@ -1,0 +1,77 @@
+{
+    "license": "Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See LICENSE file in the project root for full license information.",
+    "items": {
+        "T4ReferencePath": {
+            "description": "Additional folders to search for T4 references",
+            "kind": "folder"
+        },
+        "T4ParameterValues": {
+            "description": "T4 key-value property to pass to T4 templates",
+            "includeDescription": "T4 property keys",
+            "metadata": {
+                "Value": "The T4 property value"
+            }
+        },
+        "T4Transform": {
+            "description": "Files to be transformed using the T4 engine",
+            "kind": "file"
+        },
+        "T4Preprocess": {
+            "description": "Files to be preprocessed using the T4 engine",
+            "kind": "file"
+        },
+        "T4RequiredAssemblies": {
+            "description": "After running the Transform target, the assemblies that must be referenced to compile the preprocessed templates",
+            "kind": "file"
+        }
+    },
+    "metadata": [
+        {
+            "#": "Metadata that controls how a specific template is processed",
+            "$appliesTo": [ "None", "Compile", "Content", "EmbeddedResource", "T4Transform", "T4Preprocess" ],
+            "OutputFilePath": {
+                "description": "Overrides the output folder for a T4 template. Note that Visual Studio does not respect this.",
+                "kind": "folder"
+            },
+            "OutputFileName": {
+                "description": "Overrides the output filename for a T4 template. Note that Visual Studio does not respect this.",
+                "kind": "filename"
+            }
+        }
+    ],
+    "properties": {
+        "TransformOnBuild": {
+            "description": "Automatically transform T4 templates on build",
+            "kind": "bool",
+            "default": "false"
+        },
+        "TransformOutOfDateOnly": {
+            "description": "Only transform out of date T4 templates",
+            "kind": "bool",
+            "default": "true"
+        },
+        "TransformFile": {
+            "description": "The T4 tiles to transform when running the Transform target",
+            "kind": "file-list"
+        },
+        "BeforeTransform": {
+            "description": "Targets to run before the T4 Transform target",
+            "kind": "target-list"
+        },
+        "AfterTransform": {
+            "description": "Targets to run after the T4 Transform target",
+            "kind": "target-list"
+        },
+        "IncludeFolders": {
+            "description": "Additional folders to search for T4 includes",
+            "kind": "folder-list"
+        },
+        "PreprocessTemplateDefaultNamespace": {
+            "description": "Default namespace for preprocessed templates. Defaults to `$(RootNamespace)`."
+        }
+    },
+    "targets": {
+        "TransformAll": "Transform all T4 templates",
+        "Transform": "Transform only the T4 templates specified in the `$(TransformFile)` property"
+    }
+}

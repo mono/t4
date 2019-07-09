@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <TextTransformTaskAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)netstandard20\Mono.TextTransform.Build.dll</TextTransformTaskAssembly>
+    <TextTransformTaskAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)net46\Mono.TextTransform.Build.dll</TextTransformTaskAssembly>
+  </PropertyGroup>
+  
+  <UsingTask AssemblyFile="$(TextTransformTaskAssembly)" TaskName="TextTransform" />
+  
+  <Target Name="TransformTemplates" Condition="'$(TransformOnBuild)' == 'true'" BeforeTargets="Build">
+  </Target>
+  
+</Project>
