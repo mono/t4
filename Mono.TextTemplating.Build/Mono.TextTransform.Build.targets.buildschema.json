@@ -1,5 +1,8 @@
 {
     "license": "Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See LICENSE file in the project root for full license information.",
+    "intellisenseImports": [
+        "$(MSBuildBinPath)\\Microsoft.Common.CurrentVersion.targets"
+    ],
     "items": {
         "T4ReferencePath": {
             "description": "Additional folders to search for T4 references",
@@ -20,8 +23,30 @@
             "description": "Files to be preprocessed using the T4 engine",
             "kind": "file"
         },
+        "DirectiveProcessor": {
+            "description": "A T4 directive processor",
+            "metadata": {
+                "Class": "Fully qualified name of the processor class",
+                "Codebase": {
+                    "description": "Location of the assembly containing the processor",
+                    "kind": "file"
+                 }
+            }
+        },
+        "T4AssemblyReference": {
+            "description": "Assemblies to be referenced by T4 templates",
+            "kind": "file"
+        },
         "T4RequiredAssemblies": {
             "description": "After running the Transform target, the assemblies that must be referenced to compile the preprocessed templates",
+            "kind": "file"
+        },
+        "GeneratedTemplateOutput": {
+            "description": "After running the Transform target, the output of all tranformed templates",
+            "kind": "file"
+        },
+        "PreprocessedTemplateOutput": {
+            "description": "After running the Transform target, the output of all preprocessed templates",
             "kind": "file"
         }
     },
@@ -41,7 +66,7 @@
     ],
     "properties": {
         "TransformOnBuild": {
-            "description": "Automatically transform T4 templates on build",
+            "description": "Automatically transform T4 templates on build.",
             "kind": "bool",
             "default": "false"
         },
@@ -68,10 +93,14 @@
         },
         "PreprocessTemplateDefaultNamespace": {
             "description": "Default namespace for preprocessed templates. Defaults to `$(RootNamespace)`."
+        },
+        "UseLegacyTemplatePreprocessing": {
+            "description": "Place preprocessed templates beside the templates instead of dynamically injecting them into the build.",
+            "kind": "bool",
+            "default": "false"
         }
     },
     "targets": {
-        "TransformAll": "Transform all T4 templates",
-        "Transform": "Transform only the T4 templates specified in the `$(TransformFile)` property"
+        "TransformTemplates": "Transform T4 templates. If `$(TransformFile)` is set, only the templates listed in it will be transformed.",
     }
 }

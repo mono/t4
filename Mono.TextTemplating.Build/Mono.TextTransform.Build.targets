@@ -1,12 +1,85 @@
 <Project>
   <PropertyGroup>
-    <TextTransformTaskAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)netstandard20\Mono.TextTransform.Build.dll</TextTransformTaskAssembly>
-    <TextTransformTaskAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)net46\Mono.TextTransform.Build.dll</TextTransformTaskAssembly>
+    <TextTransformTaskAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)netstandard20\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
+    <TextTransformTaskAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)net46\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
   </PropertyGroup>
   
   <UsingTask AssemblyFile="$(TextTransformTaskAssembly)" TaskName="TextTransform" />
   
-  <Target Name="TransformTemplates" Condition="'$(TransformOnBuild)' == 'true'" BeforeTargets="Build">
+  <!-- default values -->
+  <PropertyGroup>
+    <UseLegacyTemplatePreprocessing Condition="'$(UseLegacyTemplatePreprocessing)'==''">False</UseLegacyTemplatePreprocessing>
+    <TransformOnBuild Condition="'$(TransformOnBuild)'==''">False</TransformOnBuild>
+    <PreprocessTemplateDefaultNamespace Condition="'$(PreprocessTemplateDefaultNamespace)'==''">$(RootNamespace)</PreprocessTemplateDefaultNamespace>
+  </PropertyGroup>
+
+  <!-- this is intended to be invoked explicitly -->
+  <Target Name="TransformTemplates"
+          DependsOnTargets="_SetExplicitTransformProperties;_TransformTemplates" />
+
+  <!-- this is invoked in full builds -->
+  <Target Name="_TransformTemplatesOnBuild"
+          BeforeTargets="Build"
+          Condition="'$(TransformOnBuild)'=='True'"
+          DependsOnTargets="_SetTransformOnBuildProperties;_TransformTemplates" />
+
+  <!-- this is invoked in design time builds -->
+  <Target Name="_TransformTemplatesDesignTime"
+          BeforeTargets="CoreCompile"
+          DependsOnTargets="_SetTransformDesignTimeProperties;_TransformTemplates" />
+          Condition="''$(UseLegacyTemplatePreprocessing)' == 'False' And ('$(DesignTimeBuild)' == 'True' Or '$(BuildingProject)' != 'True')"
+
+  <Target Name="_SetExplicitTransformProperties">
+    <PropertyGroup>
+      <_IsExplicitTransform>True</_IsExplicitTransform>
+    </PropertyGroup>
   </Target>
+
+  <Target Name="_SetTransformOnBuildProperties">
+    <PropertyGroup>
+      <_IsExplicitTransform>False</_IsExplicitTransform>
+      <TransformFile></TransformFile>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="_SetTransformDesignTimeProperties">
+    <PropertyGroup>
+      <_IsDesignTimeTransform>True</_IsDesignTimeTransform>
+      <_IsExplicitTransform>False</_IsExplicitTransform>
+      <TransformFile></TransformFile>
+    </PropertyGroup>
+  </Target>
+
+  <!--
+  Hook in the BeforeTransform/AfterTransform extension points.
+  They run regardless of whether we have any items to transform, as they may want to inject
+  items to be transformed.
+  -->
+  <Target Name="_TransformTemplates"
+          DependsOnTargets="$(BeforeTransform);_TransformTemplatesCore;$(AfterTransform)" />
   
+  <Target Name="_TransformTemplatesCore"
+          Condition="'@(T4Preprocess)'!='' Or ('$(_IsDesignTimeTransform)'!='True' and '@(T4Transform)'!='')">
+    <TextTransform
+      DefaultNamespace="$(PreprocessTemplateDefaultNamespace)"
+      DirectiveProcessors="@(DirectiveProcessor)"
+      IncludeFolders="@(IncludeFolders)"
+      ParameterValues="@(T4ParameterValues)"
+      ReferencePaths="@(T4ReferencePath)"
+      TransformTemplates="@(T4Transform)"
+      PreprocessTemplates="@(T4Preprocess)"
+      AssemblyReferences="@(T4AssemblyReference)"
+      IsDesignTime="$(_IsDesignTimeTransform)"
+      IntermediateDirectory="$(IntermediateTemplateOutputDir)"
+    >
+        <Output TaskParameter="GeneratedTemplates" ItemName="GeneratedTemplates" />
+        <Output TaskParameter="PreprocessedTemplates" ItemName="PreprocessedTemplates" />
+        <Output TaskParameter="RequiredAssemblies" ItemName="T4RequiredAssemblies" />
+      </TextTransform>
+
+      <ItemGroup Condition="'$(UseLegacyTemplatePreprocessing)'=='False'">
+        <Compile Include="@(PreprocessedTemplates)" />>
+      </ItemGroup>
+  </Target>
+
 </Project>

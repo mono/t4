@@ -20,6 +20,17 @@ namespace Mono.TextTemplating.Build
 
 		public ITaskItem [] ParameterValues { get; set; }
 
+		public bool IsDesignTime { get; set; }
+
+		[Output]
+		public ITaskItem [] RequiredAssemblies { get; set; }
+
+		[Output]
+		public ITaskItem [] GeneratedTemplates { get; set; }
+
+		[Output]
+		public ITaskItem [] PreprocessedTemplates { get; set; }
+
 		public override bool Execute ()
 		{
 			throw new NotImplementedException ();
