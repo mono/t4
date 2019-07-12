@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
-    <TextTransformTaskAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)netstandard20\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
-    <TextTransformTaskAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)net46\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
+    <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)netstandard20\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
+    <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)net46\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
   </PropertyGroup>
   
   <UsingTask AssemblyFile="$(TextTransformTaskAssembly)" TaskName="TextTransform" />
