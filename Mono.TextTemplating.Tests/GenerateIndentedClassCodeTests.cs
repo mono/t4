@@ -1,4 +1,4 @@
-﻿//
+//
 // GenerateIndentedClassCodeTests.cs
 //
 // Author:
@@ -24,18 +24,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
-using NUnit.Framework;
 using System.IO;
+using Xunit;
 
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
 	public class GenerateIndentedClassCodeTests
 	{
-		[Test]
+		[Fact]
 		public void FieldAndPropertyGenerated ()
 		{
 			var provider = CodeDomProvider.CreateProvider ("C#");
@@ -46,7 +44,7 @@ namespace Mono.TextTemplating.Tests
 			output = FixOutput (output);
 			string expectedOutput = FixOutput (MethodAndFieldGeneratedOutput);
 
-			Assert.AreEqual (expectedOutput, output);
+			Assert.Equal (expectedOutput, output);
 		}
 
 		static CodeTypeMember CreateVoidMethod ()

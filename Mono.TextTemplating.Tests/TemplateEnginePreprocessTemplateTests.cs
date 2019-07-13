@@ -26,18 +26,14 @@
 
 using System;
 using System.CodeDom.Compiler;
-using System.Collections.Generic;
-using System.IO;
-using NUnit.Framework;
-using Microsoft.VisualStudio.TextTemplating;
+using Xunit;
 
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
 	public class TemplateEnginePreprocessTemplateTests
 	{	
-		[Test]
-		public void Preprocess ()
+		[Fact]
+		public void Preprocess_Simple ()
 		{
 			string input = 
 				"<#@ template language=\"C#\" #>\r\n" +
@@ -46,10 +42,10 @@ namespace Mono.TextTemplating.Tests
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (OutputSample1, "\n");
 			string output = Preprocess (input);
 			
-			Assert.AreEqual (expectedOutput, output);
+			Assert.Equal (expectedOutput, output);
 		}
 		
-		[Test]
+		[Fact]
 		public void Preprocess_ControlBlockAfterIncludedTemplateWithClassFeatureBlock_ReturnsValidCSharpOutput ()
 		{
 			string input = InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock;
@@ -58,17 +54,17 @@ namespace Mono.TextTemplating.Tests
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock, "\n");
 			string output = Preprocess (input, host);
 			
-			Assert.AreEqual (expectedOutput, output, output);
+			Assert.Equal (expectedOutput, output);
 		}
 
-		[Test]
+		[Fact]
 		public void CaptureEncodingAndExtension ()
 		{
 			string input = InputTemplate_CaptureEncodingAndExtension;
 			string output = Preprocess (input);
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_CaptureEncodingAndExtension, "\n");
 
-			Assert.AreEqual (expectedOutput, output, output);
+			Assert.Equal (expectedOutput, output);
 		}
 		
 		#region Helpers

@@ -1,26 +1,25 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
-    <NUnitDisableSupportAssemblies>true</NUnitDisableSupportAssemblies>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Mono.TextTemplating.Build\Mono.TextTemplating.Build.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
-    <PackageReference Include="NUnit" Version="3.8.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.1.0" />
-    <PackageReference Include="NUnit" Version="3.12.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.13.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Build.Locator" Version="1.2.2" />
-    <PackageReference Include="Microsoft.Build" Version="15.9.20" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="15.9.20" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build" Version="15.1.548" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="15.1.548" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.548" ExcludeAssets="runtime" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="MSBuildTestCases\**\*.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Update="MSBuildTestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="MSBuildTestCases\**\*.csproj" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

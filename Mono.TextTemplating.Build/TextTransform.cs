@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -24,6 +24,8 @@ namespace Mono.TextTemplating.Build
 		public ITaskItem [] ParameterValues { get; set; }
 
 		public bool IsDesignTime { get; set; }
+
+		public string IntermediateDirectory { get; set; }
 
 		[Output]
 		public ITaskItem [] RequiredAssemblies { get; set; }

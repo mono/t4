@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="$(TemplatingTargetsPath)\Mono.TextTemplating.Build.props" />
-  
+
   <ItemGroup>
     <T4Transform Include="foo.tt" />
   </ItemGroup>
-  
+
   <Import Project="$(TemplatingTargetsPath)\Mono.TextTemplating.Build.targets" />
 </Project>

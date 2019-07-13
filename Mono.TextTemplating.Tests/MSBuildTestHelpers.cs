@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 
 // based on MonoDevelop.MSBuild.Tests.MSBuildTestHelpers from  MonoDevelop.MSBuildEditor
-namespace Mono.TextTemplating.Build
+namespace Mono.TextTemplating.Tests
 {
 	static class MSBuildTestHelpers
 	{

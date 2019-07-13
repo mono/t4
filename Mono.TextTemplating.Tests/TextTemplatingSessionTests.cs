@@ -1,4 +1,4 @@
-﻿//
+//
 // TextTemplatingSessionTests.cs
 //
 // Author:
@@ -27,14 +27,13 @@
 using System;
 using System.Reflection;
 using Microsoft.VisualStudio.TextTemplating;
-using NUnit.Framework;
+using Xunit;
 
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
 	public class TextTemplatingSessionTests
 	{
-		[Test]
+		[Fact]
 		public void AppDomainSerializationTest ()
 		{
 			var guid = Guid.NewGuid ();
@@ -50,12 +49,12 @@ namespace Mono.TextTemplating.Tests
 				null,
 				null);
 
-			Assert.AreEqual (guid, session.Id);
+			Assert.Equal (guid, session.Id);
 		}
 
 		class TestHost : TemplateGenerator { }
 
-		[Test]
+		[Fact]
 		public void TestCustomHost ()
 		{
 			var gen = new TestHost ();
@@ -67,7 +66,7 @@ namespace Mono.TextTemplating.Tests
 				out var outContent
 				);
 			Assert.True (success);
-			Assert.AreEqual ("TestHost", outContent);
+			Assert.Equal ("TestHost", outContent);
 		}
 	}
 }

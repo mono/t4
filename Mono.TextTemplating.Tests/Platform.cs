@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 
 //from MonoDevelop.Core.Platform
-namespace Mono.TextTemplating.Build
+namespace Mono.TextTemplating.Tests
 {
 	static class Platform
 	{

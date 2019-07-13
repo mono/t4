@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)netstandard20\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
-    <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)net46\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
+    <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)net461\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
   </PropertyGroup>
   
   <UsingTask AssemblyFile="$(TextTransformTaskAssembly)" TaskName="TextTransform" />
@@ -26,8 +26,8 @@
   <!-- this is invoked in design time builds -->
   <Target Name="_TransformTemplatesDesignTime"
           BeforeTargets="CoreCompile"
-          DependsOnTargets="_SetTransformDesignTimeProperties;_TransformTemplates" />
-          Condition="''$(UseLegacyTemplatePreprocessing)' == 'False' And ('$(DesignTimeBuild)' == 'True' Or '$(BuildingProject)' != 'True')"
+          DependsOnTargets="_SetTransformDesignTimeProperties;_TransformTemplates"
+          Condition="''$(UseLegacyTemplatePreprocessing)' == 'False' And ('$(DesignTimeBuild)' == 'True' Or '$(BuildingProject)' != 'True')" />
 
   <Target Name="_SetExplicitTransformProperties">
     <PropertyGroup>
@@ -78,7 +78,7 @@
       </TextTransform>
 
       <ItemGroup Condition="'$(UseLegacyTemplatePreprocessing)'=='False'">
-        <Compile Include="@(PreprocessedTemplates)" />>
+        <Compile Include="@(PreprocessedTemplates)" />
       </ItemGroup>
   </Target>
 
