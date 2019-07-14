@@ -8,10 +8,22 @@
   
   <!-- default values -->
   <PropertyGroup>
-    <UseLegacyTemplatePreprocessing Condition="'$(UseLegacyTemplatePreprocessing)'==''">False</UseLegacyTemplatePreprocessing>
+    <UseLegacyT4Preprocessing Condition="'$(UseLegacyT4Preprocessing)'==''">False</UseLegacyT4Preprocessing>
     <TransformOnBuild Condition="'$(TransformOnBuild)'==''">False</TransformOnBuild>
-    <PreprocessTemplateDefaultNamespace Condition="'$(PreprocessTemplateDefaultNamespace)'==''">$(RootNamespace)</PreprocessTemplateDefaultNamespace>
+    <!-- legacy compat -->
+    <T4DefaultNamespace Condition="'$(T4DefaultNamespace)'==''">$(PreprocessTemplateDefaultNamespace)</T4DefaultNamespace>
+    <T4DefaultNamespace Condition="'$(T4DefaultNamespace)'==''">$(RootNamespace)</T4DefaultNamespace>
+    <_T4IntermediateTemplateOutputDir Condition="'$(_T4IntermediateTemplateOutputDir)'==''">$(Intermediate)</_T4IntermediateTemplateOutputDir>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- legacy compat -->
+    <T4IncludePath Include="$(IncludeFolders)" />
+    <!-- legacy compat -->
+    <T4Argument Include="@(T4ParameterValues)" />
+    <!-- this property allows passing args on the commandline via /p:T4Arguments="name=val;name2=val2", it's not intended to be used in projects -->
+    <T4Argument Include="$(T4Arguments)" />
+  </ItemGroup>
 
   <!-- this is intended to be invoked explicitly -->
   <Target Name="TransformTemplates"
@@ -27,7 +39,7 @@
   <Target Name="_TransformTemplatesDesignTime"
           BeforeTargets="CoreCompile"
           DependsOnTargets="_SetTransformDesignTimeProperties;_TransformTemplates"
-          Condition="''$(UseLegacyTemplatePreprocessing)' == 'False' And ('$(DesignTimeBuild)' == 'True' Or '$(BuildingProject)' != 'True')" />
+          Condition="''$(UseLegacyT4Preprocessing)' == 'False' And ('$(DesignTimeBuild)' == 'True' Or '$(BuildingProject)' != 'True')" />
 
   <Target Name="_SetExplicitTransformProperties">
     <PropertyGroup>
@@ -57,20 +69,22 @@
   -->
   <Target Name="_TransformTemplates"
           DependsOnTargets="$(BeforeTransform);_TransformTemplatesCore;$(AfterTransform)" />
-  
+
   <Target Name="_TransformTemplatesCore"
           Condition="'@(T4Preprocess)'!='' Or ('$(_IsDesignTimeTransform)'!='True' and '@(T4Transform)'!='')">
+
     <TextTransform
-      DefaultNamespace="$(PreprocessTemplateDefaultNamespace)"
+      DefaultNamespace="$(T4DefaultNamespace)"
       DirectiveProcessors="@(DirectiveProcessor)"
-      IncludeFolders="@(IncludeFolders)"
-      ParameterValues="@(T4ParameterValues)"
+      IncludePaths="@(T4IncludePath)"
+      ParameterValues="@(T4Argument)"
       ReferencePaths="@(T4ReferencePath)"
       TransformTemplates="@(T4Transform)"
       PreprocessTemplates="@(T4Preprocess)"
       AssemblyReferences="@(T4AssemblyReference)"
       IsDesignTime="$(_IsDesignTimeTransform)"
-      IntermediateDirectory="$(IntermediateTemplateOutputDir)"
+      UseLegacyPreprocessingMode="$(UseLegacyT4Preprocessing)"
+      IntermediateDirectory="$(_T4IntermediateTemplateOutputDir)"
     >
         <Output TaskParameter="GeneratedTemplates" ItemName="GeneratedTemplates" />
         <Output TaskParameter="PreprocessedTemplates" ItemName="PreprocessedTemplates" />

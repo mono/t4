@@ -49,7 +49,9 @@ namespace Mono.TextTemplating.Tests
 			Assert.True (success);
 			Assert.True (logger.Errors.Count == 0);
 			Assert.True (logger.Warnings.Count == 0);
-			Assert.True (File.Exists (Path.Combine (proj.DirectoryPath, "foo.txt")));
+			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
+			Assert.True (File.Exists (generated));
+			Assert.StartsWith ("Hello 2019!", File.ReadAllText (generated));
 		}
 
 		void CopyDirectory (string src, string dest) => CopyDirectory (new DirectoryInfo (src), new DirectoryInfo (dest));
