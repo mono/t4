@@ -39,7 +39,7 @@
   <Target Name="_TransformTemplatesDesignTime"
           BeforeTargets="CoreCompile"
           DependsOnTargets="_SetTransformDesignTimeProperties;_TransformTemplates"
-          Condition="''$(UseLegacyT4Preprocessing)' == 'False' And ('$(DesignTimeBuild)' == 'True' Or '$(BuildingProject)' != 'True')" />
+          Condition="'$(UseLegacyT4Preprocessing)' == 'False' And ('$(DesignTimeBuild)' == 'True' Or '$(BuildingProject)' != 'True')" />
 
   <Target Name="_SetExplicitTransformProperties">
     <PropertyGroup>
@@ -86,8 +86,8 @@
       UseLegacyPreprocessingMode="$(UseLegacyT4Preprocessing)"
       IntermediateDirectory="$(_T4IntermediateTemplateOutputDir)"
     >
-        <Output TaskParameter="GeneratedTemplates" ItemName="GeneratedTemplates" />
-        <Output TaskParameter="PreprocessedTemplates" ItemName="PreprocessedTemplates" />
+        <Output TaskParameter="TransformTemplateOutput" ItemName="GeneratedTemplates" />
+        <Output TaskParameter="PreprocessedTemplateOutput" ItemName="PreprocessedTemplates" />
         <Output TaskParameter="RequiredAssemblies" ItemName="T4RequiredAssemblies" />
       </TextTransform>
 

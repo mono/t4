@@ -4,11 +4,9 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
-
+  
   <ItemGroup>
-    <T4Transform Include="foo.tt" />
-    <T4Argument Include="Greeting=Hello" />
-    <T4Argument Include="Year" Value="2019" />
+    <T4Preprocess Include="foo.tt" />
   </ItemGroup>
 
   <Import Project="$(TemplatingTargetsPath)\Mono.TextTemplating.Build.targets" />

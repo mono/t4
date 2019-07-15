@@ -40,10 +40,10 @@ namespace Mono.TextTemplating.Build
 		public ITaskItem [] RequiredAssemblies { get; set; }
 
 		[Output]
-		public ITaskItem [] GeneratedTemplates { get; set; }
+		public ITaskItem [] TransformTemplateOutput { get; set; }
 
 		[Output]
-		public ITaskItem [] PreprocessedTemplates { get; set; }
+		public ITaskItem [] PreprocessedTemplateOutput { get; set; }
 
 		public override bool Execute ()
 		{
@@ -124,7 +124,7 @@ namespace Mono.TextTemplating.Build
 				}
 			}
 
-			if (PreprocessedTemplates != null) {
+			if (PreprocessTemplates != null) {
 				foreach (var preprocess in PreprocessTemplates) {
 					string inputFile = preprocess.ItemSpec;
 

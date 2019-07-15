@@ -39,19 +39,90 @@ namespace Mono.TextTemplating.Tests
 		}
 
 		[Fact]
-		public void TransformOnBuild ()
+		public void TransformExplicitWithArguments ()
 		{
 			var proj = LoadTestProject ("TransformTemplates");
 			var instance = proj.CreateProjectInstance ();
 			var logger = new ListLogger ();
 			var success = instance.Build ("TransformTemplates", new[] { logger });
 
+			Assert.Empty (logger.Errors);
+			Assert.Empty (logger.Warnings);
 			Assert.True (success);
-			Assert.True (logger.Errors.Count == 0);
-			Assert.True (logger.Warnings.Count == 0);
 			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
 			Assert.True (File.Exists (generated));
 			Assert.StartsWith ("Hello 2019!", File.ReadAllText (generated));
+		}
+
+		[Fact]
+		public void TransformOnBuild ()
+		{
+			var proj = LoadTestProject ("TransformTemplates");
+			proj.SetProperty ("TransformOnBuild", "true");
+			var logger = new ListLogger ();
+
+			RestoreProject (proj, logger);
+
+			var instance = proj.CreateProjectInstance ();
+			var success = instance.Build (new string[] { "Build" }, new[] { logger });
+
+			Assert.Empty (logger.Errors);
+			Assert.Empty (logger.Warnings);
+			Assert.True (success);
+			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
+			Assert.True (File.Exists (generated));
+			Assert.StartsWith ("Hello 2019!", File.ReadAllText (generated));
+		}
+
+		[Fact]
+		public void TransformOnBuildDisabled ()
+		{
+			var proj = LoadTestProject ("TransformTemplates");
+			var logger = new ListLogger ();
+
+			RestoreProject (proj, logger);
+
+			var instance = proj.CreateProjectInstance ();
+			var success = instance.Build (new string[] { "Build" }, new[] { logger });
+
+			Assert.Empty (logger.Errors);
+			Assert.Empty (logger.Warnings);
+			Assert.True (success);
+			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
+			Assert.False (File.Exists (generated));
+		}
+
+		[Fact]
+		public void PreprocessLegacy ()
+		{
+			var proj = LoadTestProject ("PreprocessTemplate");
+			proj.SetProperty ("UseLegacyT4Preprocessing", "true");
+			var instance = proj.CreateProjectInstance ();
+			var logger = new ListLogger ();
+			var success = instance.Build ("TransformTemplates", new[] { logger });
+
+			Assert.Empty (logger.Errors);
+			Assert.Empty (logger.Warnings);
+			Assert.True (success);
+			var generated = Path.Combine (proj.DirectoryPath, "foo.cs");
+			Assert.True (File.Exists (generated));
+			Assert.StartsWith ("//--------", File.ReadAllText (generated));
+		}
+
+		void RestoreProject (Project project, ListLogger logger)
+		{
+			project.SetGlobalProperty ("MSBuildRestoreSessionId", Guid.NewGuid ().ToString ("D"));
+			var instance = project.CreateProjectInstance ();
+
+			var success = instance.Build (new string[] { "Restore" }, new[] { logger });
+
+			Assert.Empty (logger.Errors);
+			Assert.Empty (logger.Warnings);
+			Assert.True (success);
+
+			// removing this property forces the project to re-evaluate next time a ProjectInstance is created
+			// which is needed for other targets to pick up the Restore outputs
+			project.RemoveGlobalProperty ("MSBuildRestoreSessionId");
 		}
 
 		void CopyDirectory (string src, string dest) => CopyDirectory (new DirectoryInfo (src), new DirectoryInfo (dest));
