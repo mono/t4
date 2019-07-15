@@ -6,6 +6,6 @@ install:
   - nuget install xunit.runner.console -Version 2.4.1 -OutputDirectory testrunner
 script:
   - msbuild Mono.TextTemplating.sln -p:Configuration=Release
-  - mono ./testrunner/xunit.runner.console.2.4.1/tools/net472/xunit.console.exe ./Mono.TextTemplating.Tests/bin/Release/Mono.TextTemplating.Tests.dll
+  - mono ./testrunner/xunit.runner.console.2.4.1/tools/net472/xunit.console.exe -parallel none -noshadow ./Mono.TextTemplating.Tests/bin/Release/Mono.TextTemplating.Tests.dll
 git:
   depth: 1000
