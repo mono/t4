@@ -148,6 +148,31 @@ namespace Mono.TextTemplating.Tests
 			Assert.Equal (generated, Assert.Single (instance.GetItems ("PreprocessedTemplates")).GetMetadataValue ("FullPath"));
 		}
 
+		[Fact]
+		public void PreprocessOnDesignTimeBuild ()
+		{
+			var proj = LoadTestProject ("PreprocessTemplate");
+			proj.SetProperty ("DesignTimeBuild", "true");
+			proj.SetProperty ("SkipCompilerExecution", "true");
+			var logger = new ListLogger ();
+
+			RestoreProject (proj, logger);
+
+			var instance = proj.CreateProjectInstance ();
+			var success = instance.Build (new string[] { "CoreCompile" }, new[] { logger });
+
+			Assert.Empty (logger.Errors);
+			Assert.Empty (logger.Warnings);
+			Assert.True (success);
+
+			var generated = Path.Combine (proj.DirectoryPath, "obj", "Debug", "netstandard2.0", "TextTransform", "foo.cs");
+			Assert.True (File.Exists (generated));
+			Assert.StartsWith ("//--------", File.ReadAllText (generated));
+
+			Assert.Empty (instance.GetItems ("GeneratedTemplates"));
+			Assert.Equal (generated, Assert.Single (instance.GetItems ("PreprocessedTemplates")).GetMetadataValue ("FullPath"));
+		}
+
 		void RestoreProject (Project project, ListLogger logger)
 		{
 			project.SetGlobalProperty ("MSBuildRestoreSessionId", Guid.NewGuid ().ToString ("D"));
