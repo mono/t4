@@ -13,7 +13,6 @@
     <!-- legacy compat -->
     <T4DefaultNamespace Condition="'$(T4DefaultNamespace)'==''">$(PreprocessTemplateDefaultNamespace)</T4DefaultNamespace>
     <T4DefaultNamespace Condition="'$(T4DefaultNamespace)'==''">$(RootNamespace)</T4DefaultNamespace>
-    <_T4IntermediateTemplateOutputDir Condition="'$(_T4IntermediateTemplateOutputDir)'==''">$(Intermediate)</_T4IntermediateTemplateOutputDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,7 +31,7 @@
   <!-- this is invoked in full builds -->
   <Target Name="_TransformTemplatesOnBuild"
           BeforeTargets="Build"
-          Condition="'$(TransformOnBuild)'=='True'"
+          Condition="'$(TransformOnBuild)'=='True' Or '$(UseLegacyT4Preprocessing)' == 'False'"
           DependsOnTargets="_SetTransformOnBuildProperties;_TransformTemplates" />
 
   <!-- this is invoked in design time builds -->
@@ -43,21 +42,20 @@
 
   <Target Name="_SetExplicitTransformProperties">
     <PropertyGroup>
-      <_IsExplicitTransform>True</_IsExplicitTransform>
+      <_T4TransformKind>Explicit</_T4TransformKind>
     </PropertyGroup>
   </Target>
 
   <Target Name="_SetTransformOnBuildProperties">
     <PropertyGroup>
-      <_IsExplicitTransform>False</_IsExplicitTransform>
+      <_T4TransformKind>OnBuild</_T4TransformKind>
       <TransformFile></TransformFile>
     </PropertyGroup>
   </Target>
 
   <Target Name="_SetTransformDesignTimeProperties">
     <PropertyGroup>
-      <_IsDesignTimeTransform>True</_IsDesignTimeTransform>
-      <_IsExplicitTransform>False</_IsExplicitTransform>
+      <_T4TransformKind>DesignTime</_T4TransformKind>
       <TransformFile></TransformFile>
     </PropertyGroup>
   </Target>
@@ -71,7 +69,13 @@
           DependsOnTargets="$(BeforeTransform);_TransformTemplatesCore;$(AfterTransform)" />
 
   <Target Name="_TransformTemplatesCore"
-          Condition="'@(T4Preprocess)'!='' Or ('$(_IsDesignTimeTransform)'!='True' and '@(T4Transform)'!='')">
+          Condition="'@(T4Preprocess)'!='' Or ('$(_T4TransformKind)'!='DesignTime' and '@(T4Transform)'!='')">
+
+    <PropertyGroup>
+      <_T4PreprocessOnly>False</_T4PreprocessOnly>
+      <_T4PreprocessOnly Condition="'$(_T4TransformKind)'=='DesignTime' Or ('$(_T4TransformKind)'=='OnBuild' And '$(TransformOnBuild)'=='False')">True</_T4PreprocessOnly>
+      <_T4IntermediateTemplateOutputDir Condition="'$(_T4IntermediateTemplateOutputDir)'==''">$(IntermediateOutputPath)TextTransform\</_T4IntermediateTemplateOutputDir>
+    </PropertyGroup>
 
     <TextTransform
       DefaultNamespace="$(T4DefaultNamespace)"
@@ -82,7 +86,7 @@
       TransformTemplates="@(T4Transform)"
       PreprocessTemplates="@(T4Preprocess)"
       AssemblyReferences="@(T4AssemblyReference)"
-      IsDesignTime="$(_IsDesignTimeTransform)"
+      PreprocessOnly="$(_T4PreprocessOnly)"
       UseLegacyPreprocessingMode="$(UseLegacyT4Preprocessing)"
       IntermediateDirectory="$(_T4IntermediateTemplateOutputDir)"
     >

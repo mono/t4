@@ -31,9 +31,10 @@ namespace Mono.TextTemplating.Build
 
 		public ITaskItem [] ParameterValues { get; set; }
 
-		public bool IsDesignTime { get; set; }
+		public bool PreprocessOnly { get; set; }
 		public bool UseLegacyPreprocessingMode { get; set; }
 
+		[Required]
 		public string IntermediateDirectory { get; set; }
 
 		[Output]
@@ -48,6 +49,8 @@ namespace Mono.TextTemplating.Build
 		public override bool Execute ()
 		{
 			bool success = true;
+
+			Directory.CreateDirectory (IntermediateDirectory);
 
 			var generator = new MSBuildTemplateGenerator ();
 
@@ -93,7 +96,9 @@ namespace Mono.TextTemplating.Build
 				}
 			}
 
-			if (TransformTemplates != null && !IsDesignTime) {
+			var processedOutput = new List<string> ();
+
+			if (TransformTemplates != null && !PreprocessOnly) {
 				AddReferencePaths (generator);
 				success &= AddReferences (generator);
 
@@ -121,8 +126,12 @@ namespace Mono.TextTemplating.Build
 					}
 
 					WriteOutput (outputFile, outputContent, settings.Encoding);
+
+					processedOutput.Add (outputFile);
 				}
 			}
+
+			var preprocessedOutput = new List<string> ();
 
 			if (PreprocessTemplates != null) {
 				foreach (var preprocess in PreprocessTemplates) {
@@ -160,11 +169,23 @@ namespace Mono.TextTemplating.Build
 					}
 
 					WriteOutput (outputFile, outputContent, settings.Encoding);
+
+					preprocessedOutput.Add (outputFile);
 				}
 			}
 
 			if (LogAndClear (generator.Errors, null)) {
 				success = false;
+			}
+
+			TransformTemplateOutput = new ITaskItem[processedOutput.Count];
+			for (int i = 0; i < processedOutput.Count; i++) {
+				TransformTemplateOutput[i] = new TaskItem (processedOutput[i]);
+			}
+
+			PreprocessedTemplateOutput = new ITaskItem[preprocessedOutput.Count];
+			for (int i = 0; i < preprocessedOutput.Count; i++) {
+				PreprocessedTemplateOutput[i] = new TaskItem (preprocessedOutput[i]);
 			}
 
 			//TODO

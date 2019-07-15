@@ -49,9 +49,13 @@ namespace Mono.TextTemplating.Tests
 			Assert.Empty (logger.Errors);
 			Assert.Empty (logger.Warnings);
 			Assert.True (success);
+
 			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
 			Assert.True (File.Exists (generated));
 			Assert.StartsWith ("Hello 2019!", File.ReadAllText (generated));
+
+			Assert.Equal (generated, Assert.Single (instance.GetItems ("GeneratedTemplates")).GetMetadataValue ("FullPath"));
+			Assert.Empty (instance.GetItems ("PreprocessedTemplates"));
 		}
 
 		[Fact]
@@ -69,9 +73,13 @@ namespace Mono.TextTemplating.Tests
 			Assert.Empty (logger.Errors);
 			Assert.Empty (logger.Warnings);
 			Assert.True (success);
+
 			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
 			Assert.True (File.Exists (generated));
 			Assert.StartsWith ("Hello 2019!", File.ReadAllText (generated));
+
+			Assert.Equal (generated, Assert.Single (instance.GetItems ("GeneratedTemplates")).GetMetadataValue ("FullPath"));
+			Assert.Empty (instance.GetItems ("PreprocessedTemplates"));
 		}
 
 		[Fact]
@@ -88,8 +96,12 @@ namespace Mono.TextTemplating.Tests
 			Assert.Empty (logger.Errors);
 			Assert.Empty (logger.Warnings);
 			Assert.True (success);
+
 			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
 			Assert.False (File.Exists (generated));
+
+			Assert.Empty (instance.GetItems ("GeneratedTemplates"));
+			Assert.Empty (instance.GetItems ("PreprocessedTemplates"));
 		}
 
 		[Fact]
@@ -104,9 +116,36 @@ namespace Mono.TextTemplating.Tests
 			Assert.Empty (logger.Errors);
 			Assert.Empty (logger.Warnings);
 			Assert.True (success);
+
 			var generated = Path.Combine (proj.DirectoryPath, "foo.cs");
 			Assert.True (File.Exists (generated));
 			Assert.StartsWith ("//--------", File.ReadAllText (generated));
+
+			Assert.Empty (instance.GetItems ("GeneratedTemplates"));
+			Assert.Equal (generated, Assert.Single (instance.GetItems ("PreprocessedTemplates")).GetMetadataValue ("FullPath"));
+		}
+
+		[Fact]
+		public void PreprocessOnBuild ()
+		{
+			var proj = LoadTestProject ("PreprocessTemplate");
+			var logger = new ListLogger ();
+
+			RestoreProject (proj, logger);
+
+			var instance = proj.CreateProjectInstance ();
+			var success = instance.Build (new string[] { "Build" }, new[] { logger });
+
+			Assert.Empty (logger.Errors);
+			Assert.Empty (logger.Warnings);
+			Assert.True (success);
+
+			var generated = Path.Combine (proj.DirectoryPath, "obj", "Debug", "netstandard2.0", "TextTransform", "foo.cs");
+			Assert.True (File.Exists (generated));
+			Assert.StartsWith ("//--------", File.ReadAllText (generated));
+
+			Assert.Empty (instance.GetItems ("GeneratedTemplates"));
+			Assert.Equal (generated, Assert.Single (instance.GetItems ("PreprocessedTemplates")).GetMetadataValue ("FullPath"));
 		}
 
 		void RestoreProject (Project project, ListLogger logger)
