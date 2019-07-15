@@ -67,24 +67,24 @@ namespace Mono.TextTemplating.Tests
 		[Fact]
 		public void Generate ()
 		{
-			string Input = ParsingTests.ParseSample1;
-			string Output = OutputSample1;
+			string Input = ParsingTests.ParseSample1.Replace ("\r\n", "\n");
+			string Output = OutputSample1.Replace ("\r\n", "\n");
 			GenerateOutput (Input, Output, "\n");
 		}
 		
 		[Fact]
 		public void GenerateMacNewlines ()
 		{
-			string MacInput = ParsingTests.ParseSample1.Replace ("\n", "\r");
-			string MacOutput = OutputSample1.Replace ("\\n", "\\r").Replace ("\n", "\r");;
+			string MacInput = ParsingTests.ParseSample1.Replace ("\r\n", "\n").Replace ("\n", "\r");
+			string MacOutput = OutputSample1.Replace ("\\n", "\\r").Replace ("\r\n", "\n").Replace ("\n", "\r");;
 			GenerateOutput (MacInput, MacOutput, "\r");
 		}
 		
 		[Fact]
 		public void GenerateWindowsNewlines ()
 		{
-			string WinInput = ParsingTests.ParseSample1.Replace ("\n", "\r\n");
-			string WinOutput = OutputSample1.Replace ("\\n", "\\r\\n").Replace ("\n", "\r\n");
+			string WinInput = ParsingTests.ParseSample1.Replace ("\r\n", "\n").Replace ("\n", "\r\n");
+			string WinOutput = OutputSample1.Replace ("\\n", "\\r\\n").Replace ("\r\n", "\n").Replace ("\n", "\r\n");
 			GenerateOutput (WinInput, WinOutput, "\r\n");
 		}
 

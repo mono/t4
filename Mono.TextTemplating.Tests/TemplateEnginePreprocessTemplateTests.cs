@@ -61,6 +61,7 @@ namespace Mono.TextTemplating.Tests
 		public void CaptureEncodingAndExtension ()
 		{
 			string input = InputTemplate_CaptureEncodingAndExtension;
+
 			string output = Preprocess (input);
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_CaptureEncodingAndExtension, "\n");
 

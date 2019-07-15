@@ -49,7 +49,7 @@ var s = ""baz \\#>"";
 		public void TokenTest ()
 		{
 			string tf = "test.input";
-			var tk = new Tokeniser (tf, ParseSample1);
+			var tk = new Tokeniser (tf, ParseSample1.Replace ("\r\n", "\n"));
 			
 			//line 1
 			Assert.True (tk.Advance ());
@@ -135,7 +135,7 @@ var s = ""baz \\#>"";
 			string tf = "test.input";
 
 			var pt = new ParsedTemplate ("test.input");
-			var tk = new Tokeniser (tf, ParseSample1);
+			var tk = new Tokeniser (tf, ParseSample1.Replace ("\r\n", "\n"));
 			var host = new DummyHost ();
 			pt.Parse (host, tk);
 
