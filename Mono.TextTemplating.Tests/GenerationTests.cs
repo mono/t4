@@ -109,8 +109,8 @@ namespace Mono.TextTemplating.Tests
 		void Generate (string input, string expectedOutput, string newline)
 		{
 			DummyHost host = new DummyHost ();
-			string className = "GeneratedTextTransformation4f504ca0";
-			string code = GenerateCode (host, input, className, newline);
+			string nameSpaceName = "Microsoft.VisualStudio.TextTemplating4f504ca0";
+			string code = GenerateCode (host, input, nameSpaceName, newline);
 			Assert.AreEqual (0, host.Errors.Count);
 
 			var generated = TemplatingEngineHelper.CleanCodeDom (code, newline);
@@ -130,7 +130,7 @@ namespace Mono.TextTemplating.Tests
 			
 			TemplateSettings settings = TemplatingEngine.GetSettings (host, pt);
 			if (name != null)
-				settings.Name = name;
+				settings.Namespace = name;
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
@@ -156,10 +156,10 @@ namespace Mono.TextTemplating.Tests
 
 		public static string OutputSample1 =
 @"
-namespace Microsoft.VisualStudio.TextTemplating {
+namespace Microsoft.VisualStudio.TextTemplating4f504ca0 {
     
     
-    public partial class GeneratedTextTransformation4f504ca0 : global::Microsoft.VisualStudio.TextTemplating.TextTransformation {
+    public partial class GeneratedTextTransformation : global::Microsoft.VisualStudio.TextTemplating.TextTransformation {
         
         
         #line 9 """"
