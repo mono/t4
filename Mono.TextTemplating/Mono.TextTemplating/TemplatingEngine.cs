@@ -436,9 +436,9 @@ namespace Mono.TextTemplating
 			}
 
 			if (settings.Name == null)
-				settings.Name = string.Format ("GeneratedTextTransformation{0:x}", new Random ().Next ());
+				settings.Name = "GeneratedTextTransformation";
 			if (settings.Namespace == null)
-				settings.Namespace = typeof (TextTransformation).Namespace;
+				settings.Namespace = string.Format (typeof (TextTransformation).Namespace + "{0:x}", new Random ().Next ());
 
 			//resolve the CodeDOM provider
 			if (String.IsNullOrEmpty (settings.Language)) {
