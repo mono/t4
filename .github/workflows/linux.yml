@@ -30,3 +30,6 @@ jobs:
     - name: Push NuGet packages
       run: mono nuget.exe push -Source "GitHub" Packages/Release/*.nupkg
       if: github.ref == 'master'
+      
+    - name: Print ref
+      run: cat ${{ github.ref }}
