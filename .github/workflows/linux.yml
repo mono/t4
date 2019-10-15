@@ -14,8 +14,11 @@ jobs:
     - name: Build
       run: msbuild Mono.TextTemplating.sln -p:Configuration=Release -m
       
+    - name: Download NuGet
+      run: curl https://dist.nuget.org/win-x86-commandline/v5.3.0/nuget.exe -o -o nuget.exe
+      
     - name: Download NUnit
-      run: nuget install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
+      run: mono nuget.exe install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
       
     - name: Test
       run: mono ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net472/Mono.TextTemplating.Tests.dll
