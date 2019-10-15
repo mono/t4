@@ -23,8 +23,10 @@ jobs:
     - name: Test
       run: mono ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net472/Mono.TextTemplating.Tests.dll
     
-    - name: Upload
-      uses: actions/upload-artifact@master
-      with:
-        name: Packages
-        path: packages/Release
+    - name: Configure NuGet
+      uses: mono nuget.exe source Add -Name "GitHub" -Source "https://nuget.pkg.github.com/mono/index.json" -UserName mono -Password ${{ secrets.GITHUB_TOKEN }}
+      if: github.ref == "master"
+    
+    - name: Push NuGet packages
+      uses: mono nuget.exe push -Source "GitHub" Packages/Release/*.nupkg
+      if: github.ref == "master"
