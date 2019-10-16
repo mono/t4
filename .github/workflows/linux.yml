@@ -22,11 +22,3 @@ jobs:
       
     - name: Test
       run: mono ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net472/Mono.TextTemplating.Tests.dll
-    
-    - name: Configure NuGet
-      run: mono nuget.exe source Add -Name "GitHub" -Source "https://nuget.pkg.github.com/mono/index.json" -UserName mono -Password ${{ secrets.GITHUB_TOKEN }}
-      if: github.ref == 'refs/heads/master'
-    
-    - name: Push NuGet packages
-      run: for f in packages/Release/*; do mono nuget.exe push -Source "GitHub" $f; done
-      if: github.ref == 'refs/heads/master'
