@@ -72,24 +72,24 @@ namespace Mono.TextTemplating.Tests
 		[Test]
 		public void Generate ()
 		{
-			string Input = ParsingTests.ParseSample1;
-			string Output = OutputSample1;
+			string Input = ParsingTests.ParseSample1.NormalizeNewlines ();
+			string Output = OutputSample1.NormalizeEscapedNewlines ();
 			Generate (Input, Output, "\n");
 		}
 		
 		[Test]
 		public void GenerateMacNewlines ()
 		{
-			string MacInput = ParsingTests.ParseSample1.Replace ("\n", "\r");
-			string MacOutput = OutputSample1.Replace ("\\n", "\\r").Replace ("\n", "\r");;
+			string MacInput = ParsingTests.ParseSample1.NormalizeNewlines ("\r");
+			string MacOutput = OutputSample1.NormalizeEscapedNewlines ("\\r");
 			Generate (MacInput, MacOutput, "\r");
 		}
 		
 		[Test]
 		public void GenerateWindowsNewlines ()
 		{
-			string WinInput = ParsingTests.ParseSample1.Replace ("\n", "\r\n");
-			string WinOutput = OutputSample1.Replace ("\\n", "\\r\\n").Replace ("\n", "\r\n");
+			string WinInput = ParsingTests.ParseSample1.NormalizeNewlines ("\r\n");
+			string WinOutput = OutputSample1.NormalizeEscapedNewlines ("\\r\\n");
 			Generate (WinInput, WinOutput, "\r\n");
 		}
 
@@ -108,7 +108,7 @@ namespace Mono.TextTemplating.Tests
 		// in order to match the newlines in the verbatim code blocks
 		void Generate (string input, string expectedOutput, string newline)
 		{
-			DummyHost host = new DummyHost ();
+			var host = new DummyHost ();
 			string nameSpaceName = "Microsoft.VisualStudio.TextTemplating4f504ca0";
 			string code = GenerateCode (host, input, nameSpaceName, newline);
 			Assert.AreEqual (0, host.Errors.Count);
@@ -122,7 +122,7 @@ namespace Mono.TextTemplating.Tests
 		
 		string GenerateCode (ITextTemplatingEngineHost host, string content, string name, string generatorNewline)
 		{
-			ParsedTemplate pt = ParsedTemplate.FromText (content, host);
+			var pt = ParsedTemplate.FromText (content, host);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
@@ -142,7 +142,7 @@ namespace Mono.TextTemplating.Tests
 				return null;
 			}
 			
-			var opts = new System.CodeDom.Compiler.CodeGeneratorOptions ();
+			var opts = new CodeGeneratorOptions ();
 			using (var writer = new System.IO.StringWriter ()) {
 				writer.NewLine = generatorNewline;
 				settings.Provider.GenerateCodeFromCompileUnit (ccu, writer, opts);
@@ -213,5 +213,12 @@ var foo = 5;
 }
 ";
 		#endregion
+	}
+
+	static class StringNormalizationExtensions
+	{
+		public static string NormalizeNewlines (this string s, string newLine = "\n") => s.Replace ("\r\n", "\n").Replace ("\n", newLine);
+
+		public static string NormalizeEscapedNewlines (this string s, string escapedNewline = "\\n") => s.Replace ("\\r\\n", "\\n").Replace ("\\n", escapedNewline);
 	}
 }

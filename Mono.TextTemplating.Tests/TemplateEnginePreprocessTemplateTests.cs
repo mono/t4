@@ -52,10 +52,10 @@ namespace Mono.TextTemplating.Tests
 		[Test]
 		public void Preprocess_ControlBlockAfterIncludedTemplateWithClassFeatureBlock_ReturnsValidCSharpOutput ()
 		{
-			string input = InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock;
+			string input = InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock.NormalizeNewlines ();
 			DummyHost host = CreateDummyHostForControlBlockAfterIncludedTemplateWithClassFeatureBlockTest ();
 			
-			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock, "\n");
+			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock.NormalizeNewlines (), "\n");
 			string output = Preprocess (input, host);
 			
 			Assert.AreEqual (expectedOutput, output, output);
@@ -64,9 +64,9 @@ namespace Mono.TextTemplating.Tests
 		[Test]
 		public void CaptureEncodingAndExtension ()
 		{
-			string input = InputTemplate_CaptureEncodingAndExtension;
+			string input = InputTemplate_CaptureEncodingAndExtension.NormalizeNewlines ();
 			string output = Preprocess (input);
-			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_CaptureEncodingAndExtension, "\n");
+			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_CaptureEncodingAndExtension.NormalizeNewlines (), "\n");
 
 			Assert.AreEqual (expectedOutput, output, output);
 		}
@@ -108,7 +108,7 @@ namespace Mono.TextTemplating.Tests
 			
 			string includeTemplateFileName = @"d:\test\IncludedFile.tt";
 			host.Locations.Add (includeTemplateFileName, includeTemplateFileName);
-			host.Contents.Add (includeTemplateFileName, IncludedTemplate_ControlBlockAfterIncludedTemplate);
+			host.Contents.Add (includeTemplateFileName, IncludedTemplate_ControlBlockAfterIncludedTemplate.NormalizeNewlines ());
 			
 			return host;
 		}
@@ -117,7 +117,7 @@ namespace Mono.TextTemplating.Tests
 
 		#region Input templates
 
-		public static string InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock =
+		static string InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock =
 @"
 <#@ template debug=""false"" language=""C#"" #>
 <#@ output extension="".cs"" #>
@@ -138,7 +138,7 @@ Text Block 3
 #>
 ";
 		
-		public static string IncludedTemplate_ControlBlockAfterIncludedTemplate =
+		static string IncludedTemplate_ControlBlockAfterIncludedTemplate =
 @"
 <#@ template debug=""false"" language=""C#"" #>
 <#@ output extension="".cs"" #>
@@ -155,7 +155,7 @@ Included Method Body Text Block
 #>
 ";
 
-		public static string InputTemplate_CaptureEncodingAndExtension =
+		static string InputTemplate_CaptureEncodingAndExtension =
 			@"
 <#@ template debug=""false"" language=""C#"" inherits=""Foo"" hostspecific=""trueFromBase"" #>
 <#@ output extension="".cs"" encoding=""utf-8"" #>
@@ -165,7 +165,7 @@ Included Method Body Text Block
 		
 		#region Expected output strings
 		
-		public static string OutputSample1 = 
+		static string OutputSample1 = 
 @"
 namespace Templating {
     
@@ -339,7 +339,7 @@ namespace Templating {
 }
 ";
 
-		public static string Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock =
+		static string Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock =
 @"
 namespace Templating {
     
@@ -604,7 +604,7 @@ namespace Templating {
 }
 ";
 
-		public static string Output_CaptureEncodingAndExtension = 
+		static string Output_CaptureEncodingAndExtension = 
 
 		@"namespace Templating {
     
