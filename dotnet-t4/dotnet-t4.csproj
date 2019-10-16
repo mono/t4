@@ -2,17 +2,19 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <PackAsTool>true</PackAsTool>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <AssemblyName>t4</AssemblyName>
     <PackageId>dotnet-t4</PackageId>
     <Description>
-    Commandline T4 text transformation tool.
-    This package can be installed as a dotnet global tool.
-    For the project-installable `DotNetCliToolReference` version, see `dotnet-t4-project-tool`.
-    For the app-embeddable engine, see `Mono.TextTemplating`.
+<![CDATA[dotnet T4 text transformation tool.
+
+This package can be installed as a dotnet global or local tool.
+
+* To install in a project as a `DotNetCliToolReference`, use `dotnet-t4-project-tool` instead.
+* To embed the T4 engine in your app, use `Mono.TextTemplating`.]]>
     </Description>
     <ToolCommandName>t4</ToolCommandName>
     <RootNamespace>Mono.TextTemplating</RootNamespace>

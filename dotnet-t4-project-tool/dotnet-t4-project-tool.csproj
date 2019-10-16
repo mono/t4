@@ -8,10 +8,12 @@
     <AssemblyName>dotnet-t4</AssemblyName>
     <PackageId>dotnet-t4-project-tool</PackageId>
     <Description>
-    T4 text transformation commandline tool.
-    This package is project-installable via `DotNetCliToolReference`.
-    For the dotnet global tool, see `dotnet-t4`.
-    For the app-embeddable engine, see `Mono.TextTemplating`.
+<![CDATA[Project-installable T4 text transformation commandline tool.
+
+This package can be installed into a project using `DotNetCliToolReference`.
+
+* To install as a dotnet global or local tool, use `dotnet-t4` instead.
+* To embed the T4 engine in your app, use `Mono.TextTemplating`.]]>
     </Description>
     <RootNamespace>Mono.TextTemplating</RootNamespace>
   </PropertyGroup>
