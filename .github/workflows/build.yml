@@ -7,6 +7,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest ]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v1
@@ -30,9 +31,28 @@ jobs:
       shell: bash
 
     - name: Download NUnit
-      run: $RUN_EXE nuget.exe install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
+      run: $RUN_EXE ./nuget.exe install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
       shell: bash
 
     - name: Test
       run: $RUN_EXE ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net472/Mono.TextTemplating.Tests.dll
       shell: bash
+      
+    - uses: actions/upload-artifact@master
+      with:
+        name: packages
+        path: packages/Release
+
+  publish:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          path: packages
+          name: packages
+      - uses: warrenbuckley/Setup-Nuget@v1
+      - name: Publish to GPR
+        run: |
+          nuget source Add -Name "GPR" -Source "https://nuget.pkg.github.com/mono/index.json" -UserName mono -Password ${{ secrets.GITHUB_TOKEN }}
+          nuget push packages\**\*.nupkg -Source "GPR" -SkipDuplicate
