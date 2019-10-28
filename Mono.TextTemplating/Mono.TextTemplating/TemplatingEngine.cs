@@ -237,13 +237,21 @@ namespace Mono.TextTemplating
 			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
 			args.TempDirectory = tempFolder;
 
+#if FEATURE_ROSLYN_CODECOMPILATION
+			var compiler = new RoslynCodeCompiler(runtime);
+#else
 			var compiler = new CscCodeCompiler (runtime);
+#endif
 
 			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
 
 			var r = new CompilerResults (new TempFileCollection ());
 			r.TempFiles.AddFile (sourceFilename, false);
-			r.TempFiles.AddFile (result.ResponseFile, false);
+
+			if (result.ResponseFile != null) {
+				r.TempFiles.AddFile (result.ResponseFile, false);
+			}
+
 			r.NativeCompilerReturnValue = result.ExitCode;
 			r.Output.AddRange (result.Output.ToArray ());
 			r.Errors.AddRange (result.Errors.Select (e => new CompilerError (e.Origin ?? "", e.Line, e.Column, e.Code, e.Message) { IsWarning = !e.IsError }).ToArray ());

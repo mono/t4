@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net45;net35</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
@@ -15,6 +15,7 @@ This package allows embedding the T4 engine in an application.
 * To install in a project as a `DotNetCliToolReference`, use `dotnet-t4-project-tool` instead.]]>
     </Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <DefineConstants Condition="'$(TargetFramework)' == 'netstandard2.0'">$(DefineConstants);FEATURE_ROSLYN_CODECOMPILATION</DefineConstants>
     <DefineConstants Condition="'$(TargetFramework)'!='netstandard2.0'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
     <DefineConstants Condition="'$(TargetFramework)'!='net35'">$(DefineConstants);FEATURE_ROSLYN</DefineConstants>
     <DefaultItemExcludes Condition="'$(TargetFramework)'=='net35'">$(DefaultItemExcludes);Mono.TextTemplating.CodeCompilation\**</DefaultItemExcludes>
@@ -22,5 +23,10 @@ This package allows embedding the T4 engine in an application.
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.CodeDom" Version="4.4.0" Condition="'$(TargetFramework)'=='netstandard2.0'" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp">
+      <Version>3.3.1</Version>
+    </PackageReference>
   </ItemGroup>
 </Project>

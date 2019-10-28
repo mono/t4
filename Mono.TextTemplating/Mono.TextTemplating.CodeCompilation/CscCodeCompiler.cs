@@ -1,4 +1,4 @@
-﻿//
+//
 // CodeCompiler.cs
 //
 // Author:
@@ -64,7 +64,7 @@ namespace Mono.TextTemplating.CodeCompilation
 		}
 
 		//attempt to resolve refs into the runtime dir if the host didn't already do so
-		static string ResolveAssembly (RuntimeInfo runtime, string reference)
+		internal static string ResolveAssembly (RuntimeInfo runtime, string reference)
 		{
 			if (Path.IsPathRooted (reference) || File.Exists (reference)) {
 				return reference;
