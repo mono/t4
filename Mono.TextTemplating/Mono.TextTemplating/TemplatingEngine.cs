@@ -49,6 +49,16 @@ namespace Mono.TextTemplating
 		ITextTemplatingEngine
 #pragma warning restore 618
 	{
+
+#if FEATURE_ROSLYN
+		private Func<CodeCompilation.CodeCompiler> compilerFunc;
+
+		internal void SetCompilerFunc(Func<CodeCompilation.CodeCompiler> compilerFunc)
+	    {
+	     this.compilerFunc = compilerFunc;
+	    }
+#endif
+
 		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
 		{
 			using (var tpl = CompileTemplate (content, host)) {
@@ -204,7 +214,7 @@ namespace Mono.TextTemplating
 		}
 
 #if FEATURE_ROSLYN
-		static CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
+		CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
 		{
 			string sourceText;
 			var genOptions = new CodeGeneratorOptions ();
@@ -237,12 +247,7 @@ namespace Mono.TextTemplating
 			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
 			args.TempDirectory = tempFolder;
 
-#if FEATURE_ROSLYN_CODECOMPILATION
-			var compiler = new RoslynCodeCompiler(runtime);
-#else
-			var compiler = new CscCodeCompiler (runtime);
-#endif
-
+			var compiler = this.compilerFunc?.Invoke() ?? new CscCodeCompiler(RuntimeInfo.GetRuntime());
 			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
 
 			var r = new CompilerResults (new TempFileCollection ());

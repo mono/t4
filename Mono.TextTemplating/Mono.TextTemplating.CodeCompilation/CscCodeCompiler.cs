@@ -1,4 +1,4 @@
-//
+﻿//
 // CodeCompiler.cs
 //
 // Author:
@@ -63,28 +63,6 @@ namespace Mono.TextTemplating.CodeCompilation
 			throw new Exception ("Failed to create temp file", ex);
 		}
 
-		//attempt to resolve refs into the runtime dir if the host didn't already do so
-		internal static string ResolveAssembly (RuntimeInfo runtime, string reference)
-		{
-			if (Path.IsPathRooted (reference) || File.Exists (reference)) {
-				return reference;
-			}
-
-			var resolved = Path.Combine (runtime.RuntimeDir, reference);
-			if (File.Exists (resolved)) {
-				return resolved;
-			}
-
-			if (runtime.Kind != RuntimeKind.NetCore) {
-				resolved = Path.Combine (runtime.RuntimeDir, "Facades", reference);
-				if (File.Exists (resolved)) {
-					return resolved;
-				}
-			}
-
-			return reference;
-		}
-
 		/// <summary>
 		/// Compiles the file.
 		/// </summary>
@@ -135,7 +113,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				foreach (var reference in arguments.AssemblyReferences) {
 					rsp.Write ("-r:");
 					rsp.Write ("\"");
-					rsp.Write (ResolveAssembly (runtime, reference));
+					rsp.Write (AssemblyResolver.Resolve(runtime, reference));
 					rsp.WriteLine ("\"");
 				}
 
