@@ -4,11 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Text;
 using Mono.TextTemplating.CodeCompilation;
 using CodeCompiler = Mono.TextTemplating.CodeCompilation.CodeCompiler;
 
@@ -53,9 +55,28 @@ namespace Mono.TextTemplating.Roslyn
 				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary)
 			);
 
+			var pdbFilePath = Path.ChangeExtension(arguments.OutputPath, "pdb");
+
 			EmitResult result;
 			using (var fs = File.OpenWrite (arguments.OutputPath)) {
-				result = compilation.Emit (fs);
+				using (var symbolsStream = File.OpenWrite(pdbFilePath)) {
+					var emitOptions = new EmitOptions(
+						debugInformationFormat: DebugInformationFormat.PortablePdb,
+						pdbFilePath: pdbFilePath);
+
+
+					var embeddedTexts = new List<EmbeddedText> {
+						EmbeddedText.FromSource(
+							arguments.SourceFiles.Single(),
+							SourceText.From(source, Encoding.UTF8)),
+					};
+
+					result = compilation.Emit(
+						fs,
+						symbolsStream,
+						embeddedTexts: embeddedTexts,
+						options: emitOptions);
+				}
 			}
 
 			if (result.Success) {
