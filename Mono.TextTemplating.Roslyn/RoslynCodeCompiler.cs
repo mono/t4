@@ -32,19 +32,10 @@ namespace Mono.TextTemplating
 			CancellationToken token)
 		{
 			var references = new List<MetadataReference> ();
-			foreach (var assemblyReference in arguments.AssemblyReferences) {
-				var argumentsAssemblyReference = assemblyReference;
-				var path = AssemblyResolver.Resolve(_runtime, argumentsAssemblyReference);
-				references.Add (MetadataReference.CreateFromFile (path));
+			foreach (var assemblyReference in AssemblyResolver.GetResolvedReferences (runtime, arguments.AssemblyReferences)) {
+				references.Add (MetadataReference.CreateFromFile (assemblyReference));
 			}
 
-			references.Add (MetadataReference.CreateFromFile (typeof(object).Assembly.Location));
-			references.Add (MetadataReference.CreateFromFile (typeof(Enumerable).Assembly.Location));
-			references.Add (MetadataReference.CreateFromFile (typeof(string).Assembly.Location));
-			references.Add (MetadataReference.CreateFromFile (typeof(Console).Assembly.Location));
-			references.Add (MetadataReference.CreateFromFile (typeof(IntPtr).Assembly.Location));
-			references.Add (MetadataReference.CreateFromFile (typeof(AssemblyTargetedPatchBandAttribute).Assembly.Location));
-			references.Add (MetadataReference.CreateFromFile (Assembly.Load ("netstandard, Version=2.0.0.0").Location));
 
 			var source = File.ReadAllText (arguments.SourceFiles.Single ());
 			var syntaxTree = CSharpSyntaxTree.ParseText (source);

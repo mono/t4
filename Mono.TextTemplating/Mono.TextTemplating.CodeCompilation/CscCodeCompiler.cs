@@ -1,4 +1,4 @@
-﻿//
+//
 // CodeCompiler.cs
 //
 // Author:
@@ -71,11 +71,6 @@ namespace Mono.TextTemplating.CodeCompilation
 		/// <param name="token">Token.</param>
 		public override async Task<CodeCompilerResult> CompileFile (CodeCompilerArguments arguments, TextWriter log, CancellationToken token)
 		{
-			var asmFileNames = new HashSet<string> (
-				arguments.AssemblyReferences.Select (Path.GetFileName),
-				StringComparer.OrdinalIgnoreCase
-			);
-
 			string rspPath;
 			StreamWriter rsp;
 			if (arguments.TempDirectory != null) {
@@ -92,28 +87,10 @@ namespace Mono.TextTemplating.CodeCompilation
 					rsp.WriteLine ("-debug");
 				}
 
-				void AddIfNotPresent (string asm)
-				{
-					if (!asmFileNames.Contains (asm)) {
-						rsp.Write ("\"-r:");
-						rsp.Write (Path.Combine (runtime.RuntimeDir, asm));
-						rsp.WriteLine ("\"");
-					}
-				}
-				AddIfNotPresent ("mscorlib.dll");
-
-				if (runtime.Kind == RuntimeKind.NetCore) {
-					AddIfNotPresent ("netstandard.dll");
-					AddIfNotPresent ("System.Runtime.dll");
-					//because we're referencing the impl not the ref asms, we end up
-					//having to ref internals
-					AddIfNotPresent ("System.Private.CoreLib.dll");
-				}
-
-				foreach (var reference in arguments.AssemblyReferences) {
+				foreach (var reference in AssemblyResolver.GetResolvedReferences (runtime, arguments.AssemblyReferences)) {
 					rsp.Write ("-r:");
 					rsp.Write ("\"");
-					rsp.Write (AssemblyResolver.Resolve(runtime, reference));
+					rsp.Write (reference);
 					rsp.WriteLine ("\"");
 				}
 
