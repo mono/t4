@@ -51,12 +51,26 @@ namespace Mono.TextTemplating
 	{
 
 #if FEATURE_ROSLYN
-		private Func<CodeCompilation.CodeCompiler> compilerFunc;
+		Func<RuntimeInfo,CodeCompilation.CodeCompiler> createCompilerFunc;
+		CodeCompilation.CodeCompiler cachedCompiler;
 
-		internal void SetCompilerFunc(Func<CodeCompilation.CodeCompiler> compilerFunc)
-	    {
-	     this.compilerFunc = compilerFunc;
-	    }
+		internal void SetCompilerFunc (Func<RuntimeInfo,CodeCompilation.CodeCompiler> createCompiler)
+		{
+			cachedCompiler = null;
+			createCompilerFunc = createCompiler;
+		}
+
+		CodeCompilation.CodeCompiler GetOrCreateCompiler ()
+		{
+			if (cachedCompiler == null) {
+				var runtime = RuntimeInfo.GetRuntime ();
+				if (runtime.Error != null) {
+					throw new Exception (runtime.Error);
+				}
+				cachedCompiler = createCompilerFunc?.Invoke (runtime) ?? new CscCodeCompiler (runtime);
+			}
+			return cachedCompiler;
+		}
 #endif
 
 		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
@@ -223,10 +237,8 @@ namespace Mono.TextTemplating
 				sourceText = sw.ToString ();
 			}
 
-			var runtime = RuntimeInfo.GetRuntime ();
-			if (runtime.Error != null) {
-				throw new Exception (runtime.Error);
-			}
+			// this may throw, so do it before writing source files
+			var compiler = GetOrCreateCompiler ();
 
 			var tempFolder = Path.GetTempFileName ();
 			File.Delete (tempFolder);
@@ -247,7 +259,6 @@ namespace Mono.TextTemplating
 			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
 			args.TempDirectory = tempFolder;
 
-			var compiler = compilerFunc?.Invoke () ?? new CscCodeCompiler (RuntimeInfo.GetRuntime ());
 			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
 
 			var r = new CompilerResults (new TempFileCollection ());

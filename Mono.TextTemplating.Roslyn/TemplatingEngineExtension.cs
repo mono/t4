@@ -8,7 +8,12 @@ namespace Mono.TextTemplating
 	{
 		public static void UseInProcessCompiler (this TemplatingEngine engine)
 		{
-			engine.SetCompilerFunc (() => new RoslynCodeCompiler (RuntimeInfo.GetRuntime ()));
+			engine.SetCompilerFunc ((RuntimeInfo r) => new RoslynCodeCompiler (r));
+		}
+
+		public static void UseInProcessCompiler (this TemplateGenerator generator)
+		{
+			generator.Engine.UseInProcessCompiler ();
 		}
 	}
 }
