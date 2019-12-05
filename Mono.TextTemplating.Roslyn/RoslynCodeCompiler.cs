@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
-
+using Microsoft.CodeAnalysis.Text;
 using Mono.TextTemplating.CodeCompilation;
 
 using CodeCompiler = Mono.TextTemplating.CodeCompilation.CodeCompiler;
@@ -36,40 +36,28 @@ namespace Mono.TextTemplating
 				references.Add (MetadataReference.CreateFromFile (assemblyReference));
 			}
 
-
-			var source = File.ReadAllText (arguments.SourceFiles.Single ());
-			var syntaxTree = CSharpSyntaxTree.ParseText (source);
+			var syntaxTrees = new List<SyntaxTree> ();
+			foreach (var sourceFile in arguments.SourceFiles) {
+				using var stream = File.OpenRead (sourceFile);
+				var sourceText = SourceText.From (stream, Encoding.UTF8);
+				syntaxTrees.Add (CSharpSyntaxTree.ParseText (sourceText));
+			}
 
 			var compilation = CSharpCompilation.Create (
 				"GeneratedTextTransformation",
-				new List<SyntaxTree> {syntaxTree},
+				syntaxTrees,
 				references,
 				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary)
 			);
 
-			var pdbFilePath = Path.ChangeExtension(arguments.OutputPath, "pdb");
-
-			EmitResult result;
-			using (var fs = File.OpenWrite (arguments.OutputPath)) {
-				using (var symbolsStream = File.OpenWrite(pdbFilePath)) {
-					var emitOptions = new EmitOptions(
-						debugInformationFormat: DebugInformationFormat.PortablePdb,
-						pdbFilePath: pdbFilePath);
-
-
-					var embeddedTexts = new List<EmbeddedText> {
-						EmbeddedText.FromSource(
-							arguments.SourceFiles.Single(),
-							SourceText.From(source, Encoding.UTF8)),
-					};
-
-					result = compilation.Emit(
-						fs,
-						symbolsStream,
-						embeddedTexts: embeddedTexts,
-						options: emitOptions);
-				}
+			EmitOptions emitOptions = null;
+			if (arguments.Debug) {
+				var embeddedTexts = syntaxTrees.Select (st => EmbeddedText.FromSource (st.FilePath, st.GetText ())).ToList ();
+				emitOptions = new EmitOptions (debugInformationFormat: DebugInformationFormat.Embedded);
 			}
+
+			using var fs = File.OpenWrite (arguments.OutputPath);
+			EmitResult result = compilation.Emit (fs, options: emitOptions);
 
 			if (result.Success) {
 				return new CodeCompilerResult {

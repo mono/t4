@@ -6,6 +6,7 @@
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
     <PackageId>Mono.TextTemplating.Roslyn</PackageId>
     <DefaultNamespace>Mono.TextTemplating</DefaultNamespace>
+    <LangVersion>8.0</LangVersion>
     <Description>
       <![CDATA[In-process Roslyn compiler for the Mono.TextTemplating T4 templating engine
 
