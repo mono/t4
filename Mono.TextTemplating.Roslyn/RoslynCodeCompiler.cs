@@ -1,31 +1,32 @@
-using System;
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
-using Microsoft.CodeAnalysis.Text;
+
 using Mono.TextTemplating.CodeCompilation;
+
 using CodeCompiler = Mono.TextTemplating.CodeCompilation.CodeCompiler;
 
-namespace Mono.TextTemplating.Roslyn
+namespace Mono.TextTemplating
 {
 	class RoslynCodeCompiler : CodeCompiler
 	{
-		readonly RuntimeInfo _runtime;
+		readonly RuntimeInfo runtime;
 
 		public RoslynCodeCompiler (RuntimeInfo runtime)
 		{
-			_runtime = runtime;
+			this.runtime = runtime;
 		}
 
-		public  override async Task<CodeCompilerResult> CompileFile (
+		public override async Task<CodeCompilerResult> CompileFile (
 			CodeCompilerArguments arguments,
 			TextWriter log,
 			CancellationToken token)
@@ -93,7 +94,7 @@ namespace Mono.TextTemplating.Roslyn
 				Success = false,
 				Output = new List<string> (),
 				Errors = failures.Select (
-					x => new CodeCompilerError {Message = x.GetMessage ()}).ToList (),
+					x => new CodeCompilerError { Message = x.GetMessage () }).ToList (),
 			};
 		}
 	}

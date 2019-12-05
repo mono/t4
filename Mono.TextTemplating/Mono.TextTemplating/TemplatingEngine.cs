@@ -247,7 +247,7 @@ namespace Mono.TextTemplating
 			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
 			args.TempDirectory = tempFolder;
 
-			var compiler = this.compilerFunc?.Invoke() ?? new CscCodeCompiler(RuntimeInfo.GetRuntime());
+			var compiler = compilerFunc?.Invoke () ?? new CscCodeCompiler (RuntimeInfo.GetRuntime ());
 			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
 
 			var r = new CompilerResults (new TempFileCollection ());

@@ -1,11 +1,25 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
-    <AssemblyName>Mono.TextTemplating.Roslyn</AssemblyName>
-    <RootNamespace>Mono.TextTemplating.Roslyn</RootNamespace>
+    <PackageId>Mono.TextTemplating.Roslyn</PackageId>
+    <DefaultNamespace>Mono.TextTemplating</DefaultNamespace>
+    <Description>
+      <![CDATA[In-process Roslyn compiler for the Mono.TextTemplating T4 templating engine
+
+This is useful for processes that use a hosted instance of Mono.TextTemplating to compile multiple templates.
+Only the first template will be affected by the startup overhead of the compiler, and compilation of subsequent
+templates will be much faster.
+
+This can also be used to guarantee a specific version of the C# compiler rather than relying on the system version.
+
+To enable the in-process C# compiler, use the TemplatingEngine.UseInProcessCompiler() extension method.
+
+      ]]>
+    </Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
