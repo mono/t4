@@ -68,20 +68,25 @@ namespace Mono.TextTemplating
 			}
 
 			var failures = result.Diagnostics.Where (x => x.IsWarningAsError || x.Severity == DiagnosticSeverity.Error);
+			var errors = failures.Select (x => {
+				var location = x.Location.GetMappedLineSpan ();
+				var startLinePosition = location.StartLinePosition;
+				var endLinePosition = location.EndLinePosition;
+				return new CodeCompilerError {
+					Message = x.GetMessage (),
+					Column = startLinePosition.Character,
+					Line = startLinePosition.Line,
+					EndLine = endLinePosition.Line,
+					EndColumn = endLinePosition.Character,
+					IsError = x.Severity == DiagnosticSeverity.Error,
+					Origin = location.Path
+				};
+			}).ToList ();
 
 			return new CodeCompilerResult {
 				Success = false,
 				Output = new List<string> (),
-				Errors = failures.Select (
-					x => new CodeCompilerError {
-						Message = x.GetMessage(),
-						Column = x.Location.GetMappedLineSpan().StartLinePosition.Character,
-						Line = x.Location.GetMappedLineSpan().StartLinePosition.Line,
-						EndLine = x.Location.GetMappedLineSpan().EndLinePosition.Line,
-						EndColumn = x.Location.GetMappedLineSpan().EndLinePosition.Character,
-						IsError = x.Severity == DiagnosticSeverity.Error,
-						Origin = x.Location.GetMappedLineSpan().Path
-					}).ToList ()
+				Errors = errors
 			};
 		}
 	}
