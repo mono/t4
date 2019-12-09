@@ -60,6 +60,18 @@ namespace Mono.TextTemplating.Tests
 		}
 
 		[Test]
+		public void InProcessCompilerTest ()
+		{
+			var gen = new TemplateGenerator ();
+			gen.UseInProcessCompiler ();
+			string tmp = null;
+			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
+			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (System.Linq.Enumerable).Assembly.Location));
+			gen.ProcessTemplate (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
+			Assert.IsNull (gen.Errors.OfType<CompilerError> ().FirstOrDefault (), "ProcessTemplate");
+		}
+
+		[Test]
 		public void IncludeFileThatDoesNotExistTest ()
 		{
 			var gen = new TemplateGenerator ();

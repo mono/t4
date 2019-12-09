@@ -6,6 +6,7 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.1.0" />
     <PackageReference Include="NUnit" Version="3.12.0" />

@@ -91,7 +91,7 @@ namespace Mono.TextTemplating
 			return Engine.CompileTemplate (content, this);
 		}
 		
-		protected TemplatingEngine Engine {
+		protected internal TemplatingEngine Engine {
 			get {
 				if (engine == null)
 					engine = new TemplatingEngine ();

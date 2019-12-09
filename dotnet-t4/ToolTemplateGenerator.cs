@@ -19,9 +19,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Microsoft.VisualStudio.TextTemplating;
-using System;
 using System.CodeDom.Compiler;
+
+using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating
 {
