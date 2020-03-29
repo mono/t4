@@ -49,8 +49,8 @@ var s = ""baz \\#>"";
 		public void TokenTest ()
 		{
 			string tf = "test.input";
-			var tk = new Tokeniser (tf, ParseSample1.Replace ("\r\n", "\n"));
-			
+			var tk = new Tokeniser (tf, ParseSample1.NormalizeNewlines ());
+
 			//line 1
 			Assert.True (tk.Advance ());
 			Assert.Equal (new Location (tf, 1, 1), tk.Location);
@@ -133,9 +133,9 @@ var s = ""baz \\#>"";
 		public void ParseTest ()
 		{
 			string tf = "test.input";
-
+			
 			var pt = new ParsedTemplate ("test.input");
-			var tk = new Tokeniser (tf, ParseSample1.Replace ("\r\n", "\n"));
+			var tk = new Tokeniser (tf, ParseSample1.NormalizeNewlines ());
 			var host = new DummyHost ();
 			pt.Parse (host, tk);
 

@@ -131,10 +131,10 @@ namespace Mono.TextTemplating.CodeCompilation
 		static string FindHighestVersionedDirectory (string parentFolder, Func<string, bool> validate)
 		{
 			string bestMatch = null;
-			var bestVersion = new Version(0, 0, 0);
+			var bestVersion = SemVersion.Zero;
 			foreach (var dir in Directory.EnumerateDirectories (parentFolder)) {
 				var name = Path.GetFileName (dir);
-				if (Version.TryParse (name, out var version) && version.Build >= 0) {
+				if (SemVersion.TryParse (name, out var version) && version.Major >= 0) {
 					if (version > bestVersion && (validate == null || validate (dir))) {
 						bestVersion = version;
 						bestMatch = dir;

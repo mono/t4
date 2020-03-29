@@ -4,6 +4,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Authors>mhutch</Authors>
     <PackageTags>T4, templating</PackageTags>
+    <RepositoryUrl>https://github.com/mono/t4</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <PackageOutputPath>$(MSBuildThisFileDirectory)packages\$(Configuration)</PackageOutputPath>
   </PropertyGroup>
   <ItemGroup>

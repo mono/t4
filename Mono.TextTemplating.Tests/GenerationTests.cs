@@ -56,6 +56,18 @@ namespace Mono.TextTemplating.Tests
 		}
 
 		[Fact]
+		public void InProcessCompilerTest ()
+		{
+			var gen = new TemplateGenerator ();
+			gen.UseInProcessCompiler ();
+			string tmp = null;
+			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
+			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (System.Linq.Enumerable).Assembly.Location));
+			gen.ProcessTemplate (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
+			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
+		}
+
+		[Fact]
 		public void IncludeFileThatDoesNotExistTest ()
 		{
 			var gen = new TemplateGenerator ();
@@ -67,24 +79,24 @@ namespace Mono.TextTemplating.Tests
 		[Fact]
 		public void Generate ()
 		{
-			string Input = ParsingTests.ParseSample1.Replace ("\r\n", "\n");
-			string Output = OutputSample1.Replace ("\r\n", "\n");
+			string Input = ParsingTests.ParseSample1.NormalizeNewlines ();
+			string Output = OutputSample1.NormalizeEscapedNewlines ();
 			GenerateOutput (Input, Output, "\n");
 		}
 		
 		[Fact]
 		public void GenerateMacNewlines ()
 		{
-			string MacInput = ParsingTests.ParseSample1.Replace ("\r\n", "\n").Replace ("\n", "\r");
-			string MacOutput = OutputSample1.Replace ("\\n", "\\r").Replace ("\r\n", "\n").Replace ("\n", "\r");;
+			string MacInput = ParsingTests.ParseSample1.NormalizeNewlines ("\r");
+			string MacOutput = OutputSample1.NormalizeEscapedNewlines ("\\r");
 			GenerateOutput (MacInput, MacOutput, "\r");
 		}
 		
 		[Fact]
 		public void GenerateWindowsNewlines ()
 		{
-			string WinInput = ParsingTests.ParseSample1.Replace ("\r\n", "\n").Replace ("\n", "\r\n");
-			string WinOutput = OutputSample1.Replace ("\\n", "\\r\\n").Replace ("\r\n", "\n").Replace ("\n", "\r\n");
+			string WinInput = ParsingTests.ParseSample1.NormalizeNewlines ("\r\n");
+			string WinOutput = OutputSample1.NormalizeEscapedNewlines ("\\r\\n");
 			GenerateOutput (WinInput, WinOutput, "\r\n");
 		}
 
@@ -104,8 +116,8 @@ namespace Mono.TextTemplating.Tests
 		void GenerateOutput (string input, string expectedOutput, string newline)
 		{
 			var host = new DummyHost ();
-			string className = "GeneratedTextTransformation4f504ca0";
-			string code = GenerateCode (host, input, className, newline);
+			string nameSpaceName = "Microsoft.VisualStudio.TextTemplating4f504ca0";
+			string code = GenerateCode (host, input, nameSpaceName, newline);
 			Assert.Empty (host.Errors);
 
 			var generated = TemplatingEngineHelper.CleanCodeDom (code, newline);
@@ -125,7 +137,7 @@ namespace Mono.TextTemplating.Tests
 			
 			TemplateSettings settings = TemplatingEngine.GetSettings (host, pt);
 			if (name != null)
-				settings.Name = name;
+				settings.Namespace = name;
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
@@ -137,7 +149,7 @@ namespace Mono.TextTemplating.Tests
 				return null;
 			}
 			
-			var opts = new System.CodeDom.Compiler.CodeGeneratorOptions ();
+			var opts = new CodeGeneratorOptions ();
 			using (var writer = new System.IO.StringWriter ()) {
 				writer.NewLine = generatorNewline;
 				settings.Provider.GenerateCodeFromCompileUnit (ccu, writer, opts);
@@ -151,10 +163,10 @@ namespace Mono.TextTemplating.Tests
 
 		public static string OutputSample1 =
 @"
-namespace Microsoft.VisualStudio.TextTemplating {
+namespace Microsoft.VisualStudio.TextTemplating4f504ca0 {
     
     
-    public partial class GeneratedTextTransformation4f504ca0 : global::Microsoft.VisualStudio.TextTemplating.TextTransformation {
+    public partial class GeneratedTextTransformation : global::Microsoft.VisualStudio.TextTemplating.TextTransformation {
         
         
         #line 9 """"
@@ -208,5 +220,12 @@ var foo = 5;
 }
 ";
 		#endregion
+	}
+
+	static class StringNormalizationExtensions
+	{
+		public static string NormalizeNewlines (this string s, string newLine = "\n") => s.Replace ("\r\n", "\n").Replace ("\n", newLine);
+
+		public static string NormalizeEscapedNewlines (this string s, string escapedNewline = "\\n") => s.Replace ("\\r\\n", "\\n").Replace ("\\n", escapedNewline);
 	}
 }

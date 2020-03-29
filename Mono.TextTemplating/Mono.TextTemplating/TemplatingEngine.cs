@@ -49,6 +49,30 @@ namespace Mono.TextTemplating
 		ITextTemplatingEngine
 #pragma warning restore 618
 	{
+
+#if FEATURE_ROSLYN
+		Func<RuntimeInfo,CodeCompilation.CodeCompiler> createCompilerFunc;
+		CodeCompilation.CodeCompiler cachedCompiler;
+
+		internal void SetCompilerFunc (Func<RuntimeInfo,CodeCompilation.CodeCompiler> createCompiler)
+		{
+			cachedCompiler = null;
+			createCompilerFunc = createCompiler;
+		}
+
+		CodeCompilation.CodeCompiler GetOrCreateCompiler ()
+		{
+			if (cachedCompiler == null) {
+				var runtime = RuntimeInfo.GetRuntime ();
+				if (runtime.Error != null) {
+					throw new Exception (runtime.Error);
+				}
+				cachedCompiler = createCompilerFunc?.Invoke (runtime) ?? new CscCodeCompiler (runtime);
+			}
+			return cachedCompiler;
+		}
+#endif
+
 		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
 		{
 			using (var tpl = CompileTemplate (content, host)) {
@@ -204,7 +228,7 @@ namespace Mono.TextTemplating
 		}
 
 #if FEATURE_ROSLYN
-		static CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
+		CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
 		{
 			string sourceText;
 			var genOptions = new CodeGeneratorOptions ();
@@ -213,10 +237,8 @@ namespace Mono.TextTemplating
 				sourceText = sw.ToString ();
 			}
 
-			var runtime = RuntimeInfo.GetRuntime ();
-			if (runtime.Error != null) {
-				throw new Exception (runtime.Error);
-			}
+			// this may throw, so do it before writing source files
+			var compiler = GetOrCreateCompiler ();
 
 			var tempFolder = Path.GetTempFileName ();
 			File.Delete (tempFolder);
@@ -237,13 +259,15 @@ namespace Mono.TextTemplating
 			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
 			args.TempDirectory = tempFolder;
 
-			var compiler = new CscCodeCompiler (runtime);
-
 			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
 
 			var r = new CompilerResults (new TempFileCollection ());
 			r.TempFiles.AddFile (sourceFilename, false);
-			r.TempFiles.AddFile (result.ResponseFile, false);
+
+			if (result.ResponseFile != null) {
+				r.TempFiles.AddFile (result.ResponseFile, false);
+			}
+
 			r.NativeCompilerReturnValue = result.ExitCode;
 			r.Output.AddRange (result.Output.ToArray ());
 			r.Errors.AddRange (result.Errors.Select (e => new CompilerError (e.Origin ?? "", e.Line, e.Column, e.Code, e.Message) { IsWarning = !e.IsError }).ToArray ());
@@ -436,9 +460,9 @@ namespace Mono.TextTemplating
 			}
 
 			if (settings.Name == null)
-				settings.Name = string.Format ("GeneratedTextTransformation{0:x}", new Random ().Next ());
+				settings.Name = "GeneratedTextTransformation";
 			if (settings.Namespace == null)
-				settings.Namespace = typeof (TextTransformation).Namespace;
+				settings.Namespace = string.Format (typeof (TextTransformation).Namespace + "{0:x}", new Random ().Next ());
 
 			//resolve the CodeDOM provider
 			if (String.IsNullOrEmpty (settings.Language)) {

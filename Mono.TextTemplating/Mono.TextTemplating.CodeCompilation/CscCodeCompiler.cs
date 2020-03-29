@@ -1,4 +1,4 @@
-﻿//
+//
 // CodeCompiler.cs
 //
 // Author:
@@ -63,28 +63,6 @@ namespace Mono.TextTemplating.CodeCompilation
 			throw new Exception ("Failed to create temp file", ex);
 		}
 
-		//attempt to resolve refs into the runtime dir if the host didn't already do so
-		static string ResolveAssembly (RuntimeInfo runtime, string reference)
-		{
-			if (Path.IsPathRooted (reference) || File.Exists (reference)) {
-				return reference;
-			}
-
-			var resolved = Path.Combine (runtime.RuntimeDir, reference);
-			if (File.Exists (resolved)) {
-				return resolved;
-			}
-
-			if (runtime.Kind != RuntimeKind.NetCore) {
-				resolved = Path.Combine (runtime.RuntimeDir, "Facades", reference);
-				if (File.Exists (resolved)) {
-					return resolved;
-				}
-			}
-
-			return reference;
-		}
-
 		/// <summary>
 		/// Compiles the file.
 		/// </summary>
@@ -93,11 +71,6 @@ namespace Mono.TextTemplating.CodeCompilation
 		/// <param name="token">Token.</param>
 		public override async Task<CodeCompilerResult> CompileFile (CodeCompilerArguments arguments, TextWriter log, CancellationToken token)
 		{
-			var asmFileNames = new HashSet<string> (
-				arguments.AssemblyReferences.Select (Path.GetFileName),
-				StringComparer.OrdinalIgnoreCase
-			);
-
 			string rspPath;
 			StreamWriter rsp;
 			if (arguments.TempDirectory != null) {
@@ -114,28 +87,10 @@ namespace Mono.TextTemplating.CodeCompilation
 					rsp.WriteLine ("-debug");
 				}
 
-				void AddIfNotPresent (string asm)
-				{
-					if (!asmFileNames.Contains (asm)) {
-						rsp.Write ("\"-r:");
-						rsp.Write (Path.Combine (runtime.RuntimeDir, asm));
-						rsp.WriteLine ("\"");
-					}
-				}
-				AddIfNotPresent ("mscorlib.dll");
-
-				if (runtime.Kind == RuntimeKind.NetCore) {
-					AddIfNotPresent ("netstandard.dll");
-					AddIfNotPresent ("System.Runtime.dll");
-					//because we're referencing the impl not the ref asms, we end up
-					//having to ref internals
-					AddIfNotPresent ("System.Private.CoreLib.dll");
-				}
-
-				foreach (var reference in arguments.AssemblyReferences) {
+				foreach (var reference in AssemblyResolver.GetResolvedReferences (runtime, arguments.AssemblyReferences)) {
 					rsp.Write ("-r:");
 					rsp.Write ("\"");
-					rsp.Write (ResolveAssembly (runtime, reference));
+					rsp.Write (reference);
 					rsp.WriteLine ("\"");
 				}
 
