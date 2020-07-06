@@ -10,7 +10,15 @@
     <PackageId>Mono.TextTemplating.Console</PackageId>
     <IsTool>True</IsTool>
     <Description>Command-line T4 text transform tool.</Description>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- work around nuget pack targets not packaging private assets from project references -->
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" PrivateAssets="all" />
