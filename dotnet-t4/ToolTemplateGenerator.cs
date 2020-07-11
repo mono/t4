@@ -42,6 +42,7 @@ namespace Mono.TextTemplating
 			TemplateSettings settings = null)
 		{
 			TemplateFile = inputFile;
+			BuildProjectMetadata ();
 			string classNamespace = null;
 			int s = className.LastIndexOf ('.');
 			if (s > 0) {
@@ -61,6 +62,7 @@ namespace Mono.TextTemplating
 		{
 			TemplateFile = inputFile;
 			OutputFile = outputFile;
+			BuildProjectMetadata ();
 			using (var compiled = Engine.CompileTemplate (pt, inputContent, this, settings)) {
 				var result = compiled?.Process ();
 				outputFile = OutputFile;

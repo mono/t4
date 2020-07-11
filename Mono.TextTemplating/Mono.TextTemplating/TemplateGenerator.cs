@@ -31,6 +31,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using Microsoft.VisualStudio.TextTemplating;
+using System.Text.RegularExpressions;
 
 namespace Mono.TextTemplating
 {
@@ -70,6 +71,7 @@ namespace Mono.TextTemplating
 		public string OutputFile { get; protected set; }
 		public string TemplateFile { get; protected set; }
 		public bool UseRelativeLinePragmas { get; set; }
+		public ProjectMetadata ProjectMetadata { get; } = new ProjectMetadata ();
 		
 		public TemplateGenerator ()
 		{
@@ -126,7 +128,7 @@ namespace Mono.TextTemplating
 			
 			return !Errors.HasErrors;
 		}
-		
+
 		public bool ProcessTemplate (string inputFileName, string inputContent, ref string outputFileName, out string outputContent)
 		{
 			Errors.Clear ();
@@ -134,6 +136,7 @@ namespace Mono.TextTemplating
 
 			OutputFile = outputFileName;
 			TemplateFile = inputFileName;
+			BuildProjectMetadata ();
 			outputContent = Engine.ProcessTemplate (inputContent, this);
 			outputFileName = OutputFile;
 			
@@ -180,11 +183,37 @@ namespace Mono.TextTemplating
 			encoding = Utf8.BomlessEncoding;
 
 			TemplateFile = inputFileName;
+			BuildProjectMetadata ();
 			outputContent = Engine.PreprocessTemplate (inputContent, this, className, classNamespace, out language, out references);
 			
 			return !Errors.HasErrors;
 		}
-		
+
+		protected void BuildProjectMetadata ()
+		{
+			if (!FileUtil.TryFindProjectFile (TemplateFile, out var projectFile))
+				return;
+
+			ProjectMetadata.Metadatas[nameof (ProjectMetadata.ProjectFileName)] = Path.GetFileName (projectFile);
+			ProjectMetadata.Metadatas[nameof (ProjectMetadata.ProjectDir)] = Path.GetDirectoryName (projectFile) + @"\";
+		}
+
+		string ResolveProjectMetadata (string metadata)
+		{
+			if (string.IsNullOrEmpty (metadata))
+				return metadata;
+
+			var regex = new Regex (@"\$\(([^\)]+)\)", RegexOptions.Compiled);
+			var result = regex.Replace (metadata, match => {
+				if (ProjectMetadata.Metadatas.TryGetValue (match.Groups[1].Value, out var info))
+					return info;
+
+				return match.Value;
+			});
+
+			return result;
+		}
+
 		CompilerError AddError (string error)
 		{
 			var err = new CompilerError { ErrorText = error };
@@ -210,6 +239,7 @@ namespace Mono.TextTemplating
 		
 		protected virtual string ResolveAssemblyReference (string assemblyReference)
 		{
+			assemblyReference = ResolveProjectMetadata (assemblyReference);
 			if (System.IO.Path.IsPathRooted (assemblyReference))
  				return assemblyReference;
  			foreach (string referencePath in ReferencePaths) {
@@ -254,6 +284,8 @@ namespace Mono.TextTemplating
 		
 		protected virtual string ResolvePath (string path)
 		{
+			path = ResolveProjectMetadata (path);
+
 			if (!string.IsNullOrEmpty(path)) {
 				path = Environment.ExpandEnvironmentVariables (path);
 				if (Path.IsPathRooted (path))

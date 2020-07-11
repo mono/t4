@@ -1,4 +1,4 @@
-﻿//
+//
 // FileUtil.cs
 //
 // Author:
@@ -25,6 +25,7 @@
 // THE SOFTWARE.
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Mono.TextTemplating
 {
@@ -105,6 +106,27 @@ namespace Mono.TextTemplating
 				}
 				return new string (result);
 			}
+		}
+
+		/// <summary>
+		/// Find the projet that contains the file
+		/// </summary>
+		/// <param name="childFile"></param>
+		/// <param name="projectFile">Full path to project file</param>
+		/// <returns></returns>
+		public static bool TryFindProjectFile (string childFile, out string projectFile)
+		{
+			string directory = Path.GetDirectoryName (Path.GetFullPath(childFile));
+			while (Directory.Exists (directory) && Directory.GetDirectoryRoot (directory) != directory) {
+				var files = Directory.GetFiles (directory, "*.*proj").ToList();
+				if (files.Any ()) {
+					projectFile = files.First ();
+					return true;
+				}
+				directory = Path.GetDirectoryName (directory);
+			}
+			projectFile = null;
+			return false;
 		}
 
 		static bool IsSeparator (char ch)
