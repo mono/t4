@@ -30,6 +30,7 @@ using Microsoft.VisualStudio.TextTemplating;
 using System.CodeDom.Compiler;
 using System.Globalization;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Mono.TextTemplating
 {
@@ -43,14 +44,17 @@ namespace Mono.TextTemplating
 		object textTransformation;
 		readonly CultureInfo culture;
 		readonly string [] assemblyFiles;
+		readonly Dictionary<string, Assembly> loadedAeesmblies;
 
 		public CompiledTemplate (ITextTemplatingEngineHost host, CompilerResults results, string fullName, CultureInfo culture,
 			string [] assemblyFiles)
 		{
 			AppDomain.CurrentDomain.AssemblyResolve += ResolveReferencedAssemblies;
+			AppDomain.CurrentDomain.AssemblyLoad += CacheOnAssemblyLoad;
 			this.host = host;
 			this.culture = culture;
 			this.assemblyFiles = assemblyFiles;
+			this.loadedAeesmblies = new Dictionary<string, Assembly>();
 			Load (results, fullName);
 		}
 
@@ -125,9 +129,16 @@ namespace Mono.TextTemplating
 			return output;
 		}
 
+		void CacheOnAssemblyLoad (object sender, AssemblyLoadEventArgs args)
+		{
+			loadedAeesmblies[args.LoadedAssembly.GetName ().FullName] = args.LoadedAssembly;
+		}
 
 		Assembly ResolveReferencedAssemblies (object sender, ResolveEventArgs args)
 		{
+			if (loadedAeesmblies.TryGetValue (args.Name, out var assembly))
+				return assembly;
+
 			AssemblyName asmName = new AssemblyName (args.Name);
 			foreach (var asmFile in assemblyFiles) {
 				if (asmName.Name == System.IO.Path.GetFileNameWithoutExtension (asmFile))
@@ -138,7 +149,10 @@ namespace Mono.TextTemplating
 			if (System.IO.File.Exists (path))
 				return Assembly.LoadFrom (path);
 
-			return null;
+			var currAssemblies = AppDomain.CurrentDomain.GetAssemblies ();
+			assembly = currAssemblies.FirstOrDefault (o => o.GetName ().FullName == args.Name);
+
+			return assembly;
 		}
 
 		public void Dispose ()
