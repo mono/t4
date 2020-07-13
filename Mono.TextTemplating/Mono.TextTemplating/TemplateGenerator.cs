@@ -48,12 +48,16 @@ namespace Mono.TextTemplating
 			{ "System.Linq.dll", typeof(System.Linq.Enumerable).Assembly.Location },
 			{ "System.Xml.dll", typeof(System.Xml.XmlAttribute).Assembly.Location },
 			{ "System.Xml.Linq.dll", typeof(System.Xml.Linq.XDocument).Assembly.Location },
+			{ "System.Runtime.dll", typeof (int).Assembly.Location},
+			{ "System.ComponentModel.Primitives.dll", typeof (System.ComponentModel.DescriptionAttribute).Assembly.Location},
 
 			{ "System.Core", typeof(System.Linq.Enumerable).Assembly.Location },
 			{ "System.Data", typeof(System.Data.DataTable).Assembly.Location },
 			{ "System.Linq", typeof(System.Linq.Enumerable).Assembly.Location },
 			{ "System.Xml", typeof(System.Xml.XmlAttribute).Assembly.Location },
-			{ "System.Xml.Linq", typeof(System.Xml.Linq.XDocument).Assembly.Location }
+			{ "System.Xml.Linq", typeof(System.Xml.Linq.XDocument).Assembly.Location },
+			{ "System.Runtime", typeof (int).Assembly.Location},
+			{ "System.ComponentModel.Primitives", typeof (System.ComponentModel.DescriptionAttribute).Assembly.Location},
 		};
 
 		//re-usable

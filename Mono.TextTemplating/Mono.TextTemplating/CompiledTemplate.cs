@@ -160,6 +160,7 @@ namespace Mono.TextTemplating
 			if (host != null) {
 				host = null;
 				AppDomain.CurrentDomain.AssemblyResolve -= ResolveReferencedAssemblies;
+				AppDomain.CurrentDomain.AssemblyLoad -= CacheOnAssemblyLoad;
 			}
 		}
 	}
