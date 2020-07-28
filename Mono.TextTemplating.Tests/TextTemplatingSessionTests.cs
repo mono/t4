@@ -1,4 +1,4 @@
-﻿//
+//
 // TextTemplatingSessionTests.cs
 //
 // Author:
@@ -26,7 +26,7 @@
 
 using System;
 using System.Reflection;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 using NUnit.Framework;
 
 namespace Mono.TextTemplating.Tests

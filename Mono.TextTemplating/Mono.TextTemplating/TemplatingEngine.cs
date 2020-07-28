@@ -34,7 +34,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using Microsoft.CSharp;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 #if FEATURE_ROSLYN
 using Mono.TextTemplating.CodeCompilation;
 #endif

@@ -1,5 +1,5 @@
 // 
-// DirectiveProcessorException.cs
+// Engine.cs
 //  
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
@@ -25,32 +25,26 @@
 // THE SOFTWARE.
 
 using System;
-using System.Runtime.Serialization;
+using Mono.TextTemplating;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
-	
-	[Serializable]
-	public class DirectiveProcessorException : Exception
+	[Obsolete ("Use Mono.TextTemplating.TemplatingEngine directly")]
+	public class Engine : ITextTemplatingEngine
 	{
+		TemplatingEngine engine = new TemplatingEngine ();
 		
-		public DirectiveProcessorException ()
+		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
 		{
+			return engine.ProcessTemplate (content, host);
 		}
 		
-		public DirectiveProcessorException (string message)
-			: base (message)
+		public string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className, 
+			string classNamespace, out string language, out string[] references)
 		{
+			return engine.PreprocessTemplate (content, host, className, classNamespace, out language, out references);
 		}
 		
-		public DirectiveProcessorException (SerializationInfo info, StreamingContext context)
-			: base (info, context)
-		{
-		}
-		
-		public DirectiveProcessorException (string message, Exception inner)
-			: base (message, inner)
-		{
-		}
+		public const string CacheAssembliesOptionString = "CacheAssemblies";
 	}
 }

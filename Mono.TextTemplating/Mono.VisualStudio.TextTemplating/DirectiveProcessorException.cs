@@ -1,10 +1,10 @@
 // 
-// TextTemplatingSession.cs
+// DirectiveProcessorException.cs
 //  
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
 // 
-// Copyright (c) 2010 Novell, Inc.
+// Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,61 +23,34 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
-using System.Collections.Generic;
-using System.Collections;
 using System.Runtime.Serialization;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
+	
 	[Serializable]
-	public sealed class TextTemplatingSession : Dictionary<string, Object>, ITextTemplatingSession, ISerializable
+	public class DirectiveProcessorException : Exception
 	{
-		public TextTemplatingSession () : this (Guid.NewGuid ())
+		
+		public DirectiveProcessorException ()
 		{
 		}
-
-		TextTemplatingSession (SerializationInfo info, StreamingContext context)
+		
+		public DirectiveProcessorException (string message)
+			: base (message)
+		{
+		}
+		
+		public DirectiveProcessorException (SerializationInfo info, StreamingContext context)
 			: base (info, context)
 		{
-			Id = (Guid)info.GetValue ("Id", typeof (Guid));
-		}
-
-		public TextTemplatingSession (Guid id)
-		{
-			this.Id = id;
 		}
 		
-		public Guid Id {
-			get; private set;
-		}
-		
-		public override int GetHashCode ()
+		public DirectiveProcessorException (string message, Exception inner)
+			: base (message, inner)
 		{
-			return Id.GetHashCode ();
-		}
-		
-		public override bool Equals (object obj)
-		{
-			var o = obj as TextTemplatingSession;
-			return o != null && o.Equals (this);
-		}
-		
-		public bool Equals (Guid other)
-		{
-			return other.Equals (Id);
-		}
-		
-		public bool Equals (ITextTemplatingSession other)
-		{
-			return other != null && other.Id == this.Id;
-		}
-
-		void ISerializable.GetObjectData (SerializationInfo info, StreamingContext context)
-		{
-			base.GetObjectData (info, context);
-			info.AddValue ("Id", Id);
 		}
 	}
 }
-

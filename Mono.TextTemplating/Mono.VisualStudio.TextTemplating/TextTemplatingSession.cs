@@ -1,5 +1,5 @@
 // 
-// EncodingHelper.cs
+// TextTemplatingSession.cs
 //  
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
@@ -23,18 +23,60 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-
 using System;
-using System.Text;
+using System.Collections.Generic;
+using System.Collections;
+using System.Runtime.Serialization;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
-	[Obsolete("Not implemented")]
-	public static class EncodingHelper
+	[Serializable]
+	public sealed class TextTemplatingSession : Dictionary<string, Object>, ITextTemplatingSession, ISerializable
 	{
-		public static Encoding GetEncoding (string filePath)
+		public TextTemplatingSession () : this (Guid.NewGuid ())
 		{
-			throw new NotImplementedException ();
+		}
+
+		TextTemplatingSession (SerializationInfo info, StreamingContext context)
+			: base (info, context)
+		{
+			Id = (Guid)info.GetValue ("Id", typeof (Guid));
+		}
+
+		public TextTemplatingSession (Guid id)
+		{
+			this.Id = id;
+		}
+		
+		public Guid Id {
+			get; private set;
+		}
+		
+		public override int GetHashCode ()
+		{
+			return Id.GetHashCode ();
+		}
+		
+		public override bool Equals (object obj)
+		{
+			var o = obj as TextTemplatingSession;
+			return o != null && o.Equals (this);
+		}
+		
+		public bool Equals (Guid other)
+		{
+			return other.Equals (Id);
+		}
+		
+		public bool Equals (ITextTemplatingSession other)
+		{
+			return other != null && other.Id == this.Id;
+		}
+
+		void ISerializable.GetObjectData (SerializationInfo info, StreamingContext context)
+		{
+			base.GetObjectData (info, context);
+			info.AddValue ("Id", Id);
 		}
 	}
 }

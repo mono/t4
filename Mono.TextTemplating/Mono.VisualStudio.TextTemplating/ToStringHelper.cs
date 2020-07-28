@@ -27,7 +27,7 @@
 using System;
 using System.Reflection;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
 	public static class ToStringHelper
 	{

@@ -26,7 +26,7 @@
 
 using System;
 using System.Reflection;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 using System.CodeDom.Compiler;
 using System.Globalization;
 using System.Collections.Generic;

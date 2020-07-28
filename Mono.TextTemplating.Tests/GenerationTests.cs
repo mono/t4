@@ -28,7 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 using System.Linq;
 using System.CodeDom.Compiler;
 
@@ -121,7 +121,7 @@ namespace Mono.TextTemplating.Tests
 		void Generate (string input, string expectedOutput, string newline)
 		{
 			var host = new DummyHost ();
-			string nameSpaceName = "Microsoft.VisualStudio.TextTemplating4f504ca0";
+			string nameSpaceName = "Mono.VisualStudio.TextTemplating4f504ca0";
 			string code = GenerateCode (host, input, nameSpaceName, newline);
 			Assert.AreEqual (0, host.Errors.Count);
 
@@ -168,10 +168,10 @@ namespace Mono.TextTemplating.Tests
 
 		public static string OutputSample1 =
 @"
-namespace Microsoft.VisualStudio.TextTemplating4f504ca0 {
+namespace Mono.VisualStudio.TextTemplating4f504ca0 {
     
     
-    public partial class GeneratedTextTransformation : global::Microsoft.VisualStudio.TextTemplating.TextTransformation {
+    public partial class GeneratedTextTransformation : global::Mono.VisualStudio.TextTemplating.TextTransformation {
         
         
         #line 9 """"
@@ -205,7 +205,7 @@ var foo = 5;
             #line hidden
             
             #line 7 """"
-            this.Write(global::Microsoft.VisualStudio.TextTemplating.ToStringHelper.ToStringWithCulture( bar ));
+            this.Write(global::Mono.VisualStudio.TextTemplating.ToStringHelper.ToStringWithCulture( bar ));
             
             #line default
             #line hidden

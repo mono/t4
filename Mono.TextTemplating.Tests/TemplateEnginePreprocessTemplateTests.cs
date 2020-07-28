@@ -29,7 +29,7 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating.Tests
 {

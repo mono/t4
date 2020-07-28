@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft Corp (https://www.microsoft.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 
 using System;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;

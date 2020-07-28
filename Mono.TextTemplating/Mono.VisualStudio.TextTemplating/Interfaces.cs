@@ -31,8 +31,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
+using Mono.TextTemplating;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
 	public interface IRecognizeHostSpecific
 	{
@@ -46,6 +47,29 @@ namespace Microsoft.VisualStudio.TextTemplating
 		string ProcessTemplate (string content, ITextTemplatingEngineHost host);
 		string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className,
 			string classNamespace, out string language, out string [] references);
+	}
+
+	public interface ITextTemplatingComponents
+	{
+		ITextTemplatingEngineHost Host { get; }
+
+		TemplatingEngine Engine { get; }
+
+		string InputFile { get; }
+
+		ITextTemplatingCallback Callback { get; set; }
+
+		object Hierarchy { get; set; }
+	}
+
+	public interface ITextTemplatingCallback
+	{
+		bool Errors { get; set; }
+		string Extension { get; }
+		void ErrorCallback (bool warning, string message, int line, int column);
+		void SetFileExtension (string extension);
+		void SetOutputEncoding (Encoding encoding, bool fromOutputDirective);
+		Encoding OutputEncoding { get; }
 	}
 
 	public interface ITextTemplatingEngineHost

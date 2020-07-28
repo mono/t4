@@ -27,7 +27,7 @@
 using System;
 using System.Collections.Generic;
 using System.CodeDom.Compiler;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating.Tests
 {

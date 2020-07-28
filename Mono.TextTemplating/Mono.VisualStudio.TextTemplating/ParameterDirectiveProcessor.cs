@@ -30,7 +30,7 @@ using System.Collections.Generic;
 using System.IO;
 using Mono.TextTemplating;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
 	public sealed class ParameterDirectiveProcessor : DirectiveProcessor, IRecognizeHostSpecific
 	{

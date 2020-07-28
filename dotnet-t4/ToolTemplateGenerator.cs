@@ -21,7 +21,7 @@
 
 using System.CodeDom.Compiler;
 
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating
 {

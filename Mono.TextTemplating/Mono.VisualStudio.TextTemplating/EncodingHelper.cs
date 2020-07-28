@@ -1,10 +1,10 @@
 // 
-// Engine.cs
+// EncodingHelper.cs
 //  
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
 // 
-// Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
+// Copyright (c) 2010 Novell, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,26 +25,16 @@
 // THE SOFTWARE.
 
 using System;
-using Mono.TextTemplating;
+using System.Text;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
-	[Obsolete ("Use Mono.TextTemplating.TemplatingEngine directly")]
-	public class Engine : ITextTemplatingEngine
+	public static class EncodingHelper
 	{
-		TemplatingEngine engine = new TemplatingEngine ();
-		
-		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
+		public static Encoding GetEncoding (string filePath)
 		{
-			return engine.ProcessTemplate (content, host);
+			throw new NotImplementedException ();
 		}
-		
-		public string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className, 
-			string classNamespace, out string language, out string[] references)
-		{
-			return engine.PreprocessTemplate (content, host, className, classNamespace, out language, out references);
-		}
-		
-		public const string CacheAssembliesOptionString = "CacheAssemblies";
 	}
 }
+
