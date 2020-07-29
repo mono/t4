@@ -168,7 +168,7 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 			CompiledTemplate compiledTemplate = null;
 
 			if (host is ITextTemplatingComponents Component &&
-				Component.Engine is TemplatingEngine engine) {
+				Component.Engine is IDebugTextTemplatingEngine engine) {
 				compiledTemplate = engine.CompileTemplate (template, content, host, settings);
 				// do we want to dispose the appdomain resolver in compiled template in favor of the transformation runner?
 				//compiledTemplate?.Dispose ();

@@ -47,6 +47,16 @@ namespace Mono.VisualStudio.TextTemplating
 		bool RequiresProcessingRunIsHostSpecific { get; }
 	}
 
+	public interface ITextTemplatingService
+		: ITextTemplatingEngineHost
+		, ITextTemplatingSessionHost
+		, ITextTemplatingComponents
+		, IDebugTextTemplating
+		, ITextTemplating
+	{
+		new IDebugTextTemplatingEngine Engine { get; }
+	}
+
 	public interface IDebugTextTemplating
 		: ITextTemplating
 	{
@@ -80,6 +90,8 @@ namespace Mono.VisualStudio.TextTemplating
 		: ITextTemplatingEngine
 	{
 		IDebugTransformationRun PrepareTransformationRun (string content, ITextTemplatingEngineHost host, IDebugTransformationRunFactory runFactory);
+
+		CompiledTemplate CompileTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, TemplateSettings settings = null);
 	}
 
 	public interface ITextTemplatingEngine
@@ -95,7 +107,7 @@ namespace Mono.VisualStudio.TextTemplating
 
 		ITextTemplatingEngine Engine { get; }
 
-		string InputFile { get; }
+		string InputFile { get; set; }
 
 		ITextTemplatingCallback Callback { get; set; }
 
