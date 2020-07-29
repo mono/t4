@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Reflection;
 using Mono.TextTemplating;
 
-namespace Mono.VisualStudio.TextTemplating.VHost
+namespace Mono.VisualStudio.TextTemplating.VSHost
 {
 	public class TransformationRunner :
 #if FEATURE_APPDOMAINS

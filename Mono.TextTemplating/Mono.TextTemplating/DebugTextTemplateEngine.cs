@@ -1,6 +1,6 @@
 using System;
 using Mono.VisualStudio.TextTemplating;
-using Mono.VisualStudio.TextTemplating.VHost;
+using Mono.VisualStudio.TextTemplating.VSHost;
 
 namespace Mono.TextTemplating
 {

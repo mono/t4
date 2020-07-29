@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace Mono.VisualStudio.TextTemplating.VHost
+namespace Mono.VisualStudio.TextTemplating.VSHost
 {
 	public class TextTemplatingCallback
 		: ITextTemplatingCallback

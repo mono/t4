@@ -1,6 +1,6 @@
 using System;
 
-namespace Mono.VisualStudio.TextTemplating.VHost
+namespace Mono.VisualStudio.TextTemplating.VSHost
 {
 	public class DebugTemplateEventArgs : EventArgs
 	{

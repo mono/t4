@@ -39,7 +39,7 @@ using Mono.TextTemplating;
 
 namespace Mono.VisualStudio.TextTemplating
 {
-	using VHost;
+	using Mono.VisualStudio.TextTemplating.VSHost;
 
 	public interface IRecognizeHostSpecific
 	{

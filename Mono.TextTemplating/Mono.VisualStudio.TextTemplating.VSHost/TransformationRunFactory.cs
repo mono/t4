@@ -1,7 +1,7 @@
 using System;
 using Mono.TextTemplating;
 
-namespace Mono.VisualStudio.TextTemplating.VHost
+namespace Mono.VisualStudio.TextTemplating.VSHost
 {
 	public abstract class TransformationRunFactory :
 #if FEATURE_APPDOMAINS
