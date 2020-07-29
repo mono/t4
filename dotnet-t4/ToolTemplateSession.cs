@@ -47,6 +47,26 @@ namespace Mono.TextTemplating
 		public ICollection<object> Values => session.Values;
 		public int Count => session.Count;
 		public bool IsReadOnly => false;
+
+		public bool Debug {
+			get => (bool)this[nameof (Debug)];
+			set => this[nameof (Debug)] = value;
+		}
+
+		public string TemplateFile {
+			get => (string)this[nameof (TemplateFile)];
+			set => this[nameof (TemplateFile)] = value;
+		}
+		public ITextTemplatingSessionHost UserTransformationSession {
+			get => (ITextTemplatingSessionHost)this[nameof (UserTransformationSession)];
+			set => this[nameof (UserTransformationSession)] = value;
+		}
+
+		public Stack<string> IncludeStack {
+			get => (Stack<string>)this[nameof (IncludeStack)];
+			set => this[nameof (IncludeStack)] = value;
+		}
+
 		public void Add (string key, object value) => session.Add (key, value);
 		public void Add (KeyValuePair<string, object> item) => session.Add (item.Key, item.Value);
 		public void Clear () => session.Clear ();

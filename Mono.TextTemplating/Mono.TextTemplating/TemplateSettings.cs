@@ -74,7 +74,7 @@ namespace Mono.TextTemplating
 					continue;
 				}
 
-				session[property.Name] = property.GetValue (this);
+				session[property.Name] = property.GetValue (this, null);
 			}
 		}
 

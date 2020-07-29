@@ -31,6 +31,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using Mono.VisualStudio.TextTemplating;
+using System.Runtime.Serialization;
 
 namespace Mono.TextTemplating
 {
@@ -507,6 +508,11 @@ namespace Mono.TextTemplating
 		public virtual IEnumerable<IDirectiveProcessor> GetAdditionalDirectiveProcessors ()
 		{
 			yield break;
+		}
+
+		public void GetObjectData (SerializationInfo info, StreamingContext context)
+		{
+			throw new NotImplementedException ();
 		}
 	}
 }
