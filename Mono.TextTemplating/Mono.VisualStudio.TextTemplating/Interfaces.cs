@@ -54,11 +54,7 @@ namespace Mono.VisualStudio.TextTemplating
 
 	public interface IDebugTransformationRunFactory
 	{
-#if FEATURE_APPDOMAINS
 		IDebugTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate template, ResolveEventHandler resolver);
-#elif NETSTANDARD
-		IDebugTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate template, Func<AssemblyLoadContext, AssemblyName, Assembly> resolver);
-#endif
 
 		string RunTransformation (IDebugTransformationRun transformationRun);
 	}
@@ -129,9 +125,14 @@ namespace Mono.VisualStudio.TextTemplating
 	{
 		Guid Id { get; }
 		bool Debug { get; set; }
+		bool CachedTemplates { get; set; }
 		string TemplateFile { get; set; }
 		ITextTemplatingSessionHost UserTransformationSession { get; set; }
 		Stack<string> IncludeStack { get; }
+		List<string> Assemblies { get; }
+		string ClassFullName { get; set; }
+		string CompilerOptions { get; set; }
+		SupportedLangaugeEnum SupportedLangauge { get; set; }
 	}
 	
 	public interface ITextTemplatingSessionHost

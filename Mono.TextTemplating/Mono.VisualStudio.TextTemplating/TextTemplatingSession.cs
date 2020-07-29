@@ -46,6 +46,7 @@ namespace Mono.VisualStudio.TextTemplating
 		{
 			this.Id = id;
 			this.IncludeStack = new Stack<string> ();
+			this.Assemblies = new List<string> ();
 		}
 		
 		public Guid Id {
@@ -56,6 +57,11 @@ namespace Mono.VisualStudio.TextTemplating
 		public bool Debug {
 			get => (bool)this[nameof (Debug)];
 			set => this[nameof (Debug)] = value;
+		}
+
+		public bool CachedTemplates {
+			get => (bool)this[nameof (CachedTemplates)];
+			set => this[nameof (CachedTemplates)] = value;
 		}
 
 		public string TemplateFile {
@@ -70,6 +76,25 @@ namespace Mono.VisualStudio.TextTemplating
 		public Stack<string> IncludeStack {
 			get => (Stack<string>)this[nameof (IncludeStack)];
 			set => this[nameof (IncludeStack)] = value;
+		}
+
+		public List<string> Assemblies {
+			get => (List<string>)this[nameof (Assemblies)];
+			set => this[nameof (Assemblies)] = value;
+		}
+		public string ClassFullName {
+			get => (string)this[nameof (ClassFullName)];
+			set => this[nameof (ClassFullName)] = value;
+		}
+
+		public SupportedLangaugeEnum SupportedLangauge {
+			get => (SupportedLangaugeEnum)this[nameof (SupportedLangauge)];
+			set => this[nameof (SupportedLangauge)] = value;
+		}
+
+		public string CompilerOptions {
+			get => (string)this[nameof (CompilerOptions)];
+			set => this[nameof (CompilerOptions)] = value;
 		}
 
 		public override int GetHashCode ()

@@ -14,7 +14,7 @@ namespace Mono.VisualStudio.TextTemplating
 	using Microsoft.Extensions.DependencyModel.Resolution;
 	using Mono.TextTemplating;
 
-	public class TextDebugTemplateEngine
+	public class DebugTextTemplateEngine
 		: TemplatingEngine
 		, IDebugTextTemplatingEngine
 	{
@@ -44,9 +44,7 @@ namespace Mono.VisualStudio.TextTemplating
 
 				settings.Debug = true;
 
-				settings.ApplyTo (session);
-
-				run = CompileAndPrepareRun (pt, host, session, runFactory, settings);
+				run = CompileAndPrepareRun (pt, content, host, session, runFactory, settings);
 			} catch(Exception ex) {
 				if (IsCriticalException(ex)) {
 					throw;
@@ -76,7 +74,7 @@ namespace Mono.VisualStudio.TextTemplating
 			}
 		}
 
-		IDebugTransformationRun CompileAndPrepareRun (ParsedTemplate template, ITextTemplatingEngineHost host, ITextTemplatingSession session, IDebugTransformationRunFactory runFactory, TemplateSettings settings) 
+		IDebugTransformationRun CompileAndPrepareRun (ParsedTemplate template, string content, ITextTemplatingEngineHost host, ITextTemplatingSession session, IDebugTransformationRunFactory runFactory, TemplateSettings settings) 
 		{
 			TransformationRunner runner = null;
 			bool success = false;
@@ -93,12 +91,14 @@ namespace Mono.VisualStudio.TextTemplating
 					}
 				}
 				if (runner != null && !runner.Errors.HasErrors) {
-					string[] assemblies = ProcessReferences (host, template, settings);
+					ProcessReferences (host, template, settings);
 					if (!template.Errors.HasErrors) {
-						runner.PreLoadAssemblies (assemblies);
+						runner.PreLoadAssemblies (settings.Assemblies);
+
+						settings.ApplyTo (session);
 
 						try {
-							success = runner.PrepareTransformation (session, template, settings.HostSpecific ? host : null);
+							success = runner.PrepareTransformation (session, template, content, settings.HostSpecific ? host : null, settings);
 						}
 						catch (SerializationException) {
 							template.LogError (Resources.SessionHostMarshalError, new Location (session.TemplateFile, -1, -1));

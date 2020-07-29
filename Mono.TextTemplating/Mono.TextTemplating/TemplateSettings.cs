@@ -72,10 +72,17 @@ namespace Mono.TextTemplating
 			foreach(PropertyInfo property in GetType().GetProperties()) {
 				if (!property.PropertyType.IsSerializable) {
 					continue;
+				} else if (property.Name.Equals(nameof(Language), StringComparison.OrdinalIgnoreCase)) {
+					if (property.GetValue<string>(this, null).TryParse(out SupportedLangaugeEnum supported)) {
+						session.SupportedLangauge = supported;
+					}
+					continue;
 				}
 
 				session[property.Name] = property.GetValue (this, null);
 			}
+
+			session.ClassFullName = GetFullName ();
 		}
 
 		public string GetFullName () => string.IsNullOrEmpty (Namespace) ? Name : Namespace + "." + Name;

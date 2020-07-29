@@ -16,7 +16,7 @@ namespace Mono.VisualStudio.TextTemplating
 		public const string TransformationRunFactoryPrefix = "TransformationRunFactoryService";
 		public const string TransformationRunFactorySuffix = nameof (TransformationRunFactory);
 
-		public abstract IDebugTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate template, Func<AssemblyLoadContext, AssemblyName, Assembly> resolver);
+		public abstract IDebugTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate template, ResolveEventHandler resolver);
 
 		public abstract string RunTransformation (IDebugTransformationRun transformationRun);
 #if FEATURE_APPDOMAINS

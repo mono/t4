@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using System.Reflection;
 
 namespace Mono.TextTemplating
 {
@@ -14,5 +16,33 @@ namespace Mono.TextTemplating
 
 			return true;
 		}
+
+		public static TType GetValue<TType>(this PropertyInfo property, object @object, object[] index)
+		{
+			if (property.GetValue(@object, index) is TType success) {
+				return success;
+			}
+			return default;
+		}
+
+
+		public static bool TryParse<TEnum> (this string value, out TEnum @enum)
+			where TEnum: struct
+		{
+#if NET35
+			if (Enum.Parse (typeof (TEnum), value) is TEnum success) {
+				@enum = success;
+
+				return true;
+			}
+
+			@enum = default;
+
+			return false;
+#else
+			return Enum.TryParse (value, out @enum);
+#endif
+		}
+
 	}
 }

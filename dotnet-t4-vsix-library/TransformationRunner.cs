@@ -3,9 +3,8 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
 using Mono.TextTemplating;
 
 namespace Mono.VisualStudio.TextTemplating
@@ -16,12 +15,12 @@ namespace Mono.VisualStudio.TextTemplating
 #endif
 		IDebugTransformationRun
 	{
-		private Assembly assembly;
-		private TemplateSettings settings;
-		private ITextTemplatingSession session;
-		private ITextTemplatingEngineHost host;
-		private static Regex linePattern;
-
+		static HashSet<string> shadowCopyPaths = null;
+		static object shadowCopySync = new object ();
+		CompiledTemplate compiledTemplate;
+		TemplateSettings settings;
+		ITextTemplatingSession session;
+		ITextTemplatingEngineHost host;
 
 		public CompilerErrorCollection Errors { get; private set; }
 
@@ -29,24 +28,31 @@ namespace Mono.VisualStudio.TextTemplating
 		{
 			string errorOutput = Resources.ErrorOutput;
 
-			if (assembly == null) {
+			if (compiledTemplate == null) {
 				LogError (Resources.ErrorInitializingTransformationObject, false);
 
 				return errorOutput;
 			}
 
-			object result = null;
+			object transform = null;
 
 			try {
-				result = CreateTextTransformation (settings, host, assembly, session);
+				transform = CreateTextTransformation (settings, host, compiledTemplate.Assembly, session);
 
-				throw new NotImplementedException ();
+				return compiledTemplate.Process (transform);
+			}
+			catch (Exception ex) {
+				if (DebugTextTemplateEngine.IsCriticalException(ex)) {
+					throw;
+				}
+				LogError (ex.ToString (), false);
 			}
 			finally {
-				if (result is IDisposable disposable) {
+				if (transform is IDisposable disposable) {
 					disposable.Dispose ();
 				}
-				assembly = null;
+				compiledTemplate?.Dispose ();
+				compiledTemplate = null;
 				host = null;
 			}
 
@@ -88,7 +94,7 @@ namespace Mono.VisualStudio.TextTemplating
 							}	
 						}
 						catch(Exception hostException) {
-							if (TextDebugTemplateEngine.IsCriticalException(hostException)) {
+							if (DebugTextTemplateEngine.IsCriticalException(hostException)) {
 								throw;
 							}
 							LogError (string.Format (CultureInfo.CurrentCulture, Resources.ExceptionSettingHost, settings.GetFullName ()), false);
@@ -101,7 +107,7 @@ namespace Mono.VisualStudio.TextTemplating
 						property?.SetValue (result, session, null);
 					}
 					catch(Exception sessionException) {
-						if (TextDebugTemplateEngine.IsCriticalException (sessionException)) {
+						if (DebugTextTemplateEngine.IsCriticalException (sessionException)) {
 							throw;
 						}
 						LogError (string.Format (CultureInfo.CurrentCulture, Resources.ExceptionSettingSession, settings.GetFullName ()), false);
@@ -113,7 +119,7 @@ namespace Mono.VisualStudio.TextTemplating
 				}
 			}
 			catch(Exception instantiatingException) {
-				if (TextDebugTemplateEngine.IsCriticalException (instantiatingException)) {
+				if (DebugTextTemplateEngine.IsCriticalException (instantiatingException)) {
 					throw;
 				}
 				LogError (Resources.ExceptionInstantiatingTransformationObject + string.Format(CultureInfo.CurrentCulture, Resources.Exception, instantiatingException), false);
@@ -122,14 +128,108 @@ namespace Mono.VisualStudio.TextTemplating
 			return success;
 		}
 
-		internal bool PrepareTransformation (ITextTemplatingSession session, ParsedTemplate template, ITextTemplatingEngineHost host)
+		internal bool PrepareTransformation (ITextTemplatingSession session, ParsedTemplate template, string content, ITextTemplatingEngineHost host, TemplateSettings settings)
 		{
-			throw new NotImplementedException ();
+			this.session = session ?? throw new ArgumentNullException (nameof (session));
+			this.host = host ?? throw new ArgumentNullException (nameof (host));
+			this.settings = settings ?? throw new ArgumentNullException (nameof (settings));
+
+			try {
+				this.settings.Assemblies.Add (base.GetType ().Assembly.Location);
+				this.settings.Assemblies.Add (typeof (ITextTemplatingEngineHost).Assembly.Location);
+				this.compiledTemplate = LocateAssembly (session, template, content);
+			}
+			catch(Exception ex) {
+				if (DebugTextTemplateEngine.IsCriticalException (ex)) {
+					throw;
+				}
+				LogError (string.Format (CultureInfo.CurrentCulture, Resources.Exception, ex), false);
+			}
+			return this.compiledTemplate != null;
 		}
 
-		internal void PreLoadAssemblies (string[] assemblies)
+		CompiledTemplate LocateAssembly (ITextTemplatingSession session, ParsedTemplate template, string content)
 		{
-			throw new NotImplementedException ();
+			CompiledTemplate compiledTemplate = null;
+
+			if (session.CachedTemplates) {
+				compiledTemplate = CompiledTemplateCache.Find (session.ClassFullName);
+			}
+			if (compiledTemplate == null) {
+				compiledTemplate = Compile (template, content);
+				if (session.CachedTemplates && compiledTemplate != null) {
+					CompiledTemplateCache.Insert (session.ClassFullName, compiledTemplate);
+				}
+			}
+			return compiledTemplate;
+		}
+
+		CompiledTemplate Compile (ParsedTemplate template, string content)
+		{
+			CompiledTemplate compiledTemplate = null;
+
+			if (host is ITextTemplatingComponents Component &&
+				Component.Engine is DebugTextTemplateEngine engine) {
+				compiledTemplate = engine.CompileTemplate (template, content, host, settings);
+			}
+
+			return compiledTemplate;
+		}
+
+		internal void PreLoadAssemblies (IEnumerable<string> assemblies)
+		{
+			try {
+				//TODO:: investigate preloading assemblies with the AssemblyLoadContext
+			}catch(Exception ex) {
+				if (DebugTextTemplateEngine.IsCriticalException (ex)) {
+					throw;
+				}
+			}
+		}
+
+		[Obsolete]
+		void LoadExplicitAssemblyReferences (IEnumerable<string> references)
+		{
+			references = (from referenceAssembly in references
+						  where !string.IsNullOrEmpty (referenceAssembly) && File.Exists (referenceAssembly)
+						  select referenceAssembly).ToList ();
+
+			List<string> source = new List<string> ();
+
+			if (AppDomain.CurrentDomain.ShadowCopyFiles) {
+				foreach(string reference in references) {
+					string referenceDir = Path.GetDirectoryName (reference);
+					if (string.IsNullOrEmpty (referenceDir)) {
+						string currentDir = Directory.GetCurrentDirectory ();
+						if (File.Exists(Path.Combine(currentDir, reference))) {
+							referenceDir = currentDir;
+						}
+					}
+					source.Add (referenceDir);
+				}
+				EnsureShadowCopyPaths (source.Distinct (StringComparer.OrdinalIgnoreCase));
+			}
+		}
+
+		[Obsolete]
+		void EnsureShadowCopyPaths (IEnumerable<string> paths)
+		{
+			if (AppDomain.CurrentDomain.ShadowCopyFiles) {
+				string path = string.Empty;
+				object shadowCopySync = TransformationRunner.shadowCopySync;
+				lock (shadowCopySync) {
+					if (shadowCopyPaths == null) {
+						shadowCopyPaths = new HashSet<string> (StringComparer.OrdinalIgnoreCase);
+					}
+					foreach (string str2 in paths) {
+						if (!shadowCopyPaths.Contains (str2)) {
+							shadowCopyPaths.Add (str2);
+						}
+					}
+					path = string.Join (";", shadowCopyPaths.ToArray<string> ());
+				}
+				AppDomain.CurrentDomain.SetShadowCopyPath (path);
+			}
 		}
 
 		protected Assembly AttemptAssemblyLoad(string assemblyName)
