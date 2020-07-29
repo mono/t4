@@ -30,7 +30,8 @@ using Mono.TextTemplating;
 namespace Mono.VisualStudio.TextTemplating
 {
 	[Obsolete ("Use Mono.TextTemplating.TemplatingEngine directly")]
-	public class Engine : ITextTemplatingEngine
+	public class Engine
+		: ITextTemplatingEngine
 	{
 		TemplatingEngine engine = new TemplatingEngine ();
 		
@@ -44,7 +45,7 @@ namespace Mono.VisualStudio.TextTemplating
 		{
 			return engine.PreprocessTemplate (content, host, className, classNamespace, out language, out references);
 		}
-		
+
 		public const string CacheAssembliesOptionString = "CacheAssemblies";
 	}
 }

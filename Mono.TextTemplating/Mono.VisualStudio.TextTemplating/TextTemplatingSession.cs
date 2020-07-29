@@ -40,18 +40,38 @@ namespace Mono.VisualStudio.TextTemplating
 		TextTemplatingSession (SerializationInfo info, StreamingContext context)
 			: base (info, context)
 		{
-			Id = (Guid)info.GetValue ("Id", typeof (Guid));
 		}
 
 		public TextTemplatingSession (Guid id)
 		{
 			this.Id = id;
+			this.IncludeStack = new Stack<string> ();
 		}
 		
 		public Guid Id {
-			get; private set;
+			get => (Guid)this[nameof (Id)];
+			set => this[nameof (Id)] = value;
 		}
-		
+
+		public bool Debug {
+			get => (bool)this[nameof (Debug)];
+			set => this[nameof (Debug)] = value;
+		}
+
+		public string TemplateFile {
+			get => (string)this[nameof (TemplateFile)];
+			set => this[nameof (TemplateFile)] = value;
+		}
+		public ITextTemplatingSessionHost UserTransformationSession {
+			get => (ITextTemplatingSessionHost)this[nameof (UserTransformationSession)];
+			set => this[nameof (UserTransformationSession)] = value;
+		}
+
+		public Stack<string> IncludeStack {
+			get => (Stack<string>)this[nameof (IncludeStack)];
+			set => this[nameof (IncludeStack)] = value;
+		}
+
 		public override int GetHashCode ()
 		{
 			return Id.GetHashCode ();
@@ -76,7 +96,6 @@ namespace Mono.VisualStudio.TextTemplating
 		void ISerializable.GetObjectData (SerializationInfo info, StreamingContext context)
 		{
 			base.GetObjectData (info, context);
-			info.AddValue ("Id", Id);
 		}
 	}
 }

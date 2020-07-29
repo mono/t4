@@ -311,7 +311,7 @@ namespace Mono.TextTemplating
 		}
 #endif
 
-		static string [] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)
+		protected static string[] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)
 		{
 			var resolved = new Dictionary<string, string> ();
 

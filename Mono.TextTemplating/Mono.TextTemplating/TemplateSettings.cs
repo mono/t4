@@ -29,6 +29,7 @@ using System.Text;
 using System.Collections.Generic;
 using Mono.VisualStudio.TextTemplating;
 using System.IO;
+using System.Reflection;
 
 namespace Mono.TextTemplating
 {
@@ -65,6 +66,18 @@ namespace Mono.TextTemplating
 		public bool NoLinePragmas { get; set; }
 		public bool InternalVisibility { get; set; }
 		public Type HostType { get; set; }
+
+		public void ApplyTo (ITextTemplatingSession session)
+		{
+			foreach(PropertyInfo property in GetType().GetProperties()) {
+				if (!property.PropertyType.IsSerializable) {
+					continue;
+				}
+
+				session[property.Name] = property.GetValue (this);
+			}
+		}
+
 		public string GetFullName () => string.IsNullOrEmpty (Namespace) ? Name : Namespace + "." + Name;
 	}
 	

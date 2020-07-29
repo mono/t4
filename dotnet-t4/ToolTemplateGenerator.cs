@@ -32,7 +32,7 @@ namespace Mono.TextTemplating
 			Refs.Add (typeof (CompilerErrorCollection).Assembly.Location);
 		}
 
-		protected override ITextTemplatingSession CreateSession () => new ToolTemplateSession (this);
+		protected override ITextTemplatingSession CreateSession () => new TextTemplatingSession (this);
 
 		public string PreprocessTemplate (
 			ParsedTemplate pt,

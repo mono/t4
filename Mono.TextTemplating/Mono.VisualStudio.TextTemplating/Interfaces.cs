@@ -29,6 +29,10 @@ using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
+#if NETSTANDARD
+using System.Runtime.Loader;
+#endif
 using System.Runtime.Serialization;
 using System.Text;
 using Mono.TextTemplating;
@@ -41,7 +45,30 @@ namespace Mono.VisualStudio.TextTemplating
 		bool RequiresProcessingRunIsHostSpecific { get; }
 	}
 
-	[Obsolete("Use Mono.TextTemplating.TemplatingEngine directly")]
+	public interface IDebugTransformationRun
+	{
+		string PerformTransformation ();
+
+		CompilerErrorCollection Errors { get; }
+	}
+
+	public interface IDebugTransformationRunFactory
+	{
+#if FEATURE_APPDOMAINS
+		IDebugTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate template, ResolveEventHandler resolver);
+#elif NETSTANDARD
+		IDebugTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate template, Func<AssemblyLoadContext, AssemblyName, Assembly> resolver);
+#endif
+
+		string RunTransformation (IDebugTransformationRun transformationRun);
+	}
+
+	public interface IDebugTextTemplatingEngine
+		: ITextTemplatingEngine
+	{
+		IDebugTransformationRun PrepareTransformationRun (string content, ITextTemplatingEngineHost host, IDebugTransformationRunFactory runFactory);
+	}
+
 	public interface ITextTemplatingEngine
 	{
 		string ProcessTemplate (string content, ITextTemplatingEngineHost host);
@@ -53,7 +80,7 @@ namespace Mono.VisualStudio.TextTemplating
 	{
 		ITextTemplatingEngineHost Host { get; }
 
-		TemplatingEngine Engine { get; }
+		ITextTemplatingEngine Engine { get; }
 
 		string InputFile { get; }
 
@@ -69,6 +96,8 @@ namespace Mono.VisualStudio.TextTemplating
 		void ErrorCallback (bool warning, string message, int line, int column);
 		void SetFileExtension (string extension);
 		void SetOutputEncoding (Encoding encoding, bool fromOutputDirective);
+		ITextTemplatingCallback DeepCopy ();
+
 		Encoding OutputEncoding { get; }
 	}
 
@@ -99,9 +128,14 @@ namespace Mono.VisualStudio.TextTemplating
 		IEnumerable, ISerializable
 	{
 		Guid Id { get; }
+		bool Debug { get; set; }
+		string TemplateFile { get; set; }
+		ITextTemplatingSessionHost UserTransformationSession { get; set; }
+		Stack<string> IncludeStack { get; }
 	}
 	
-	public interface ITextTemplatingSessionHost	
+	public interface ITextTemplatingSessionHost
+		: ISerializable
 	{
 		ITextTemplatingSession CreateSession ();
 		ITextTemplatingSession Session { get; set; }

@@ -27,12 +27,12 @@ using System.Runtime.Serialization;
 
 namespace Mono.TextTemplating
 {
-	class ToolTemplateSession : ITextTemplatingSession
+	class TextTemplatingSession : ITextTemplatingSession
 	{
 		readonly Dictionary<string, object> session = new Dictionary<string, object> ();
 		readonly ToolTemplateGenerator toolTemplateGenerator;
 
-		public ToolTemplateSession (ToolTemplateGenerator toolTemplateGenerator)
+		public TextTemplatingSession (ToolTemplateGenerator toolTemplateGenerator)
 		{
 			this.toolTemplateGenerator = toolTemplateGenerator;
 		}
