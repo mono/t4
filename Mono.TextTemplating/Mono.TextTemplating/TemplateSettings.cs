@@ -46,6 +46,7 @@ namespace Mono.TextTemplating
 		public bool HostSpecific { get; set; }
 		public bool HostPropertyOnBase { get; set; }
 		public bool Debug { get; set; }
+		public bool CachedTemplates { get; set; }
 		public TextWriter Log { get; set; }
 		public string Inherits { get; set; }
 		public string Name { get; set; }
@@ -66,24 +67,6 @@ namespace Mono.TextTemplating
 		public bool NoLinePragmas { get; set; }
 		public bool InternalVisibility { get; set; }
 		public Type HostType { get; set; }
-
-		public void ApplyTo (ITextTemplatingSession session)
-		{
-			foreach(PropertyInfo property in GetType().GetProperties()) {
-				if (!property.PropertyType.IsSerializable) {
-					continue;
-				} else if (property.Name.Equals(nameof(Language), StringComparison.OrdinalIgnoreCase)) {
-					if (property.GetValue<string>(this, null).TryParse(out SupportedLangaugeEnum supported)) {
-						session.SupportedLangauge = supported;
-					}
-					continue;
-				}
-
-				session[property.Name] = property.GetValue (this, null);
-			}
-
-			session.ClassFullName = GetFullName ();
-		}
 
 		public string GetFullName () => string.IsNullOrEmpty (Namespace) ? Name : Namespace + "." + Name;
 	}

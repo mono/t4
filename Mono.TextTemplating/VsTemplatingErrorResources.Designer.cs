@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Mono.VisualStudio.TextTemplating {
+namespace Mono.TextTemplating {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Mono.VisualStudio.TextTemplating {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources {
+    internal class VsTemplatingErrorResources {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Resources() {
+        internal VsTemplatingErrorResources() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Mono.VisualStudio.TextTemplating {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Mono.VisualStudio.TextTemplating.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Mono.TextTemplating.VsTemplatingErrorResources", typeof(VsTemplatingErrorResources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,7 +61,7 @@ namespace Mono.VisualStudio.TextTemplating {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Assembly &quot;{0}&quot; Load Error: .
+        ///   Looks up a localized string similar to Assembly &quot;{0}&quot; Load Error: {1}.
         /// </summary>
         internal static string AssemblyLoadError {
             get {
@@ -147,6 +147,15 @@ namespace Mono.VisualStudio.TextTemplating {
         internal static string SessionHostMarshalError {
             get {
                 return ResourceManager.GetString("SessionHostMarshalError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Session host session is not initialized for {0}..
+        /// </summary>
+        internal static string SessionHostSessionNotInitialized {
+            get {
+                return ResourceManager.GetString("SessionHostSessionNotInitialized", resourceCulture);
             }
         }
     }

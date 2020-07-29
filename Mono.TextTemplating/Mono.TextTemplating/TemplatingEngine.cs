@@ -41,7 +41,7 @@ using Mono.TextTemplating.CodeCompilation;
 
 namespace Mono.TextTemplating
 {
-	public class TemplatingEngine :
+	public partial class TemplatingEngine :
 #if FEATURE_APPDOMAINS
 		MarshalByRefObject,
 #endif

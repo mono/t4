@@ -39,10 +39,27 @@ using Mono.TextTemplating;
 
 namespace Mono.VisualStudio.TextTemplating
 {
+	using VHost;
+
 	public interface IRecognizeHostSpecific
 	{
 		void SetProcessingRunIsHostSpecific (bool hostSpecific);
 		bool RequiresProcessingRunIsHostSpecific { get; }
+	}
+
+	public interface IDebugTextTemplating
+		: ITextTemplating
+	{
+		event EventHandler<DebugTemplateEventArgs> DebugCompleted;
+		void DebugTemplateAsync (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy);
+	}
+
+	public interface ITextTemplating
+	{
+		void BeginErrorSession ();
+		bool EndErrorSession ();
+		string PreprocessTemplate (string inputFile, string content, ITextTemplatingCallback callback, string className, string classNamespace, out string[] references);
+		string ProcessTemplate (string inputFile, string content, ITextTemplatingCallback callback = null, object hierarchy = null);
 	}
 
 	public interface IDebugTransformationRun
@@ -124,15 +141,6 @@ namespace Mono.VisualStudio.TextTemplating
 		IEnumerable, ISerializable
 	{
 		Guid Id { get; }
-		bool Debug { get; set; }
-		bool CachedTemplates { get; set; }
-		string TemplateFile { get; set; }
-		ITextTemplatingSessionHost UserTransformationSession { get; set; }
-		Stack<string> IncludeStack { get; }
-		List<string> Assemblies { get; }
-		string ClassFullName { get; set; }
-		string CompilerOptions { get; set; }
-		SupportedLangaugeEnum SupportedLangauge { get; set; }
 	}
 	
 	public interface ITextTemplatingSessionHost

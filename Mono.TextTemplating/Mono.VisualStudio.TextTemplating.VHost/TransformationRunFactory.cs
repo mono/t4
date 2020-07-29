@@ -1,11 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Runtime.Loader;
-using System.Text;
 using Mono.TextTemplating;
 
-namespace Mono.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating.VHost
 {
 	public abstract class TransformationRunFactory :
 #if FEATURE_APPDOMAINS
@@ -15,7 +11,16 @@ namespace Mono.VisualStudio.TextTemplating
 	{
 		public const string TransformationRunFactoryPrefix = "TransformationRunFactoryService";
 		public const string TransformationRunFactorySuffix = nameof (TransformationRunFactory);
-
+		/// <summary>
+		/// Create the transformation runner
+		/// </summary>
+		/// <param name="runnerType"></param>
+		/// <param name="template"></param>
+		/// <param name="resolver"></param>
+		/// <returns></returns>
+		/// <remarks>
+		/// abstracted, just because I am uncertain on how this would run on multiple platforms. Also visual studio classes may be required to pull of correctly.
+		/// </remarks>
 		public abstract IDebugTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate template, ResolveEventHandler resolver);
 
 		public abstract string RunTransformation (IDebugTransformationRun transformationRun);

@@ -35,8 +35,6 @@ namespace Mono.TextTemplating
 		public TextTemplatingSession (ToolTemplateGenerator toolTemplateGenerator)
 		{
 			this.toolTemplateGenerator = toolTemplateGenerator;
-			this.IncludeStack = new Stack<string> ();
-			this.Assemblies = new List<string> ();
 		}
 
 		public object this [string key] {
@@ -48,52 +46,7 @@ namespace Mono.TextTemplating
 		public ICollection<string> Keys => session.Keys;
 		public ICollection<object> Values => session.Values;
 		public int Count => session.Count;
-		public bool IsReadOnly => false;
-
-		public bool Debug {
-			get => (bool)this[nameof (Debug)];
-			set => this[nameof (Debug)] = value;
-		}
-
-		public bool CachedTemplates {
-			get => (bool)this[nameof (CachedTemplates)];
-			set => this[nameof (CachedTemplates)] = value;
-		}
-
-		public string TemplateFile {
-			get => (string)this[nameof (TemplateFile)];
-			set => this[nameof (TemplateFile)] = value;
-		}
-		public ITextTemplatingSessionHost UserTransformationSession {
-			get => (ITextTemplatingSessionHost)this[nameof (UserTransformationSession)];
-			set => this[nameof (UserTransformationSession)] = value;
-		}
-
-		public Stack<string> IncludeStack {
-			get => (Stack<string>)this[nameof (IncludeStack)];
-			set => this[nameof (IncludeStack)] = value;
-		}
-
-		public List<string> Assemblies {
-			get => (List<string>)this[nameof (Assemblies)];
-			set => this[nameof (Assemblies)] = value;
-		}
-
-		public string ClassFullName {
-			get => (string)this[nameof (ClassFullName)];
-			set => this[nameof (ClassFullName)] = value;
-		}
-
-		public SupportedLangaugeEnum SupportedLangauge {
-			get => (SupportedLangaugeEnum)this[nameof (SupportedLangauge)];
-			set => this[nameof (SupportedLangauge)] = value;
-		}
-
-		public string CompilerOptions {
-			get => (string)this[nameof (CompilerOptions)];
-			set => this[nameof (CompilerOptions)] = value;
-		}
-
+		public bool IsReadOnly => false;		
 		public void Add (string key, object value) => session.Add (key, value);
 		public void Add (KeyValuePair<string, object> item) => session.Add (item.Key, item.Value);
 		public void Clear () => session.Clear ();

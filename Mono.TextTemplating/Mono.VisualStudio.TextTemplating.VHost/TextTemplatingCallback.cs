@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
 
-namespace Mono.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating.VHost
 {
 	public class TextTemplatingCallback
 		: ITextTemplatingCallback

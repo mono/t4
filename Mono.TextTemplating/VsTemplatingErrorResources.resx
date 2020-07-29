@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AssemblyLoadError" xml:space="preserve">
-    <value>Assembly "{0}" Load Error: </value>
+    <value>Assembly "{0}" Load Error: {1}</value>
   </data>
   <data name="ErrorInitializingTransformationObject" xml:space="preserve">
     <value>Error initializing the transformation object.</value>
@@ -146,5 +146,8 @@
   </data>
   <data name="SessionHostMarshalError" xml:space="preserve">
     <value>Something bad happened while prepping transformation.</value>
+  </data>
+  <data name="SessionHostSessionNotInitialized" xml:space="preserve">
+    <value>Session host session is not initialized for {0}.</value>
   </data>
 </root>
