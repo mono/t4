@@ -107,7 +107,7 @@ namespace Mono.VisualStudio.TextTemplating
 
 		ITextTemplatingEngine Engine { get; }
 
-		string InputFile { get; set; }
+		string TemplateFile { get; set; }
 
 		ITextTemplatingCallback Callback { get; set; }
 
