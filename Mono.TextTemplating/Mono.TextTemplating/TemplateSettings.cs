@@ -63,7 +63,7 @@ namespace Mono.TextTemplating
 		public Dictionary<string,IDirectiveProcessor> DirectiveProcessors { get; private set; }
 		public bool IncludePreprocessingHelpers { get; set; }
 		public bool IsPreprocessed { get; set; }
-		public bool RelativeLinePragmas { get; set; }
+		public bool UseRelativeLinePragmas { get; set; }
 		public bool NoLinePragmas { get; set; }
 		public bool InternalVisibility { get; set; }
 		public Type HostType { get; set; }

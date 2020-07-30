@@ -337,7 +337,7 @@ namespace Mono.TextTemplating
 		{
 			var settings = new TemplateSettings ();
 
-			bool relativeLinePragmas = host.GetHostOption ("UseRelativeLinePragmas") as bool? ?? false;
+			bool relativeLinePragmas = host.GetHostOption (nameof (TemplateSettings.UseRelativeLinePragmas)) as bool? ?? false;
 
 			foreach (Directive dt in pt.Directives) {
 				switch (dt.Name.ToLowerInvariant ()) {
@@ -368,15 +368,15 @@ namespace Mono.TextTemplating
 							settings.HostSpecific = string.Compare (val, "true", StringComparison.OrdinalIgnoreCase) == 0;
 						}
 					}
-					val = dt.Extract ("CompilerOptions");
+					val = dt.Extract (nameof (TemplateSettings.CompilerOptions)) ?? host.GetHostOption(nameof(TemplateSettings.CompilerOptions))?.ToString().ToLower();
 					if (val != null) {
 						settings.CompilerOptions = val;
 					}
-					val = dt.Extract ("relativeLinePragmas");
+					val = dt.Extract ("relativeLinePragmas") ?? host.GetHostOption (nameof (TemplateSettings.UseRelativeLinePragmas))?.ToString().ToLower();
 					if (val != null) {
 						relativeLinePragmas = string.Compare (val, "true", StringComparison.OrdinalIgnoreCase) == 0;
 					}
-					val = dt.Extract ("linePragmas");
+					val = dt.Extract ("linePragmas") ?? host.GetHostOption (nameof (TemplateSettings.NoLinePragmas))?.ToString ().ToLower ();
 					if (val != null) {
 						settings.NoLinePragmas = string.Compare (val, "false", StringComparison.OrdinalIgnoreCase) == 0;
 					}
@@ -483,7 +483,9 @@ namespace Mono.TextTemplating
 				return settings;
 			}
 
-			settings.RelativeLinePragmas = relativeLinePragmas;
+			settings.UseRelativeLinePragmas = relativeLinePragmas;
+
+			settings.CachedTemplates = (bool?)host.GetHostOption (nameof (TemplateSettings.CachedTemplates)) ?? false;
 
 			return settings;
 		}
@@ -652,7 +654,7 @@ namespace Mono.TextTemplating
 				CodeLinePragma location = null;
 				if (!settings.NoLinePragmas) {
 					var f = seg.StartLocation.FileName ?? host.TemplateFile;
-					if (settings.RelativeLinePragmas)
+					if (settings.UseRelativeLinePragmas)
 						f = FileUtil.AbsoluteToRelativePath (baseDirectory, f).Replace ('\\', '/');
 					location = new CodeLinePragma (f, seg.StartLocation.Line);
 				}
