@@ -26,10 +26,11 @@
 
 using System;
 using Mono.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 
-namespace Mono.VisualStudio.TextTemplating
+namespace Microsoft.VisualStudio.TextTemplating
 {
-	[Obsolete ("Use Mono.TextTemplating.TemplatingEngine directly")]
+	[Obsolete ("Use Mono.TextTemplating.TemplatingEngine directly", true)]
 	public class Engine
 		: ITextTemplatingEngine
 	{
