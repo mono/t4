@@ -14,6 +14,14 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 
 		public Encoding OutputEncoding { get; private set; } = Encoding.UTF8;
 
+		public void Initialize()
+		{
+			Errors = false;
+			Extension = null;
+			OutputEncoding = Encoding.UTF8;
+			isFromOutputDirective = false;
+		}
+
 		public void ErrorCallback (bool warning, string message, int line, int column)
 		{
 			Errors = true;
