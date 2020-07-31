@@ -57,9 +57,11 @@ namespace Mono.TextTemplating.CodeCompilation
 						if (!p.HasExited) {
 							p.Kill ();
 						}
-					} catch (InvalidOperationException ex) {
-						if (ex.Message.IndexOf ("already exited", StringComparison.Ordinal) < 0)
+					}
+					catch (InvalidOperationException ex) {
+						if (ex.Message.IndexOf ("already exited", StringComparison.Ordinal) < 0) {
 							throw;
+						}
 					}
 				});
 			}
@@ -75,20 +77,19 @@ namespace Mono.TextTemplating.CodeCompilation
 					try {
 						if (e.Data == null) {
 							outputDone = true;
-							if (exitDone && errorDone)
-							{
-								tcs.TrySetResult(p.ExitCode);
+							if (exitDone && errorDone) {
+								tcs.TrySetResult (p.ExitCode);
 							}
 							return;
 						}
 
-						if (stdOutInitialized)
-						{
-							await stdout.WriteLineAsync();
+						if (stdOutInitialized) {
+							await stdout.WriteLineAsync ().ConfigureAwait (false);
 						}
-						await stdout.WriteLineAsync(e.Data);
+						await stdout.WriteLineAsync (e.Data).ConfigureAwait (false);
 						stdOutInitialized = true;
-					} catch (Exception ex) {
+					}
+					catch (Exception ex) {
 						tcs.TrySetException (ex);
 					}
 				};
@@ -103,19 +104,19 @@ namespace Mono.TextTemplating.CodeCompilation
 					try {
 						if (e.Data == null) {
 							errorDone = true;
-							if (exitDone && outputDone)
-							{
-								tcs.TrySetResult(p.ExitCode);
+							if (exitDone && outputDone) {
+								tcs.TrySetResult (p.ExitCode);
 							}
 							return;
 						}
 
 						if (stdErrInitialized) {
-							await stderr.WriteLineAsync();
+							await stderr.WriteLineAsync ().ConfigureAwait (false);
 						}
-						await stderr.WriteLineAsync(e.Data);
+						await stderr.WriteLineAsync (e.Data).ConfigureAwait (false);
 						stdErrInitialized = true;
-					} catch (Exception ex) {
+					}
+					catch (Exception ex) {
 						tcs.TrySetException (ex);
 					}
 				};
@@ -126,9 +127,8 @@ namespace Mono.TextTemplating.CodeCompilation
 
 			p.Exited += (sender, e) => {
 				exitDone = true;
-				if (errorDone && outputDone)
-				{
-					tcs.TrySetResult(p.ExitCode);
+				if (errorDone && outputDone) {
+					tcs.TrySetResult (p.ExitCode);
 				}
 			};
 

@@ -125,54 +125,60 @@ namespace Mono.TextTemplating.CodeCompilation
 				log.WriteLine($"{psi.FileName} {psi.Arguments}");
 			}
 
-			var stdout = new StringWriter ();
-			var stderr = new StringWriter ();
+			using (var stdout = new StringWriter ())
+			using (var stderr = new StringWriter ())
+			using (TextWriter outWriter = log != null ? new SplitOutputWriter (log, (TextWriter)stderr) : (TextWriter)stderr)
+			using (TextWriter errWriter = log != null ? new SplitOutputWriter (log, (TextWriter)stderr) : (TextWriter)stderr) {
 
-			TextWriter outWriter = stderr, errWriter = stderr;
-			if (log != null) {
-				outWriter = new SplitOutputWriter (log, outWriter);
-				errWriter = new SplitOutputWriter (log, errWriter);
-			}
+				//TextWriter
+				//	outWriter = stderr,
+				//	errWriter = stderr;
 
-			var process = ProcessUtils.StartProcess (psi, outWriter, errWriter, token);
+				//if (log != null) {
+				//	outWriter = new SplitOutputWriter (log, outWriter);
+				//	errWriter = new SplitOutputWriter (log, errWriter);
+				//}
 
-			int result = -1;
+				var process = ProcessUtils.StartProcess (psi, outWriter, errWriter, token);
 
-			if (!token.IsCancellationRequested) {
-				result = await process;
-			}
+				int result = -1;
 
-			var outputList = new List<string> ();
-			var errors = new List<CodeCompilerError> ();
+				if (!token.IsCancellationRequested) {
+					result = await process.ConfigureAwait (false);
+				}
 
-			void ConsumeOutput (string s)
-			{
-				using (var sw = new StringReader (s)) {
-					string line;
-					while ((line = sw.ReadLine ()) != null) {
-						outputList.Add (line);
-						var err = MSBuildErrorParser.TryParseLine (line);
-						if (err != null) {
-							errors.Add (err);
+				var outputList = new List<string> ();
+				var errors = new List<CodeCompilerError> ();
+
+				void ConsumeOutput (string s)
+				{
+					using (var sw = new StringReader (s)) {
+						string line;
+						while ((line = sw.ReadLine ()) != null) {
+							outputList.Add (line);
+							var err = MSBuildErrorParser.TryParseLine (line);
+							if (err != null) {
+								errors.Add (err);
+							}
 						}
 					}
 				}
+
+				ConsumeOutput (stdout.ToString ());
+				ConsumeOutput (stderr.ToString ());
+
+				if (log != null) {
+					log.WriteLine ($"{psi.FileName} {psi.Arguments}");
+				}
+
+				return new CodeCompilerResult {
+					Success = result == 0,
+					Errors = errors,
+					ExitCode = result,
+					Output = outputList,
+					ResponseFile = rspPath
+				};
 			}
-
-			ConsumeOutput (stdout.ToString ());
-			ConsumeOutput (stderr.ToString ());
-
-			if (log != null) {
-				log.WriteLine ($"{psi.FileName} {psi.Arguments}");
-			}
-
-			return new CodeCompilerResult {
-				Success = result == 0,
-				Errors = errors,
-				ExitCode = result,
-				Output = outputList,
-				ResponseFile = rspPath
-			};
 		}
 
 		//we know that ProcessUtils.StartProcess only uses WriteLine and Write(string)
