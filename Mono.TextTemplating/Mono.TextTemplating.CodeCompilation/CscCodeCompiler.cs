@@ -204,33 +204,6 @@ namespace Mono.TextTemplating.CodeCompilation
 				logWriter.Write (value);
 				errorWriter.Write (value);
 			}
-
-            public override async Task WriteAsync(string value)
-            {
-				await logWriter.WriteAsync(value).ConfigureAwait(false);
-
-				if (errorWriter is StringWriter sw) {
-					await sw.WriteAsync (value).ConfigureAwait (false);
-				}
-			}
-
-            public override async Task WriteLineAsync()
-            {
-				await logWriter.WriteLineAsync().ConfigureAwait (false);
-
-				if (errorWriter is StringWriter sw) {
-					await sw.WriteLineAsync ().ConfigureAwait (false);
-				}
-			}
-
-			public override async Task WriteLineAsync (string value)
-			{
-				await logWriter.WriteLineAsync (value).ConfigureAwait (false);
-
-				if (errorWriter is StringWriter sw) {
-					await sw.WriteLineAsync (value).ConfigureAwait (false);
-				}
-			}
 		}
 	}
 }
