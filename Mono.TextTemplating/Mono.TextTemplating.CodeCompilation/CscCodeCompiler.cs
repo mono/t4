@@ -161,7 +161,8 @@ namespace Mono.TextTemplating.CodeCompilation
 				ConsumeOutput (stderr.ToString ());
 
 				if (log != null) {
-					log.WriteLine ("-------------------------------------------------------------------------------");
+					log.WriteLine ();
+					log.WriteLine ();
 					log.WriteLine ($"{psi.FileName} {psi.Arguments}");
 				}
 
