@@ -136,7 +136,11 @@ namespace Mono.TextTemplating.CodeCompilation
 
 			var process = ProcessUtils.StartProcess (psi, outWriter, errWriter, token);
 
-			var result = await process;
+			int result = -1;
+
+			if (!token.IsCancellationRequested) {
+				result = await process;
+			}
 
 			var outputList = new List<string> ();
 			var errors = new List<CodeCompilerError> ();
