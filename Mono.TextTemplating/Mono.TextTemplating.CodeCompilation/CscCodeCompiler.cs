@@ -32,6 +32,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Text;
+using System.Globalization;
 
 namespace Mono.TextTemplating.CodeCompilation
 {
@@ -125,19 +126,10 @@ namespace Mono.TextTemplating.CodeCompilation
 				log.WriteLine($"{psi.FileName} {psi.Arguments}");
 			}
 
-			using (var stdout = new StringWriter ())
-			using (var stderr = new StringWriter ())
-			using (TextWriter outWriter = log != null ? new SplitOutputWriter (log, (TextWriter)stderr) : (TextWriter)stderr)
-			using (TextWriter errWriter = log != null ? new SplitOutputWriter (log, (TextWriter)stderr) : (TextWriter)stderr) {
-
-				//TextWriter
-				//	outWriter = stderr,
-				//	errWriter = stderr;
-
-				//if (log != null) {
-				//	outWriter = new SplitOutputWriter (log, outWriter);
-				//	errWriter = new SplitOutputWriter (log, errWriter);
-				//}
+			using (var stdout = new StringWriter (new StringBuilder(), CultureInfo.CurrentCulture))
+			using (var stderr = new StringWriter (new StringBuilder (), CultureInfo.CurrentCulture))
+			using (TextWriter outWriter = log != null ? new SplitOutputWriter (log, stderr) : (TextWriter)stderr)
+			using (TextWriter errWriter = log != null ? new SplitOutputWriter (log, stderr) : (TextWriter)stderr) {
 
 				var process = ProcessUtils.StartProcess (psi, outWriter, errWriter, token);
 
@@ -184,45 +176,60 @@ namespace Mono.TextTemplating.CodeCompilation
 		//we know that ProcessUtils.StartProcess only uses WriteLine and Write(string)
 		class SplitOutputWriter : TextWriter
 		{
-			readonly TextWriter a;
-			readonly TextWriter b;
+			readonly TextWriter logWriter;
+			readonly TextWriter errorWriter;
 
 			public SplitOutputWriter (TextWriter a, TextWriter b)
 			{
-				this.a = a;
-				this.b = b;
+				this.logWriter = a;
+				this.errorWriter = b;
 			}
 
 			public override Encoding Encoding => Encoding.UTF8;
 
 			public override void WriteLine ()
 			{
-				a.WriteLine ();
-				b.WriteLine ();
+				logWriter.WriteLine ();
+				errorWriter.WriteLine ();
+			}
+
+			public override void WriteLine (string value)
+			{
+				logWriter.WriteLine (value);
+				errorWriter.WriteLine (value);
 			}
 
 			public override void Write (string value)
 			{
-				a.Write (value);
-				b.Write (value);
+				logWriter.Write (value);
+				errorWriter.Write (value);
 			}
 
             public override async Task WriteAsync(string value)
             {
-				await a.WriteAsync(value).ConfigureAwait(false);
-				await b.WriteAsync(value).ConfigureAwait (false);
+				await logWriter.WriteAsync(value).ConfigureAwait(false);
+
+				if (errorWriter is StringWriter sw) {
+					await sw.WriteAsync (value).ConfigureAwait (false);
+				}
 			}
 
             public override async Task WriteLineAsync()
             {
-				await a.WriteLineAsync().ConfigureAwait (false);
-				await b.WriteLineAsync().ConfigureAwait (false);
+				await logWriter.WriteLineAsync().ConfigureAwait (false);
+
+				if (errorWriter is StringWriter sw) {
+					await sw.WriteLineAsync ().ConfigureAwait (false);
+				}
 			}
 
 			public override async Task WriteLineAsync (string value)
 			{
-				await a.WriteLineAsync (value).ConfigureAwait (false);
-				await b.WriteLineAsync (value).ConfigureAwait (false);
+				await logWriter.WriteLineAsync (value).ConfigureAwait (false);
+
+				if (errorWriter is StringWriter sw) {
+					await sw.WriteLineAsync (value).ConfigureAwait (false);
+				}
 			}
 		}
 	}
