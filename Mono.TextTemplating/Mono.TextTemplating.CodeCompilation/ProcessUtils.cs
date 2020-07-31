@@ -71,17 +71,21 @@ namespace Mono.TextTemplating.CodeCompilation
 			p.EnableRaisingEvents = true;
 			if (psi.RedirectStandardOutput) {
 				bool stdOutInitialized = false;
-				p.OutputDataReceived += (sender, e) => {
+				p.OutputDataReceived += async (sender, e) => {
 					try {
 						if (e.Data == null) {
 							outputDone = true;
 							if (exitDone && errorDone)
-								tcs.TrySetResult (p.ExitCode);
+							{
+								tcs.TrySetResult(p.ExitCode);
+							}
 							return;
 						}
 
 						if (stdOutInitialized)
-							stdout.WriteLine ();
+						{
+							await stdout.WriteLineAsync();
+						}
 						stdout.Write (e.Data);
 						stdOutInitialized = true;
 					} catch (Exception ex) {
@@ -95,17 +99,20 @@ namespace Mono.TextTemplating.CodeCompilation
 
 			if (psi.RedirectStandardError) {
 				bool stdErrInitialized = false;
-				p.ErrorDataReceived += (sender, e) => {
+				p.ErrorDataReceived += async (sender, e) => {
 					try {
 						if (e.Data == null) {
 							errorDone = true;
 							if (exitDone && outputDone)
-								tcs.TrySetResult (p.ExitCode);
+							{
+								tcs.TrySetResult(p.ExitCode);
+							}
 							return;
 						}
 
-						if (stdErrInitialized)
-							stderr.WriteLine ();
+						if (stdErrInitialized) {
+							await stderr.WriteLineAsync();
+						}
 						stderr.Write (e.Data);
 						stdErrInitialized = true;
 					} catch (Exception ex) {
@@ -120,7 +127,9 @@ namespace Mono.TextTemplating.CodeCompilation
 			p.Exited += (sender, e) => {
 				exitDone = true;
 				if (errorDone && outputDone)
-					tcs.TrySetResult (p.ExitCode);
+				{
+					tcs.TrySetResult(p.ExitCode);
+				}
 			};
 
 			return tcs.Task;
