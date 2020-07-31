@@ -30,8 +30,9 @@ using System.Linq;
 
 namespace Mono.TextTemplating.CodeCompilation
 {
-	enum RuntimeKind
+	public enum RuntimeKind
 	{
+		Default = 0,
 		NetCore,
 		NetFramework,
 		Mono
@@ -49,18 +50,18 @@ namespace Mono.TextTemplating.CodeCompilation
 		public string CscPath { get; private set; }
 		public bool IsValid => Error == null;
 
-		public static RuntimeInfo GetRuntime ()
+		public static RuntimeInfo GetRuntime (RuntimeKind kind = RuntimeKind.Default)
 		{
 			var monoFx = GetMonoRuntime ();
-			if (monoFx.IsValid) {
+			if (monoFx.IsValid && (monoFx.Kind == kind || kind == RuntimeKind.Default)) {
 				return monoFx;
 			}
 			var netFx = GetNetFrameworkRuntime ();
-			if (netFx.IsValid) {
+			if (netFx.IsValid && (netFx.Kind == kind || kind == RuntimeKind.Default)) {
 				return netFx;
 			}
 			var coreFx = GetDotNetCoreRuntime ();
-			if (coreFx.IsValid) {
+			if (coreFx.IsValid && (coreFx.Kind == kind || kind == RuntimeKind.Default)) {
 				return coreFx;
 			}
 			return FromError (RuntimeKind.Mono, "Could not find any valid runtime" );
@@ -95,6 +96,27 @@ namespace Mono.TextTemplating.CodeCompilation
 				CscPath = csc,
 				RuntimeDir = runtimeDir
 			};
+		}
+
+		public static RuntimeInfo GetDotNetCoreRuntime ()
+		{
+			var dotnetRoot = FindDotNetRoot ();
+			if (dotnetRoot == null) {
+				return FromError (RuntimeKind.NetCore, "Could not find .NET Core installation");
+			}
+
+			string MakeCscPath (string d) => Path.Combine (d, "Roslyn", "bincore", "csc.dll");
+			var sdkDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "sdk"), d => File.Exists (MakeCscPath (d)));
+			if (sdkDir == null) {
+				return FromError (RuntimeKind.NetCore, "Could not find csc.dll in any .NET Core SDK");
+			}
+
+			var runtimeDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "shared", "Microsoft.NETCore.App"), d => File.Exists (Path.Combine (d, "System.Runtime.dll")));
+			if (runtimeDir == null) {
+				return FromError (RuntimeKind.NetCore, "Could not find System.Runtime.dll in any .NET shared runtime");
+			}
+
+			return new RuntimeInfo (RuntimeKind.NetCore) { RuntimeDir = runtimeDir, CscPath = MakeCscPath (sdkDir) };
 		}
 
 		static string FindDotNetRoot ()
@@ -144,25 +166,6 @@ namespace Mono.TextTemplating.CodeCompilation
 			return bestMatch;
 		}
 
-		public static RuntimeInfo GetDotNetCoreRuntime ()
-		{
-			var dotnetRoot = FindDotNetRoot ();
-			if (dotnetRoot == null) {
-				return FromError (RuntimeKind.NetCore, "Could not find .NET Core installation" );
-			}
-
-			string MakeCscPath (string d) => Path.Combine (d, "Roslyn", "bincore", "csc.dll");
-			var sdkDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "sdk"), d => File.Exists (MakeCscPath (d)));
-			if (sdkDir == null) {
-				return FromError (RuntimeKind.NetCore, "Could not find csc.dll in any .NET Core SDK" );
-			}
-
-			var runtimeDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "shared", "Microsoft.NETCore.App"), d => File.Exists (Path.Combine (d, "System.Runtime.dll")));
-			if (runtimeDir == null) {
-				return FromError (RuntimeKind.NetCore, "Could not find System.Runtime.dll in any .NET shared runtime" );
-			}
-
-			return new RuntimeInfo (RuntimeKind.NetCore) { RuntimeDir = runtimeDir, CscPath = MakeCscPath (sdkDir) };
-		}
+		
 	}
 }

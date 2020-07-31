@@ -60,10 +60,10 @@ namespace Mono.TextTemplating
 			createCompilerFunc = createCompiler;
 		}
 
-		CodeCompilation.CodeCompiler GetOrCreateCompiler ()
+		CodeCompilation.CodeCompiler GetOrCreateCompiler (RuntimeKind kind = RuntimeKind.Default)
 		{
 			if (cachedCompiler == null) {
-				var runtime = RuntimeInfo.GetRuntime ();
+				var runtime = RuntimeInfo.GetRuntime (kind);
 				if (runtime.Error != null) {
 					throw new Exception (runtime.Error);
 				}
@@ -238,7 +238,7 @@ namespace Mono.TextTemplating
 			}
 
 			// this may throw, so do it before writing source files
-			var compiler = GetOrCreateCompiler ();
+			var compiler = GetOrCreateCompiler (settings.RuntimeKind);
 
 			var tempFolder = Path.GetTempFileName ();
 			File.Delete (tempFolder);
@@ -500,7 +500,13 @@ namespace Mono.TextTemplating
 			else {
 				settings.CancellationToken = CancellationToken.None;
 			}
+
+			if ((host.GetHostOption (nameof (TemplateSettings.RuntimeKind)) ?? RuntimeKind.Default) is RuntimeKind runtimeKind) {
+				settings.RuntimeKind = runtimeKind;
+			}
 #endif
+
+
 
 			return settings;
 		}

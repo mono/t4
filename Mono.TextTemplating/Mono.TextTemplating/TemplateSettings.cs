@@ -31,6 +31,9 @@ using Mono.VisualStudio.TextTemplating;
 using System.IO;
 using System.Reflection;
 using System.Threading;
+#if !NET35
+using Mono.TextTemplating.CodeCompilation;
+#endif
 
 namespace Mono.TextTemplating
 {
@@ -50,6 +53,7 @@ namespace Mono.TextTemplating
 		public bool CachedTemplates { get; set; }
 #if !NET35
 		public CancellationToken CancellationToken { get; set; }
+		public RuntimeKind RuntimeKind { get; set; }
 #endif
 		public TextWriter Log { get; set; }
 		public string Inherits { get; set; }
