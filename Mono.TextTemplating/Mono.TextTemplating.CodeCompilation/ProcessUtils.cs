@@ -86,7 +86,7 @@ namespace Mono.TextTemplating.CodeCompilation
 						{
 							await stdout.WriteLineAsync();
 						}
-						stdout.Write (e.Data);
+						await stdout.WriteLineAsync(e.Data);
 						stdOutInitialized = true;
 					} catch (Exception ex) {
 						tcs.TrySetException (ex);
@@ -113,7 +113,7 @@ namespace Mono.TextTemplating.CodeCompilation
 						if (stdErrInitialized) {
 							await stderr.WriteLineAsync();
 						}
-						stderr.Write (e.Data);
+						await stderr.WriteLineAsync(e.Data);
 						stdErrInitialized = true;
 					} catch (Exception ex) {
 						tcs.TrySetException (ex);
