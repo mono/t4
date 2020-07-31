@@ -86,7 +86,7 @@ namespace Mono.TextTemplating.CodeCompilation
 						if (stdOutInitialized) {
 							await stdout.WriteLineAsync ().ConfigureAwait (false);
 						}
-						await stdout.WriteLineAsync (e.Data).ConfigureAwait (false);
+						await stdout.WriteAsync (e.Data).ConfigureAwait (false);
 						stdOutInitialized = true;
 					}
 					catch (Exception ex) {
@@ -113,7 +113,7 @@ namespace Mono.TextTemplating.CodeCompilation
 						if (stdErrInitialized) {
 							await stderr.WriteLineAsync ().ConfigureAwait (false);
 						}
-						await stderr.WriteLineAsync (e.Data).ConfigureAwait (false);
+						await stderr.WriteAsync (e.Data).ConfigureAwait (false);
 						stdErrInitialized = true;
 					}
 					catch (Exception ex) {
