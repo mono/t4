@@ -72,7 +72,7 @@ namespace Mono.TextTemplating.CodeCompilation
 
 			p.EnableRaisingEvents = true;
 			if (psi.RedirectStandardOutput) {
-				bool stdOutInitialized = false;
+				//bool stdOutInitialized = false;
 				p.OutputDataReceived += async (sender, e) => {
 					try {
 						if (e.Data == null) {
@@ -83,11 +83,11 @@ namespace Mono.TextTemplating.CodeCompilation
 							return;
 						}
 
-						if (stdOutInitialized) {
-							await stdout.WriteLineAsync ().ConfigureAwait (false);
-						}
+						//if (stdOutInitialized) {
+						//	await stdout.WriteLineAsync ().ConfigureAwait (false);
+						//}
 						await stdout.WriteLineAsync (e.Data).ConfigureAwait (false);
-						stdOutInitialized = true;
+						//stdOutInitialized = true;
 					}
 					catch (Exception ex) {
 						tcs.TrySetException (ex);
@@ -99,7 +99,7 @@ namespace Mono.TextTemplating.CodeCompilation
 			}
 
 			if (psi.RedirectStandardError) {
-				bool stdErrInitialized = false;
+				//bool stdErrInitialized = false;
 				p.ErrorDataReceived += async (sender, e) => {
 					try {
 						if (e.Data == null) {
@@ -110,11 +110,11 @@ namespace Mono.TextTemplating.CodeCompilation
 							return;
 						}
 
-						if (stdErrInitialized) {
-							await stderr.WriteLineAsync ().ConfigureAwait (false);
-						}
+						//if (stdErrInitialized) {
+						//	await stderr.WriteLineAsync ().ConfigureAwait (false);
+						//}
 						await stderr.WriteLineAsync (e.Data).ConfigureAwait (false);
-						stdErrInitialized = true;
+						//stdErrInitialized = true;
 					}
 					catch (Exception ex) {
 						tcs.TrySetException (ex);
