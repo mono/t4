@@ -76,7 +76,7 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 				if (result != null) {
 					type = result.GetType ();
 
-					if (settings.HostPropertyOnBase) {
+					if (settings.HostPropertyOnBase || settings.HostSpecific) {
 						try {
 							PropertyInfo property = type.GetProperty ("Host");
 
