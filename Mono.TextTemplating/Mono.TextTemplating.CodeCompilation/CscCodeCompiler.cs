@@ -115,13 +115,14 @@ namespace Mono.TextTemplating.CodeCompilation
 				UseShellExecute = false
 			};
 
-			if (log != null) {
-				log.WriteLine ($"{psi.FileName} {psi.Arguments}");
-			}
-
 			if (runtime.Kind == RuntimeKind.NetCore) {
 				psi.Arguments = $"\"{psi.FileName}\" {psi.Arguments}";
 				psi.FileName = Path.GetFullPath (Path.Combine (runtime.RuntimeDir, "..", "..", "..", "dotnet"));
+			}
+
+			if (log != null)
+			{
+				log.WriteLine($"{psi.FileName} {psi.Arguments}");
 			}
 
 			var stdout = new StringWriter ();

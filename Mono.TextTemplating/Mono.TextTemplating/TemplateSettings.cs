@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using Mono.VisualStudio.TextTemplating;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 
 namespace Mono.TextTemplating
 {
@@ -47,6 +48,9 @@ namespace Mono.TextTemplating
 		public bool HostPropertyOnBase { get; set; }
 		public bool Debug { get; set; }
 		public bool CachedTemplates { get; set; }
+#if !NET35
+		public CancellationToken CancellationToken { get; set; }
+#endif
 		public TextWriter Log { get; set; }
 		public string Inherits { get; set; }
 		public string Name { get; set; }
