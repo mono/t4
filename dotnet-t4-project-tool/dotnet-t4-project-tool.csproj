@@ -31,4 +31,9 @@ This package can be installed into a project using `DotNetCliToolReference`.
     <Compile Include="..\TextTransform\Options.cs" Link="Options.cs" />
     <Compile Include="..\dotnet-t4\*.cs" />
   </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Update="Nerdbank.GitVersioning" Version="3.2.31" />
+  </ItemGroup>
 </Project>

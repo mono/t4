@@ -32,10 +32,14 @@ To enable the in-process C# compiler, use the TemplatingEngine.UseInProcessCompi
 
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.3.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.6.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Nerdbank.GitVersioning" Version="3.2.31" />
   </ItemGroup>
 </Project>

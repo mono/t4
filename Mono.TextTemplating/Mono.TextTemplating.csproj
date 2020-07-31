@@ -29,7 +29,7 @@ This package allows embedding the T4 engine in an application.
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.CodeDom" Version="4.4.0" Condition="'$(TargetFramework)'=='netstandard2.0'" />
+    <PackageReference Include="System.CodeDom" Version="4.7.0" Condition="'$(TargetFramework)'=='netstandard2.0'" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
@@ -51,5 +51,9 @@ This package allows embedding the T4 engine in an application.
       <LastGenOutput>VsTemplatingErrorResources.Designer.cs</LastGenOutput>
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Nerdbank.GitVersioning" Version="3.2.31" />
   </ItemGroup>
 </Project>

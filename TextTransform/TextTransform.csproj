@@ -24,4 +24,8 @@
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" PrivateAssets="all" />
     <None Include="$(OutDir)\Mono.TextTemplating.dll" Pack="true" PackagePath="tools\Mono.TextTemplating.dll" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Nerdbank.GitVersioning" Version="3.2.31" />
+  </ItemGroup>
 </Project>
