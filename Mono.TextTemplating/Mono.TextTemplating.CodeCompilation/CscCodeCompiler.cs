@@ -200,6 +200,18 @@ namespace Mono.TextTemplating.CodeCompilation
 				a.Write (value);
 				b.Write (value);
 			}
+
+            public override async Task WriteAsync(string value)
+            {
+				await a.WriteAsync(value);
+				await b.WriteAsync(value);
+			}
+
+            public override async Task WriteLineAsync()
+            {
+				await a.WriteLineAsync();
+				await b.WriteLineAsync();
+			}
 		}
 	}
 }
