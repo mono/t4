@@ -86,7 +86,7 @@ namespace Mono.TextTemplating.CodeCompilation
 						if (stdOutInitialized) {
 							stdout.WriteLine ();
 						}
-						stdout.WriteLine (e.Data);
+						stdout.Write (e.Data);
 						stdOutInitialized = true;
 					}
 					catch (Exception ex) {
@@ -113,7 +113,7 @@ namespace Mono.TextTemplating.CodeCompilation
 						if (stdErrInitialized) {
 							stderr.WriteLine ();
 						}
-						stderr.WriteLine (e.Data);
+						stderr.Write (e.Data);
 						stdErrInitialized = true;
 					}
 					catch (Exception ex) {
