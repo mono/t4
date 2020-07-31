@@ -209,14 +209,14 @@ namespace Mono.TextTemplating.CodeCompilation
 
             public override async Task WriteAsync(string value)
             {
-				await a.WriteAsync(value);
-				await b.WriteAsync(value);
+				await a.WriteAsync(value).ConfigureAwait(false);
+				await b.WriteAsync(value).ConfigureAwait (false);
 			}
 
             public override async Task WriteLineAsync()
             {
-				await a.WriteLineAsync();
-				await b.WriteLineAsync();
+				await a.WriteLineAsync().ConfigureAwait (false);
+				await b.WriteLineAsync().ConfigureAwait (false);
 			}
 		}
 	}
