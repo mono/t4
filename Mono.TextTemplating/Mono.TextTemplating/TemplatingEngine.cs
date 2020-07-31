@@ -485,7 +485,13 @@ namespace Mono.TextTemplating
 
 			settings.UseRelativeLinePragmas = relativeLinePragmas;
 
-			settings.CachedTemplates = (bool?)host.GetHostOption (nameof (TemplateSettings.CachedTemplates)) ?? false;
+			if (host.GetHostOption (nameof (TemplateSettings.CachedTemplates)) is bool cachedTemplates) {
+				settings.CachedTemplates = cachedTemplates;
+			}
+
+			if (host.GetHostOption (nameof (TemplateSettings.Log)) is TextWriter output) {
+				settings.Log = output;
+			}			
 
 			return settings;
 		}
