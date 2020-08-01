@@ -28,27 +28,33 @@ using System;
 using System.Collections.Generic;
 using System.CodeDom.Compiler;
 using System.CodeDom;
+using Mono.TextTemplating;
 
 namespace Mono.VisualStudio.TextTemplating
 {
 	public abstract class DirectiveProcessor : IDirectiveProcessor
 	{
+		protected ITextTemplatingEngineHost Host { get; private set; }
+		protected TemplateSettings Settings { get; private set; }
+
 		CompilerErrorCollection errors;
 
 		protected DirectiveProcessor ()
 		{
 		}
 		
-		public virtual void Initialize (ITextTemplatingEngineHost host)
+		public virtual void Initialize (ITextTemplatingEngineHost host, TemplateSettings settings)
 		{
-			if (host == null)
-				throw new ArgumentNullException ("host");
+			this.Host = host ?? throw new ArgumentNullException (nameof (host));
+			this.Settings = settings ?? throw new ArgumentNullException (nameof (settings));
 		}
 		
 		public virtual void StartProcessingRun (CodeDomProvider languageProvider, string templateContents, CompilerErrorCollection errors)
 		{
-			if (languageProvider == null)
-				throw new ArgumentNullException ("languageProvider");
+			if (languageProvider == null) {
+				throw new ArgumentNullException (nameof (languageProvider));
+			}
+
 			this.errors = errors;
 		}
 		

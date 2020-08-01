@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.CodeDom.Compiler;
 using System.Text;
+using Mono.TextTemplating;
 
 namespace Mono.VisualStudio.TextTemplating
 {
@@ -36,7 +37,7 @@ namespace Mono.VisualStudio.TextTemplating
 	public abstract class RequiresProvidesDirectiveProcessor : DirectiveProcessor
 	{
 		bool isInProcessingRun;
-		ITextTemplatingEngineHost host;
+
 		StringBuilder preInitBuffer = new StringBuilder ();
 		StringBuilder postInitBuffer = new StringBuilder ();
 		StringBuilder codeBuffer = new StringBuilder ();
@@ -46,10 +47,9 @@ namespace Mono.VisualStudio.TextTemplating
 		{
 		}
 		
-		public override void Initialize (ITextTemplatingEngineHost host)
+		public override void Initialize (ITextTemplatingEngineHost host, TemplateSettings settings)
 		{
-			base.Initialize (host);
-			this.host = host;
+			base.Initialize (host, settings);
 		}
 		
 		protected abstract void InitializeProvidesDictionary (string directiveName, IDictionary<string, string> providesDictionary);
@@ -120,9 +120,9 @@ namespace Mono.VisualStudio.TextTemplating
 			if (isInProcessingRun)
 				throw new InvalidOperationException ();
 		}
-		
+
 		//FIXME: handle escaping
-		IEnumerable<KeyValuePair<string,string>> ParseArgs (string args)
+		static IEnumerable<KeyValuePair<string,string>> ParseArgs (string args)
 		{
 			var pairs = args.Split (';');
 			foreach (var p in pairs) {
@@ -135,11 +135,12 @@ namespace Mono.VisualStudio.TextTemplating
 		
 		public override void ProcessDirective (string directiveName, IDictionary<string, string> arguments)
 		{
-			if (directiveName == null)
-				throw new ArgumentNullException ("directiveName");
-			if (arguments == null)
-				throw new ArgumentNullException ("arguments");
-			
+			if (directiveName == null) {
+				throw new ArgumentNullException (nameof (directiveName));
+			}
+			if (arguments == null) {
+				throw new ArgumentNullException (nameof (arguments));
+			}
 			var providesDictionary = new Dictionary<string,string> ();
 			var requiresDictionary = new Dictionary<string,string> ();
 			
@@ -163,7 +164,7 @@ namespace Mono.VisualStudio.TextTemplating
 			var id = ProvideUniqueId (directiveName, arguments, requiresDictionary, providesDictionary);
 			
 			foreach (var req in requiresDictionary) {
-				var val = host.ResolveParameterValue (id, FriendlyName, req.Key);
+				var val = Host.ResolveParameterValue (id, FriendlyName, req.Key);
 				if (val != null)
 					requiresDictionary[req.Key] = val; 
 				else if (req.Value == null)
@@ -171,7 +172,7 @@ namespace Mono.VisualStudio.TextTemplating
 			}
 			
 			foreach (var req in providesDictionary) {
-				var val = host.ResolveParameterValue (id, FriendlyName, req.Key);
+				var val = Host.ResolveParameterValue (id, FriendlyName, req.Key);
 				if (val != null)
 					providesDictionary[req.Key] = val;
 			}
@@ -187,10 +188,6 @@ namespace Mono.VisualStudio.TextTemplating
 			IDictionary<string, string> requiresArguments, IDictionary<string, string> providesArguments)
 		{
 			return directiveName;
-		}
-		
-		protected ITextTemplatingEngineHost Host {
-			get { return host; }
 		}
 	}
 }

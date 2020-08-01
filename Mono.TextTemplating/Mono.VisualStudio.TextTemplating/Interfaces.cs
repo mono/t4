@@ -177,7 +177,7 @@ namespace Mono.VisualStudio.TextTemplating
 		string GetPreInitializationCodeForProcessingRun ();
 		string[] GetReferencesForProcessingRun ();
 		CodeAttributeDeclarationCollection GetTemplateClassCustomAttributes ();  //TODO
-		void Initialize (ITextTemplatingEngineHost host);
+		void Initialize (ITextTemplatingEngineHost host, TemplateSettings settings);
 		bool IsDirectiveSupported (string directiveName);
 		void ProcessDirective (string directiveName, IDictionary<string, string> arguments);
 		void SetProcessingRunIsHostSpecific (bool hostSpecific);

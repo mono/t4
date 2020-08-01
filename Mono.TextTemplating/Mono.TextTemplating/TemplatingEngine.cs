@@ -465,7 +465,7 @@ namespace Mono.TextTemplating
 
 			//initialize the custom processors
 			foreach (var kv in settings.DirectiveProcessors) {
-				kv.Value.Initialize (host);
+				kv.Value.Initialize (host, settings);
 
 				IRecognizeHostSpecific hs;
 				if (settings.HostSpecific || (

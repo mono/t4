@@ -29,6 +29,9 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using Mono.TextTemplating;
+#if NET45
+using Mono.TextTemplating.CodeCompilation;
+#endif
 
 namespace Mono.VisualStudio.TextTemplating
 {
@@ -159,7 +162,9 @@ namespace Mono.VisualStudio.TextTemplating
 			var valRef = new CodeVariableReferenceExpression ("data");
 			var namePrimitive = new CodePrimitiveExpression (name);
 			var sessionRef = new CodePropertyReferenceExpression (thisRef, "Session");
+#if FEATURE_APPDOMAINS
 			var callContextTypeRefExpr = new CodeTypeReferenceExpression ("System.Runtime.Remoting.Messaging.CallContext");
+#endif
 			var nullPrim = new CodePrimitiveExpression (null);
 
 			bool hasAcquiredCheck = hostSpecific
@@ -218,14 +223,20 @@ namespace Mono.VisualStudio.TextTemplating
 			}
 
 #if FEATURE_APPDOMAINS
-			//if acquiredVariable is false, tries to gets the value from the call context
-			var checkCallContext = new CodeConditionStatement (
-				IsFalse (acquiredVariableRef),
-				new CodeVariableDeclarationStatement (typeof (object), "data",
-					new CodeMethodInvokeExpression (callContextTypeRefExpr, "LogicalGetData", namePrimitive)),
-				new CodeConditionStatement (NotNull (valRef), checkCastThenAssignVal));
-			
-			this.postStatements.Add (checkCallContext);
+#if NET45
+			if (Settings.RuntimeKind == RuntimeKind.NetFramework) {
+#endif
+				//if acquiredVariable is false, tries to gets the value from the call context
+				var checkCallContext = new CodeConditionStatement (
+					IsFalse (acquiredVariableRef),
+					new CodeVariableDeclarationStatement (typeof (object), "data",
+						new CodeMethodInvokeExpression (callContextTypeRefExpr, "LogicalGetData", namePrimitive)),
+					new CodeConditionStatement (NotNull (valRef), checkCastThenAssignVal));
+
+				this.postStatements.Add (checkCallContext);
+#if NET45
+			}
+#endif
 #endif
 		}
 		
