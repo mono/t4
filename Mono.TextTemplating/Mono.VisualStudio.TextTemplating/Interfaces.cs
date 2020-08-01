@@ -29,9 +29,8 @@ using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
-#if NETSTANDARD
-using System.Runtime.Loader;
+#if NET45 || NETSTANDARD
+using System.Threading.Tasks;
 #endif
 using System.Runtime.Serialization;
 using System.Text;
@@ -61,7 +60,11 @@ namespace Mono.VisualStudio.TextTemplating
 		: ITextTemplating
 	{
 		event EventHandler<ProcessTemplateEventArgs> TransformProcessCompleted;
-		void ProcessTemplateAsync (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
+#if NETSTANDARD || NET45
+		Task ProcessTemplateAsync (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
+#elif NET35
+		void ProcessTemplate (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
+#endif
 	}
 
 	public interface ITextTemplating
