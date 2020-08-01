@@ -35,6 +35,7 @@ using System.Text;
 using System.Threading;
 using Microsoft.CSharp;
 using Mono.VisualStudio.TextTemplating;
+using System.Globalization;
 #if FEATURE_ROSLYN
 using Mono.TextTemplating.CodeCompilation;
 #endif
@@ -483,7 +484,7 @@ namespace Mono.TextTemplating
 			if (settings.Name == null)
 				settings.Name = "GeneratedTextTransformation";
 			if (settings.Namespace == null)
-				settings.Namespace = string.Format (typeof (TextTransformation).Namespace + "{0:x}", new Random ().Next ());
+				settings.Namespace = string.Format (CultureInfo.InvariantCulture, typeof (TextTransformation).Namespace + "{0:x}", new Random ().Next ());
 
 			//resolve the CodeDOM provider
 			if (String.IsNullOrEmpty (settings.Language)) {
