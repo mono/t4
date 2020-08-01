@@ -288,6 +288,9 @@ namespace Mono.TextTemplating
 					disposable.Dispose ();
 				}
 			}
+			else {
+				r.TempFiles.KeepFiles = args.Debug;
+			}
 
 			return r;
 		}
