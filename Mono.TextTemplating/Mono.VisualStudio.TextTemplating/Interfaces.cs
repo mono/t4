@@ -61,7 +61,7 @@ namespace Mono.VisualStudio.TextTemplating
 	{
 		event EventHandler<ProcessTemplateEventArgs> TransformProcessCompleted;
 #if NETSTANDARD || NET45
-		Task ProcessTemplateAsync (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
+		Task<string> ProcessTemplateAsync (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
 #elif NET35
 		void ProcessTemplate (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
 #endif
