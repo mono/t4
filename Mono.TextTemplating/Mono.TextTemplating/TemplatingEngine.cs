@@ -576,16 +576,20 @@ namespace Mono.TextTemplating
 
 		static void AddDirective (TemplateSettings settings, ITextTemplatingEngineHost host, string processorName, Directive directive)
 		{
-			if (!settings.DirectiveProcessors.TryGetValue (processorName, out IDirectiveProcessor processor)) {
-				switch (processorName) {
-				case "ParameterDirectiveProcessor":
-					processor = new ParameterDirectiveProcessor ();
-					break;
-				default:
-					Type processorType = host.ResolveDirectiveProcessor (processorName);
-					processor = (IDirectiveProcessor)Activator.CreateInstance (processorType);
-					break;
-				}
+			if (settings.DirectiveProcessors.ContainsKey(processorName)) {
+				return;
+			}
+
+			IDirectiveProcessor processor;
+
+			switch (processorName) {
+			case "ParameterDirectiveProcessor":
+				processor = new ParameterDirectiveProcessor ();
+				break;
+			default:
+				Type processorType = host.ResolveDirectiveProcessor (processorName);
+				processor = (IDirectiveProcessor)Activator.CreateInstance (processorType);
+				break;
 			}
 
 			if (!processor.IsDirectiveSupported (directive.Name))
