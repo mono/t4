@@ -685,6 +685,8 @@ namespace Mono.TextTemplating
 				type.BaseTypes.Add (new CodeTypeReference (settings.Inherits));
 			} else if (!settings.IncludePreprocessingHelpers) {
 				type.BaseTypes.Add (TypeRef<TextTransformation> ());
+				// issue #87 because CompilerErrorCollection is referenced by the TextTransformation base class
+				TextTransformation.AddRequiredReferences (settings.Assemblies);
 			} else {
 				type.BaseTypes.Add (new CodeTypeReference (settings.Name + "Base"));
 			}

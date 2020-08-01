@@ -42,9 +42,7 @@ namespace Mono.TextTemplating.CodeCompilation
 			{
 				yield return "mscorlib.dll";
 				yield return "netstandard.dll";
-				// issue #87 because CompilerErrorCollection is referenced by the TextTransformation base class
-				yield return "System.CodeDom.dll";
-
+				
 				if (runtime.Kind == RuntimeKind.NetCore) {
 					yield return "System.Runtime.dll";
 					//because we're referencing the impl not the ref asms, we end up
