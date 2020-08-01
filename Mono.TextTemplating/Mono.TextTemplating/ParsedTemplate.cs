@@ -66,6 +66,10 @@ namespace Mono.TextTemplating
 
 		public static ParsedTemplate FromText (string content, ITextTemplatingEngineHost host)
 		{
+			if (host == null) {
+				throw new ArgumentNullException (nameof (host));
+			}
+
 			var template = new ParsedTemplate (host.TemplateFile);
 			try {
 				template.Parse (host, new Tokeniser (host.TemplateFile, content));
