@@ -283,7 +283,9 @@ namespace Mono.TextTemplating
 			}
 
 			if (!args.Debug) {
-				r.TempFiles.Delete ();
+				if (r.TempFiles is IDisposable disposable) {
+					disposable.Dispose ();
+				}
 			}
 
 			return r;
