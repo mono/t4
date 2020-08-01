@@ -28,6 +28,7 @@ using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 
 namespace Mono.VisualStudio.TextTemplating
@@ -215,9 +216,17 @@ namespace Mono.VisualStudio.TextTemplating
 			Dispose (false);
 		}
 
-		internal static void AddRequiredReferences (HashSet<string> assemblies)
+		internal static void AddRequiredReferences (IList<string> standardAssemblies)
 		{
-			assemblies.Add (typeof (CompilerErrorCollection).Assembly.Location);
+			if (standardAssemblies == null) {
+				throw new ArgumentNullException (nameof (standardAssemblies));
+			}
+
+			string codeDom = typeof (CompilerErrorCollection).Assembly.Location;
+
+			if (!standardAssemblies.Any (x => x.Equals (codeDom, StringComparison.CurrentCultureIgnoreCase))) {
+				standardAssemblies.Add (codeDom);
+			}
 		}
 
 		#endregion
