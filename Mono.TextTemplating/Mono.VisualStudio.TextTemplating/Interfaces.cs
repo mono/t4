@@ -51,17 +51,17 @@ namespace Mono.VisualStudio.TextTemplating
 		: ITextTemplatingEngineHost
 		, ITextTemplatingSessionHost
 		, ITextTemplatingComponents
-		, IDebugTextTemplating
+		, IProcessTextTemplating
 		, ITextTemplating
 	{
-		new IDebugTextTemplatingEngine Engine { get; }
+		new IProcessTextTemplatingEngine Engine { get; }
 	}
 
-	public interface IDebugTextTemplating
+	public interface IProcessTextTemplating
 		: ITextTemplating
 	{
-		event EventHandler<DebugTemplateEventArgs> DebugCompleted;
-		void DebugTemplateAsync (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy);
+		event EventHandler<ProcessTemplateEventArgs> TransformProcessCompleted;
+		void ProcessTemplateAsync (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
 	}
 
 	public interface ITextTemplating
@@ -72,24 +72,24 @@ namespace Mono.VisualStudio.TextTemplating
 		string ProcessTemplate (string inputFile, string content, ITextTemplatingCallback callback = null, object hierarchy = null);
 	}
 
-	public interface IDebugTransformationRun
+	public interface IProcessTransformationRun
 	{
 		string PerformTransformation ();
 
 		CompilerErrorCollection Errors { get; }
 	}
 
-	public interface IDebugTransformationRunFactory
+	public interface IProcessTransformationRunFactory
 	{
-		IDebugTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate template, ResolveEventHandler resolver);
+		IProcessTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate pt, ResolveEventHandler resolver);
 
-		string RunTransformation (IDebugTransformationRun transformationRun);
+		string RunTransformation (IProcessTransformationRun transformationRun);
 	}
 
-	public interface IDebugTextTemplatingEngine
+	public interface IProcessTextTemplatingEngine
 		: ITextTemplatingEngine
 	{
-		IDebugTransformationRun PrepareTransformationRun (string content, ITextTemplatingEngineHost host, IDebugTransformationRunFactory runFactory);
+		IProcessTransformationRun PrepareTransformationRun (string content, ITextTemplatingEngineHost host, IProcessTransformationRunFactory runFactory, bool debugging = false);
 
 		CompiledTemplate CompileTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, TemplateSettings settings = null);
 	}

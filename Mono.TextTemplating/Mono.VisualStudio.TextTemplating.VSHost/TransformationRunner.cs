@@ -11,7 +11,7 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 #if FEATURE_APPDOMAINS
 		MarshalByRefObject,
 #endif
-		IDebugTransformationRun
+		IProcessTransformationRun
 	{
 		CompiledTemplate compiledTemplate;
 		TemplateSettings settings;
@@ -54,7 +54,7 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 			return errorOutput;
 		}
 
-		PropertyInfo GetDerivedProperty (Type transformType, string propertyName)
+		static PropertyInfo GetDerivedProperty (Type transformType, string propertyName)
 		{
 			while(transformType != typeof(object) && transformType != null) {
 				PropertyInfo property = transformType.GetProperty (propertyName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
@@ -68,6 +68,19 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 
 		protected virtual object CreateTextTransformation(TemplateSettings settings, ITextTemplatingEngineHost host, Assembly assembly) {
 			object success = null;
+
+			if (settings == null) {
+				throw new ArgumentNullException (nameof (settings));
+			}
+
+			if (host == null) {
+				throw new ArgumentNullException (nameof (host));
+			}
+
+			if (assembly == null) {
+				throw new ArgumentNullException (nameof (assembly));
+			}
+
 			try {
 				Type type;
 
@@ -128,7 +141,7 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 			return success;
 		}
 
-		public virtual bool PrepareTransformation (ParsedTemplate template, string content, ITextTemplatingEngineHost host, TemplateSettings settings)
+		public virtual bool PrepareTransformation (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, TemplateSettings settings)
 		{
 			this.host = host ?? throw new ArgumentNullException (nameof (host));
 			this.settings = settings ?? throw new ArgumentNullException (nameof (settings));
@@ -136,7 +149,7 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 			try {
 				this.settings.Assemblies.Add (base.GetType ().Assembly.Location);
 				this.settings.Assemblies.Add (typeof (ITextTemplatingEngineHost).Assembly.Location);
-				this.compiledTemplate = LocateAssembly (template, content);
+				this.compiledTemplate = LocateAssembly (pt, content);
 			}
 			catch(Exception ex) {
 				if (TemplatingEngine.IsCriticalException (ex)) {
@@ -147,7 +160,7 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 			return this.compiledTemplate != null;
 		}
 
-		CompiledTemplate LocateAssembly (ParsedTemplate template, string content)
+		CompiledTemplate LocateAssembly (ParsedTemplate pt, string content)
 		{
 			CompiledTemplate compiledTemplate = null;
 
@@ -155,7 +168,7 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 				compiledTemplate = CompiledTemplateCache.Find (settings.GetFullName ());
 			}
 			if (compiledTemplate == null) {
-				compiledTemplate = Compile (template, content);
+				compiledTemplate = Compile (pt, content);
 				if (settings.CachedTemplates && compiledTemplate != null) {
 					CompiledTemplateCache.Insert (settings.GetFullName (), compiledTemplate);
 				}
@@ -163,30 +176,33 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 			return compiledTemplate;
 		}
 
-		CompiledTemplate Compile (ParsedTemplate template, string content)
+		CompiledTemplate Compile (ParsedTemplate pt, string content)
 		{
 			CompiledTemplate compiledTemplate = null;
 
 			if (host is ITextTemplatingComponents Component &&
-				Component.Engine is IDebugTextTemplatingEngine engine) {
-				compiledTemplate = engine.CompileTemplate (template, content, host, settings);
-				// do we want to dispose the appdomain resolver in compiled template in favor of the transformation runner?
-				//compiledTemplate?.Dispose ();
+				Component.Engine is IProcessTextTemplatingEngine engine) {
+				compiledTemplate = engine.CompileTemplate (pt, content, host, settings);
+
+				if (settings.CachedTemplates) {
+					// we will resolve loading of assemblies through the run factory for cached templates
+					compiledTemplate?.Dispose ();
+				}
 			}
 
 			return compiledTemplate;
 		}
 
-		public virtual void PreLoadAssemblies (IEnumerable<string> assemblies)
-		{
-			try {
-				//TODO:: investigate preloading assemblies with the AssemblyLoadContext
-			}catch(Exception ex) {
-				if (TemplatingEngine.IsCriticalException (ex)) {
-					throw;
-				}
-			}
-		}
+		//public virtual void PreLoadAssemblies (IEnumerable<string> assemblies)
+		//{
+		//	try {
+		//		//TODO:: investigate preloading assemblies with the AssemblyLoadContext
+		//	}catch(Exception ex) {
+		//		if (TemplatingEngine.IsCriticalException (ex)) {
+		//			throw;
+		//		}
+		//	}
+		//}
 
 		protected Assembly AttemptAssemblyLoad(AssemblyName assembly)
 		{

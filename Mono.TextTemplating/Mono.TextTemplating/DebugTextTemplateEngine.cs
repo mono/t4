@@ -11,9 +11,9 @@ namespace Mono.TextTemplating
 	using System.Threading;
 
 	public partial class TemplatingEngine
-		: IDebugTextTemplatingEngine
+		: IProcessTextTemplatingEngine
 	{
-		public IDebugTransformationRun PrepareTransformationRun (string content, ITextTemplatingEngineHost host, IDebugTransformationRunFactory runFactory)
+		public IProcessTransformationRun PrepareTransformationRun (string content, ITextTemplatingEngineHost host, IProcessTransformationRunFactory runFactory, bool debugging = false)
 		{
 			if (content == null) {
 				throw new ArgumentNullException (nameof(content));
@@ -33,7 +33,7 @@ namespace Mono.TextTemplating
 
 			ParsedTemplate pt = ParsedTemplate.FromText (content, host);
 
-			IDebugTransformationRun run = null;
+			IProcessTransformationRun run = null;
 
 			try {
 				if (pt.Errors.HasErrors) {
@@ -41,7 +41,7 @@ namespace Mono.TextTemplating
 				}
 				TemplateSettings settings = GetSettings (host, pt);
 
-				settings.Debug = true;
+				settings.Debug = debugging;
 
 				run = CompileAndPrepareRun (pt, content, host, runFactory, settings);
 			} catch(Exception ex) {
@@ -57,10 +57,26 @@ namespace Mono.TextTemplating
 			return run;
 		}
 
-		protected virtual IDebugTransformationRun CompileAndPrepareRun (ParsedTemplate template, string content, ITextTemplatingEngineHost host, IDebugTransformationRunFactory runFactory, TemplateSettings settings) 
+		protected virtual IProcessTransformationRun CompileAndPrepareRun (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, IProcessTransformationRunFactory runFactory, TemplateSettings settings) 
 		{
 			TransformationRunner runner = null;
 			bool success = false;
+
+			if (pt == null) {
+				throw new ArgumentNullException (nameof (pt));
+			}
+
+			if (host == null) {
+				throw new ArgumentNullException (nameof (host));
+			}
+
+			if (runFactory == null) {
+				throw new ArgumentNullException (nameof (runFactory));
+			}
+
+			if (settings == null) {
+				throw new ArgumentNullException (nameof (settings));
+			}
 
 			Assembly ResolveReferencedAssemblies (object sender, ResolveEventArgs args)
 			{
@@ -81,7 +97,7 @@ namespace Mono.TextTemplating
 
 			try {
 				try {
-					if (runFactory.CreateTransformationRun (typeof (TransformationRunner), template, new ResolveEventHandler(ResolveReferencedAssemblies)) is TransformationRunner theRunner) {
+					if (runFactory.CreateTransformationRun (typeof (TransformationRunner), pt, new ResolveEventHandler(ResolveReferencedAssemblies)) is TransformationRunner theRunner) {
 						runner = theRunner;
 					}
 				}
@@ -91,15 +107,15 @@ namespace Mono.TextTemplating
 					}
 				}
 				if (runner != null && !runner.Errors.HasErrors) {
-					ProcessReferences (host, template, settings);
-					if (!template.Errors.HasErrors) {
-						runner.PreLoadAssemblies (settings.Assemblies);
-
+					ProcessReferences (host, pt, settings);
+					if (!pt.Errors.HasErrors) {
+						//with app domains dissappearing we may not be able to pre load anything
+						//runner.PreLoadAssemblies (settings.Assemblies);
 						try {
-							success = runner.PrepareTransformation (template, content, settings.HostSpecific ? host : null, settings);
+							success = runner.PrepareTransformation (pt, content, settings.HostSpecific ? host : null, settings);
 						}
 						catch (SerializationException) {
-							template.LogError (VsTemplatingErrorResources.SessionHostMarshalError, new Location (host.TemplateFile, -1, -1));
+							pt.LogError (VsTemplatingErrorResources.SessionHostMarshalError, new Location (host.TemplateFile, -1, -1));
 							throw;
 						}
 					}
@@ -109,11 +125,11 @@ namespace Mono.TextTemplating
 				if (IsCriticalException (ex)) {
 					throw;
 				}
-				template.LogError (ex.ToString (), new Location (host.TemplateFile, -1, -1));
+				pt.LogError (ex.ToString (), new Location (host.TemplateFile, -1, -1));
 			}
 			finally {
 				if (runner != null) {
-					template.Errors.AddRange (runner.Errors);
+					pt.Errors.AddRange (runner.Errors);
 					runner.ClearErrors ();
 				}
 			}
