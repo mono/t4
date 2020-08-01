@@ -224,7 +224,7 @@ namespace Mono.VisualStudio.TextTemplating
 
 #if FEATURE_APPDOMAINS
 #if NET45
-			if (Settings.RuntimeKind == RuntimeKind.NetFramework) {
+			if (Settings.RuntimeKind != RuntimeKind.NetCore) {
 #endif
 				//if acquiredVariable is false, tries to gets the value from the call context
 				var checkCallContext = new CodeConditionStatement (
