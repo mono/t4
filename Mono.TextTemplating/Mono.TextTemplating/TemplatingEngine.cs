@@ -315,6 +315,16 @@ namespace Mono.TextTemplating
 
 		protected static string[] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)
 		{
+			if (host == null) {
+				throw new ArgumentNullException (nameof (host));
+			}
+			if (pt == null) {
+				throw new ArgumentNullException (nameof (pt));
+			}
+			if (settings == null) {
+				throw new ArgumentNullException (nameof (settings));
+			}
+			
 			var resolved = new Dictionary<string, string> ();
 
 			foreach (string assem in settings.Assemblies.Union (host.StandardAssemblyReferences)) {
@@ -337,12 +347,21 @@ namespace Mono.TextTemplating
 
 		public static TemplateSettings GetSettings (ITextTemplatingEngineHost host, ParsedTemplate pt)
 		{
+			if (host == null) {
+				throw new ArgumentNullException (nameof (host));
+			}
+			if (pt == null) {
+				throw new ArgumentNullException (nameof (pt));
+			}
+
 			var settings = new TemplateSettings ();
 
 			bool relativeLinePragmas = host.GetHostOption (nameof (TemplateSettings.UseRelativeLinePragmas)) as bool? ?? false;
 
 			foreach (Directive dt in pt.Directives) {
+#pragma warning disable CA1308 // Normalize strings to uppercase
 				switch (dt.Name.ToLowerInvariant ()) {
+#pragma warning restore CA1308 // Normalize strings to uppercase
 				case "template":
 					string val = dt.Extract ("language");
 					if (val != null)
@@ -522,6 +541,10 @@ namespace Mono.TextTemplating
 
 		public static string IndentSnippetText (string text, string indent)
 		{
+			if (text == null) {
+				throw new ArgumentNullException (nameof (text));
+			}
+
 			var builder = new StringBuilder (text.Length);
 			builder.Append (indent);
 			int lastNewline = 0;
@@ -563,11 +586,13 @@ namespace Mono.TextTemplating
 					processor = (IDirectiveProcessor)Activator.CreateInstance (processorType);
 					break;
 				}
-				if (!processor.IsDirectiveSupported (directive.Name))
-					throw new InvalidOperationException ("Directive processor '" + processorName + "' does not support directive '" + directive.Name + "'");
-
-				settings.DirectiveProcessors [processorName] = processor;
 			}
+
+			if (!processor.IsDirectiveSupported (directive.Name))
+				throw new InvalidOperationException ("Directive processor '" + processorName + "' does not support directive '" + directive.Name + "'");
+
+			settings.DirectiveProcessors[processorName] = processor;
+
 			settings.CustomDirectives.Add (new CustomDirective (processorName, directive));
 		}
 
@@ -617,6 +642,18 @@ namespace Mono.TextTemplating
 
 		public static CodeCompileUnit GenerateCompileUnit (ITextTemplatingEngineHost host, string content, ParsedTemplate pt, TemplateSettings settings)
 		{
+			if (host == null) {
+				throw new ArgumentNullException (nameof (host));
+			}
+
+			if (pt == null) {
+				throw new ArgumentNullException (nameof (pt));
+			}
+
+			if (settings == null) {
+				throw new ArgumentNullException (nameof (settings));
+			}
+
 			ProcessDirectives (content, pt, settings);
 
 			string baseDirectory = Path.GetDirectoryName (host.TemplateFile);
@@ -648,7 +685,7 @@ namespace Mono.TextTemplating
 			//prep the transform method
 			var transformMeth = new CodeMemberMethod {
 				Name = "TransformText",
-				ReturnType = new CodeTypeReference (typeof (String)),
+				ReturnType = new CodeTypeReference (typeof (string)),
 				Attributes = MemberAttributes.Public,
 			};
 			if (!settings.IncludePreprocessingHelpers)
@@ -863,6 +900,10 @@ namespace Mono.TextTemplating
 
 		static void GenerateProcessingHelpers (CodeTypeDeclaration type, TemplateSettings settings)
 		{
+			if (settings == null) {
+				throw new ArgumentNullException (nameof (settings));
+			}
+
 			var thisRef = new CodeThisReferenceExpression ();
 			var sbTypeRef = TypeRef<StringBuilder> ();
 
@@ -1256,9 +1297,18 @@ namespace Mono.TextTemplating
 		/// </summary>
 		public static void GenerateCodeFromMembers (CodeDomProvider provider, CodeGeneratorOptions options, StringWriter sw, IEnumerable<CodeTypeMember> members)
 		{
+			if (provider == null) {
+				throw new ArgumentNullException (nameof (provider));
+			}
+
+			if (members == null) {
+				throw new ArgumentNullException (nameof (members));
+			}
+
 			if (!useMonoHack) {
-				foreach (CodeTypeMember member in members)
+				foreach (CodeTypeMember member in members) {
 					provider.GenerateCodeFromMember (member, sw, options);
+				}
 				return;
 			}
 
