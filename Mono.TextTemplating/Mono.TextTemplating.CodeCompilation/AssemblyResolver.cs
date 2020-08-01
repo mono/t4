@@ -47,7 +47,7 @@ namespace Mono.TextTemplating.CodeCompilation
 					yield return "System.Runtime.dll";
 					//because we're referencing the impl not the ref asms, we end up
 					//having to ref internals
-					yield return "System.Private.CoreLib.dll";
+					//yield return "System.Private.CoreLib.dll";
 				}
 			}
 
