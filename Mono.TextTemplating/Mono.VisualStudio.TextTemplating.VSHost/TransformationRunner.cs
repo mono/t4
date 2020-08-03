@@ -7,11 +7,9 @@ using Mono.TextTemplating;
 
 namespace Mono.VisualStudio.TextTemplating.VSHost
 {
-	public class TransformationRunner :
-#if FEATURE_APPDOMAINS
-		MarshalByRefObject,
-#endif
-		IProcessTransformationRun
+	public class TransformationRunner
+		: MarshalByRefObject
+		, IProcessTransformationRun
 	{
 		CompiledTemplate compiledTemplate;
 		TemplateSettings settings;

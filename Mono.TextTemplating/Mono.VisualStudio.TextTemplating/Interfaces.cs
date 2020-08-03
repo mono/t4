@@ -61,7 +61,7 @@ namespace Mono.VisualStudio.TextTemplating
 	{
 		event EventHandler<ProcessTemplateEventArgs> TransformProcessCompleted;
 #if NETSTANDARD || NET45
-		Task ProcessTemplateAsync (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
+		Task<string> ProcessTemplateAsync (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
 #elif NET35
 		void ProcessTemplate (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
 #endif
@@ -94,6 +94,7 @@ namespace Mono.VisualStudio.TextTemplating
 	{
 		IProcessTransformationRun PrepareTransformationRun (string content, ITextTemplatingEngineHost host, IProcessTransformationRunFactory runFactory, bool debugging = false);
 
+		CompiledTemplate CompileTemplate (string content, ITextTemplatingEngineHost host);
 		CompiledTemplate CompileTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, TemplateSettings settings = null);
 	}
 

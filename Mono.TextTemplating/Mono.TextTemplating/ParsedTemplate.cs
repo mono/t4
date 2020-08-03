@@ -274,6 +274,9 @@ namespace Mono.TextTemplating
 			Column = column;
 			Line = line;
 		}
+
+		public Location (string fileName)
+			: this (fileName, -1, -1) { }
 		
 		public int Line { get; private set; }
 		public int Column { get; private set; }
@@ -292,6 +295,26 @@ namespace Mono.TextTemplating
 		public bool Equals (Location other)
 		{
 			return other.Line == Line && other.Column == Column && other.FileName == FileName;
+		}
+
+		public override bool Equals (object obj)
+		{
+			return obj is Location && Equals ((Location)obj);
+		}
+
+		public static bool operator == (Location left, Location right)
+		{
+			return left.Equals (right);
+		}
+
+		public static bool operator != (Location left, Location right)
+		{
+			return !(left == right);
+		}
+
+		public override int GetHashCode ()
+		{
+			return base.GetHashCode ();
 		}
 	}
 }
