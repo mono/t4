@@ -3,11 +3,9 @@ using Mono.TextTemplating;
 
 namespace Mono.VisualStudio.TextTemplating.VSHost
 {
-	public abstract class TransformationRunFactory :
-#if FEATURE_APPDOMAINS
-		MarshalByRefObject,
-#endif
-		IProcessTransformationRunFactory
+	public abstract class TransformationRunFactory
+		: MarshalByRefObject
+		, IProcessTransformationRunFactory
 	{
 		public const string TransformationRunFactoryPrefix = "TransformationRunFactoryService";
 		public const string TransformationRunFactorySuffix = nameof (TransformationRunFactory);
@@ -24,11 +22,11 @@ namespace Mono.VisualStudio.TextTemplating.VSHost
 		public abstract IProcessTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate pt, ResolveEventHandler resolver);
 
 		public abstract string RunTransformation (IProcessTransformationRun transformationRun);
-#if FEATURE_APPDOMAINS
+
 		public override object InitializeLifetimeService ()
 		{
 			return null;
 		}
-#endif
+
 	}
 }
