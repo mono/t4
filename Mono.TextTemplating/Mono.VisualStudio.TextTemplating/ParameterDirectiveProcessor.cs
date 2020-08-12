@@ -146,17 +146,21 @@ namespace Mono.VisualStudio.TextTemplating
 			string fieldName = "_" + name + "Field";
 			var typeRef = new CodeTypeReference (type);
 			var thisRef = new CodeThisReferenceExpression ();
-			var fieldRef = new CodeFieldReferenceExpression (thisRef, fieldName);
+			var fieldRef = new CodeFieldReferenceExpression () {
+				FieldName = fieldName
+			};
 			
 			var property = new CodeMemberProperty () {
 				Name = name,
-				Attributes = MemberAttributes.Public | MemberAttributes.Final,
+				Attributes = MemberAttributes.Public | MemberAttributes.Static | MemberAttributes.Final,
 				HasGet = true,
 				HasSet = false,
 				Type = typeRef
 			};
 			property.GetStatements.Add (new CodeMethodReturnStatement (fieldRef));
-			members.Add (new CodeMemberField (typeRef, fieldName));
+			members.Add (new CodeMemberField (typeRef, fieldName) {
+				Attributes = MemberAttributes.Private | MemberAttributes.Static
+			});
 			members.Add (property);
 			
 			var valRef = new CodeVariableReferenceExpression ("data");

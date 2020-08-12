@@ -49,6 +49,16 @@ namespace Mono.TextTemplating.Tests
 		}
 
 		[Test]
+		public void GenerateStaticPropertyForParameter ()
+		{
+			var engine = new TemplatingEngine ();
+
+			var output = engine.PreprocessTemplate (T4ParameterSample, new DummyHost (), "ParameterTestClass", "Testing", out string language, out string[] references);
+
+			Assert.IsTrue (output.Contains ("public static string TestParameter"));
+		}
+
+		[Test]
 		public void ImportReferencesTest ()
 		{
 			var gen = new TemplateGenerator ();
@@ -104,6 +114,8 @@ namespace Mono.TextTemplating.Tests
 			string WinOutput = OutputSample1.NormalizeEscapedNewlines ("\\r\\n");
 			Generate (WinInput, WinOutput, "\r\n");
 		}
+
+		
 
 		[Test]
 		public void DefaultLanguage ()
@@ -162,6 +174,27 @@ namespace Mono.TextTemplating.Tests
 			}
 		}
 
+		#endregion
+
+		#region input strings
+		public static string T4ParameterSample =
+@"<#@ template hostspecific=""true"" language=""C#"" #>
+<#@ parameter type=""System.String"" name=""TestParameter"" #>
+using System;
+
+namespace Testing
+{
+	public class Parameters
+	{
+		public string SomeParameter
+		{
+			get
+			{
+				return TestParameter;
+			}
+		}
+	}
+}";
 		#endregion
 
 		#region Expected output strings
