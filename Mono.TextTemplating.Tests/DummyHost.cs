@@ -37,11 +37,11 @@ namespace Mono.TextTemplating.Tests
 		public readonly Dictionary<string, string> Locations = new Dictionary<string, string> ();
 		public readonly Dictionary<string, string> Contents = new Dictionary<string, string> ();
 		public readonly Dictionary<string, object> HostOptions = new Dictionary<string, object> ();
-	 	List<string> standardAssemblyReferences = new List<string> ();
+	 	List<string> standardAssemblyReferences = new List<string> (new[] { typeof(TemplatingEngine).Assembly.Location });
 		List<string> standardImports = new List<string> ();
 		public readonly CompilerErrorCollection Errors = new CompilerErrorCollection ();
 		public readonly Dictionary<string, Type> DirectiveProcessors = new Dictionary<string, Type> ();
-		
+		public readonly Dictionary<string, string> Parameters = new Dictionary<string, string> ();
 		public virtual object GetHostOption (string optionName)
 		{
 			object o;
@@ -68,7 +68,7 @@ namespace Mono.TextTemplating.Tests
 		
 		public virtual string ResolveAssemblyReference (string assemblyReference)
 		{
-			throw new System.NotImplementedException();
+			return assemblyReference;
 		}
 		
 		public virtual Type ResolveDirectiveProcessor (string processorName)
@@ -80,22 +80,24 @@ namespace Mono.TextTemplating.Tests
 		
 		public virtual string ResolveParameterValue (string directiveId, string processorName, string parameterName)
 		{
-			throw new System.NotImplementedException();
+			return Parameters[parameterName];
 		}
 		
 		public virtual string ResolvePath (string path)
 		{
 			throw new System.NotImplementedException();
 		}
-		
+
+		string extension;
+
 		public virtual void SetFileExtension (string extension)
 		{
-			throw new System.NotImplementedException();
+			this.extension = extension;
 		}
 		
 		public virtual void SetOutputEncoding (System.Text.Encoding encoding, bool fromOutputDirective)
 		{
-			throw new System.NotImplementedException();
+			
 		}
 		
 		public virtual IList<string> StandardAssemblyReferences {

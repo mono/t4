@@ -40,7 +40,7 @@ namespace Mono.TextTemplating
 		IDisposable
 	{
 		ITextTemplatingEngineHost host;
-		object textTransformation;
+		internal object textTransformation;
 		readonly CultureInfo culture;
 		readonly string [] assemblyFiles;
 

@@ -31,6 +31,7 @@ using NUnit.Framework;
 using Mono.VisualStudio.TextTemplating;
 using System.Linq;
 using System.CodeDom.Compiler;
+using System.Reflection;
 
 namespace Mono.TextTemplating.Tests
 {
@@ -53,9 +54,53 @@ namespace Mono.TextTemplating.Tests
 		{
 			var engine = new TemplatingEngine ();
 
-			var output = engine.PreprocessTemplate (T4ParameterSample, new DummyHost (), "ParameterTestClass", "Testing", out string language, out string[] references);
+			var host = new DummyHost ();
+
+			var output = engine.PreprocessTemplate (T4ParameterSample, host, "ParameterTestClass", "Testing", out string language, out string[] references);
+
+			foreach (CompilerError error in host.Errors) {
+				Console.Error.WriteLine (error.ErrorText);
+			}
 
 			Assert.IsTrue (output.Contains ("public static string TestParameter"));
+
+			Console.Out.WriteLine (output);
+		}
+
+		[Test]
+		[TestCase("some nonsense value")]
+		public void GenerateStaticPropertyForParameterCanInitilialize (string value)
+		{
+			var engine = new TemplatingEngine ();
+
+			var host = new DummyHost () {
+				TemplateFile = "test.tt"
+			};
+
+			host.Parameters.Add ("TestParameter", value);
+			
+
+			var tt = engine.CompileTemplate (T4ParameterSample, host);
+
+			foreach (CompilerError error in host.Errors) {
+				Console.Error.WriteLine (error.ErrorText);
+			}
+
+			Type ttType = tt.textTransformation?.GetType ();
+
+			Assert.IsNotNull (ttType);
+
+			var initMethod = ttType.GetMethod ("Initialize");
+			var testAssignment = ttType.GetMethod ("TestAssignment");
+			var parameter = ttType.GetProperty ("TestParameter", BindingFlags.Public | BindingFlags.Static);
+
+			initMethod.Invoke (tt.textTransformation, null);
+
+			if (testAssignment.Invoke(tt.textTransformation, null) is bool success) {
+				Assert.IsTrue (success);
+			}
+
+			Assert.AreEqual (value, parameter.GetValue (null));
 		}
 
 		[Test]
@@ -177,24 +222,17 @@ namespace Mono.TextTemplating.Tests
 		#endregion
 
 		#region input strings
-		public static string T4ParameterSample =
+		public const string T4ParameterSample =
 @"<#@ template hostspecific=""true"" language=""C#"" #>
+<#@ output extension="".cs"" #>
 <#@ parameter type=""System.String"" name=""TestParameter"" #>
+<#@ import namespace=""System"" #>
 using System;
-
-namespace Testing
-{
-	public class Parameters
-	{
-		public string SomeParameter
-		{
-			get
-			{
-				return TestParameter;
-			}
-		}
-	}
-}";
+<#+
+public bool TestAssignment() {
+	return !string.IsNullOrEmpty(TestParameter);
+}
+#>";
 		#endregion
 
 		#region Expected output strings
