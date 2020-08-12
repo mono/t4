@@ -57,9 +57,11 @@ namespace Mono.TextTemplating.CodeCompilation
 						if (!p.HasExited) {
 							p.Kill ();
 						}
-					} catch (InvalidOperationException ex) {
-						if (ex.Message.IndexOf ("already exited", StringComparison.Ordinal) < 0)
+					}
+					catch (InvalidOperationException ex) {
+						if (ex.Message.IndexOf ("already exited", StringComparison.Ordinal) < 0) {
 							throw;
+						}
 					}
 				});
 			}
@@ -75,16 +77,19 @@ namespace Mono.TextTemplating.CodeCompilation
 					try {
 						if (e.Data == null) {
 							outputDone = true;
-							if (exitDone && errorDone)
+							if (exitDone && errorDone) {
 								tcs.TrySetResult (p.ExitCode);
+							}
 							return;
 						}
 
-						if (stdOutInitialized)
+						if (stdOutInitialized) {
 							stdout.WriteLine ();
+						}
 						stdout.Write (e.Data);
 						stdOutInitialized = true;
-					} catch (Exception ex) {
+					}
+					catch (Exception ex) {
 						tcs.TrySetException (ex);
 					}
 				};
@@ -99,16 +104,19 @@ namespace Mono.TextTemplating.CodeCompilation
 					try {
 						if (e.Data == null) {
 							errorDone = true;
-							if (exitDone && outputDone)
+							if (exitDone && outputDone) {
 								tcs.TrySetResult (p.ExitCode);
+							}
 							return;
 						}
 
-						if (stdErrInitialized)
+						if (stdErrInitialized) {
 							stderr.WriteLine ();
+						}
 						stderr.Write (e.Data);
 						stdErrInitialized = true;
-					} catch (Exception ex) {
+					}
+					catch (Exception ex) {
 						tcs.TrySetException (ex);
 					}
 				};
@@ -119,8 +127,9 @@ namespace Mono.TextTemplating.CodeCompilation
 
 			p.Exited += (sender, e) => {
 				exitDone = true;
-				if (errorDone && outputDone)
+				if (errorDone && outputDone) {
 					tcs.TrySetResult (p.ExitCode);
+				}
 			};
 
 			return tcs.Task;

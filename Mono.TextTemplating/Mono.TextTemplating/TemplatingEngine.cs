@@ -34,14 +34,15 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using Microsoft.CSharp;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
+using System.Globalization;
 #if FEATURE_ROSLYN
 using Mono.TextTemplating.CodeCompilation;
 #endif
 
 namespace Mono.TextTemplating
 {
-	public class TemplatingEngine :
+	public partial class TemplatingEngine :
 #if FEATURE_APPDOMAINS
 		MarshalByRefObject,
 #endif
@@ -60,10 +61,10 @@ namespace Mono.TextTemplating
 			createCompilerFunc = createCompiler;
 		}
 
-		CodeCompilation.CodeCompiler GetOrCreateCompiler ()
+		CodeCompilation.CodeCompiler GetOrCreateCompiler (RuntimeKind kind = RuntimeKind.Default)
 		{
 			if (cachedCompiler == null) {
-				var runtime = RuntimeInfo.GetRuntime ();
+				var runtime = RuntimeInfo.GetRuntime (kind);
 				if (runtime.Error != null) {
 					throw new Exception (runtime.Error);
 				}
@@ -238,7 +239,7 @@ namespace Mono.TextTemplating
 			}
 
 			// this may throw, so do it before writing source files
-			var compiler = GetOrCreateCompiler ();
+			var compiler = GetOrCreateCompiler (settings.RuntimeKind);
 
 			var tempFolder = Path.GetTempFileName ();
 			File.Delete (tempFolder);
@@ -259,7 +260,7 @@ namespace Mono.TextTemplating
 			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
 			args.TempDirectory = tempFolder;
 
-			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
+			var result = compiler.CompileFile (args, settings.Log, settings.CancellationToken).Result;
 
 			var r = new CompilerResults (new TempFileCollection ());
 			r.TempFiles.AddFile (sourceFilename, false);
@@ -283,7 +284,12 @@ namespace Mono.TextTemplating
 			}
 
 			if (!args.Debug) {
-				r.TempFiles.Delete ();
+				if (r.TempFiles is IDisposable disposable) {
+					disposable.Dispose ();
+				}
+			}
+			else {
+				r.TempFiles.KeepFiles = args.Debug;
 			}
 
 			return r;
@@ -311,8 +317,18 @@ namespace Mono.TextTemplating
 		}
 #endif
 
-		static string [] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)
+		protected static string[] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)
 		{
+			if (host == null) {
+				throw new ArgumentNullException (nameof (host));
+			}
+			if (pt == null) {
+				throw new ArgumentNullException (nameof (pt));
+			}
+			if (settings == null) {
+				throw new ArgumentNullException (nameof (settings));
+			}
+			
 			var resolved = new Dictionary<string, string> ();
 
 			foreach (string assem in settings.Assemblies.Union (host.StandardAssemblyReferences)) {
@@ -335,12 +351,21 @@ namespace Mono.TextTemplating
 
 		public static TemplateSettings GetSettings (ITextTemplatingEngineHost host, ParsedTemplate pt)
 		{
+			if (host == null) {
+				throw new ArgumentNullException (nameof (host));
+			}
+			if (pt == null) {
+				throw new ArgumentNullException (nameof (pt));
+			}
+
 			var settings = new TemplateSettings ();
 
-			bool relativeLinePragmas = host.GetHostOption ("UseRelativeLinePragmas") as bool? ?? false;
+			bool relativeLinePragmas = host.GetHostOption (nameof (TemplateSettings.UseRelativeLinePragmas)) as bool? ?? false;
 
 			foreach (Directive dt in pt.Directives) {
+#pragma warning disable CA1308 // Normalize strings to uppercase
 				switch (dt.Name.ToLowerInvariant ()) {
+#pragma warning restore CA1308 // Normalize strings to uppercase
 				case "template":
 					string val = dt.Extract ("language");
 					if (val != null)
@@ -368,15 +393,15 @@ namespace Mono.TextTemplating
 							settings.HostSpecific = string.Compare (val, "true", StringComparison.OrdinalIgnoreCase) == 0;
 						}
 					}
-					val = dt.Extract ("CompilerOptions");
+					val = dt.Extract (nameof (TemplateSettings.CompilerOptions)) ?? host.GetHostOption(nameof(TemplateSettings.CompilerOptions))?.ToString().ToLower();
 					if (val != null) {
 						settings.CompilerOptions = val;
 					}
-					val = dt.Extract ("relativeLinePragmas");
+					val = dt.Extract ("relativeLinePragmas") ?? host.GetHostOption (nameof (TemplateSettings.UseRelativeLinePragmas))?.ToString().ToLower();
 					if (val != null) {
 						relativeLinePragmas = string.Compare (val, "true", StringComparison.OrdinalIgnoreCase) == 0;
 					}
-					val = dt.Extract ("linePragmas");
+					val = dt.Extract ("linePragmas") ?? host.GetHostOption (nameof (TemplateSettings.NoLinePragmas))?.ToString ().ToLower ();
 					if (val != null) {
 						settings.NoLinePragmas = string.Compare (val, "false", StringComparison.OrdinalIgnoreCase) == 0;
 					}
@@ -440,7 +465,7 @@ namespace Mono.TextTemplating
 
 			//initialize the custom processors
 			foreach (var kv in settings.DirectiveProcessors) {
-				kv.Value.Initialize (host);
+				kv.Value.Initialize (host, settings);
 
 				IRecognizeHostSpecific hs;
 				if (settings.HostSpecific || (
@@ -462,7 +487,7 @@ namespace Mono.TextTemplating
 			if (settings.Name == null)
 				settings.Name = "GeneratedTextTransformation";
 			if (settings.Namespace == null)
-				settings.Namespace = string.Format (typeof (TextTransformation).Namespace + "{0:x}", new Random ().Next ());
+				settings.Namespace = string.Format (CultureInfo.InvariantCulture, typeof (TextTransformation).Namespace + "{0:x}", new Random ().Next ());
 
 			//resolve the CodeDOM provider
 			if (String.IsNullOrEmpty (settings.Language)) {
@@ -483,7 +508,30 @@ namespace Mono.TextTemplating
 				return settings;
 			}
 
-			settings.RelativeLinePragmas = relativeLinePragmas;
+			settings.UseRelativeLinePragmas = relativeLinePragmas;
+
+			if (host.GetHostOption (nameof (TemplateSettings.CachedTemplates)) is bool cachedTemplates) {
+				settings.CachedTemplates = cachedTemplates;
+			}
+
+			if (host.GetHostOption (nameof (TemplateSettings.Log)) is TextWriter output) {
+				settings.Log = output;
+			}
+
+#if !NET35
+			if (host.GetHostOption (nameof (TemplateSettings.CancellationToken)) is CancellationToken cancellationToken) {
+				settings.CancellationToken = cancellationToken;
+			}
+			else {
+				settings.CancellationToken = CancellationToken.None;
+			}
+
+			if ((host.GetHostOption (nameof (TemplateSettings.RuntimeKind)) ?? RuntimeKind.Default) is RuntimeKind runtimeKind) {
+				settings.RuntimeKind = runtimeKind;
+			}
+#endif
+
+
 
 			return settings;
 		}
@@ -497,6 +545,10 @@ namespace Mono.TextTemplating
 
 		public static string IndentSnippetText (string text, string indent)
 		{
+			if (text == null) {
+				throw new ArgumentNullException (nameof (text));
+			}
+
 			var builder = new StringBuilder (text.Length);
 			builder.Append (indent);
 			int lastNewline = 0;
@@ -528,21 +580,27 @@ namespace Mono.TextTemplating
 
 		static void AddDirective (TemplateSettings settings, ITextTemplatingEngineHost host, string processorName, Directive directive)
 		{
-			if (!settings.DirectiveProcessors.TryGetValue (processorName, out IDirectiveProcessor processor)) {
-				switch (processorName) {
-				case "ParameterDirectiveProcessor":
-					processor = new ParameterDirectiveProcessor ();
-					break;
-				default:
-					Type processorType = host.ResolveDirectiveProcessor (processorName);
-					processor = (IDirectiveProcessor)Activator.CreateInstance (processorType);
-					break;
-				}
-				if (!processor.IsDirectiveSupported (directive.Name))
-					throw new InvalidOperationException ("Directive processor '" + processorName + "' does not support directive '" + directive.Name + "'");
-
-				settings.DirectiveProcessors [processorName] = processor;
+			if (settings.DirectiveProcessors.ContainsKey(processorName)) {
+				return;
 			}
+
+			IDirectiveProcessor processor;
+
+			switch (processorName) {
+			case "ParameterDirectiveProcessor":
+				processor = new ParameterDirectiveProcessor ();
+				break;
+			default:
+				Type processorType = host.ResolveDirectiveProcessor (processorName);
+				processor = (IDirectiveProcessor)Activator.CreateInstance (processorType);
+				break;
+			}
+
+			if (!processor.IsDirectiveSupported (directive.Name))
+				throw new InvalidOperationException ("Directive processor '" + processorName + "' does not support directive '" + directive.Name + "'");
+
+			settings.DirectiveProcessors[processorName] = processor;
+
 			settings.CustomDirectives.Add (new CustomDirective (processorName, directive));
 		}
 
@@ -592,6 +650,18 @@ namespace Mono.TextTemplating
 
 		public static CodeCompileUnit GenerateCompileUnit (ITextTemplatingEngineHost host, string content, ParsedTemplate pt, TemplateSettings settings)
 		{
+			if (host == null) {
+				throw new ArgumentNullException (nameof (host));
+			}
+
+			if (pt == null) {
+				throw new ArgumentNullException (nameof (pt));
+			}
+
+			if (settings == null) {
+				throw new ArgumentNullException (nameof (settings));
+			}
+
 			ProcessDirectives (content, pt, settings);
 
 			string baseDirectory = Path.GetDirectoryName (host.TemplateFile);
@@ -615,6 +685,8 @@ namespace Mono.TextTemplating
 				type.BaseTypes.Add (new CodeTypeReference (settings.Inherits));
 			} else if (!settings.IncludePreprocessingHelpers) {
 				type.BaseTypes.Add (TypeRef<TextTransformation> ());
+				// issue #87 because CompilerErrorCollection is referenced by the TextTransformation base class
+				TextTransformation.AddRequiredReferences (host.StandardAssemblyReferences);
 			} else {
 				type.BaseTypes.Add (new CodeTypeReference (settings.Name + "Base"));
 			}
@@ -623,7 +695,7 @@ namespace Mono.TextTemplating
 			//prep the transform method
 			var transformMeth = new CodeMemberMethod {
 				Name = "TransformText",
-				ReturnType = new CodeTypeReference (typeof (String)),
+				ReturnType = new CodeTypeReference (typeof (string)),
 				Attributes = MemberAttributes.Public,
 			};
 			if (!settings.IncludePreprocessingHelpers)
@@ -652,7 +724,7 @@ namespace Mono.TextTemplating
 				CodeLinePragma location = null;
 				if (!settings.NoLinePragmas) {
 					var f = seg.StartLocation.FileName ?? host.TemplateFile;
-					if (settings.RelativeLinePragmas)
+					if (settings.UseRelativeLinePragmas)
 						f = FileUtil.AbsoluteToRelativePath (baseDirectory, f).Replace ('\\', '/');
 					location = new CodeLinePragma (f, seg.StartLocation.Line);
 				}
@@ -838,6 +910,10 @@ namespace Mono.TextTemplating
 
 		static void GenerateProcessingHelpers (CodeTypeDeclaration type, TemplateSettings settings)
 		{
+			if (settings == null) {
+				throw new ArgumentNullException (nameof (settings));
+			}
+
 			var thisRef = new CodeThisReferenceExpression ();
 			var sbTypeRef = TypeRef<StringBuilder> ();
 
@@ -1231,9 +1307,18 @@ namespace Mono.TextTemplating
 		/// </summary>
 		public static void GenerateCodeFromMembers (CodeDomProvider provider, CodeGeneratorOptions options, StringWriter sw, IEnumerable<CodeTypeMember> members)
 		{
+			if (provider == null) {
+				throw new ArgumentNullException (nameof (provider));
+			}
+
+			if (members == null) {
+				throw new ArgumentNullException (nameof (members));
+			}
+
 			if (!useMonoHack) {
-				foreach (CodeTypeMember member in members)
+				foreach (CodeTypeMember member in members) {
 					provider.GenerateCodeFromMember (member, sw, options);
+				}
 				return;
 			}
 

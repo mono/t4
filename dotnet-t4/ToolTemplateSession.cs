@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft Corp (https://www.microsoft.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,19 +20,19 @@
 // THE SOFTWARE.
 
 using System;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Mono.TextTemplating
 {
-	class ToolTemplateSession : ITextTemplatingSession
+	class TextTemplatingSession : ITextTemplatingSession
 	{
 		readonly Dictionary<string, object> session = new Dictionary<string, object> ();
 		readonly ToolTemplateGenerator toolTemplateGenerator;
 
-		public ToolTemplateSession (ToolTemplateGenerator toolTemplateGenerator)
+		public TextTemplatingSession (ToolTemplateGenerator toolTemplateGenerator)
 		{
 			this.toolTemplateGenerator = toolTemplateGenerator;
 		}
@@ -46,7 +46,7 @@ namespace Mono.TextTemplating
 		public ICollection<string> Keys => session.Keys;
 		public ICollection<object> Values => session.Values;
 		public int Count => session.Count;
-		public bool IsReadOnly => false;
+		public bool IsReadOnly => false;		
 		public void Add (string key, object value) => session.Add (key, value);
 		public void Add (KeyValuePair<string, object> item) => session.Add (item.Key, item.Value);
 		public void Clear () => session.Clear ();

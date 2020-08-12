@@ -28,9 +28,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 using System.Linq;
 using System.CodeDom.Compiler;
+using System.Reflection;
 
 namespace Mono.TextTemplating.Tests
 {
@@ -46,6 +47,60 @@ namespace Mono.TextTemplating.Tests
 			string tmp = null;
 			gen.ProcessTemplate (null, "<#@ template language=\"C#\" #>", ref tmp, out tmp);
 			Assert.IsNull (gen.Errors.OfType<CompilerError> ().FirstOrDefault (), "ProcessTemplate");
+		}
+
+		[Test]
+		public void GenerateStaticPropertyForParameter ()
+		{
+			var engine = new TemplatingEngine ();
+
+			var host = new DummyHost ();
+
+			var output = engine.PreprocessTemplate (T4ParameterSample, host, "ParameterTestClass", "Testing", out string language, out string[] references);
+
+			foreach (CompilerError error in host.Errors) {
+				Console.Error.WriteLine (error.ErrorText);
+			}
+
+			Assert.IsTrue (output.Contains ("public static string TestParameter"));
+
+			Console.Out.WriteLine (output);
+		}
+
+		[Test]
+		[TestCase("some nonsense value")]
+		public void GenerateStaticPropertyForParameterCanInitilialize (string value)
+		{
+			var engine = new TemplatingEngine ();
+
+			var host = new DummyHost () {
+				TemplateFile = "test.tt"
+			};
+
+			host.Parameters.Add ("TestParameter", value);
+			
+
+			var tt = engine.CompileTemplate (T4ParameterSample, host);
+
+			foreach (CompilerError error in host.Errors) {
+				Console.Error.WriteLine (error.ErrorText);
+			}
+
+			Type ttType = tt.textTransformation?.GetType ();
+
+			Assert.IsNotNull (ttType);
+
+			var initMethod = ttType.GetMethod ("Initialize");
+			var testAssignment = ttType.GetMethod ("TestAssignment");
+			var parameter = ttType.GetProperty ("TestParameter", BindingFlags.Public | BindingFlags.Static);
+
+			initMethod.Invoke (tt.textTransformation, null);
+
+			if (testAssignment.Invoke(tt.textTransformation, null) is bool success) {
+				Assert.IsTrue (success);
+			}
+
+			Assert.AreEqual (value, parameter.GetValue (null));
 		}
 
 		[Test]
@@ -105,6 +160,8 @@ namespace Mono.TextTemplating.Tests
 			Generate (WinInput, WinOutput, "\r\n");
 		}
 
+		
+
 		[Test]
 		public void DefaultLanguage ()
 		{
@@ -121,7 +178,7 @@ namespace Mono.TextTemplating.Tests
 		void Generate (string input, string expectedOutput, string newline)
 		{
 			var host = new DummyHost ();
-			string nameSpaceName = "Microsoft.VisualStudio.TextTemplating4f504ca0";
+			string nameSpaceName = "Mono.VisualStudio.TextTemplating4f504ca0";
 			string code = GenerateCode (host, input, nameSpaceName, newline);
 			Assert.AreEqual (0, host.Errors.Count);
 
@@ -164,14 +221,28 @@ namespace Mono.TextTemplating.Tests
 
 		#endregion
 
+		#region input strings
+		public const string T4ParameterSample =
+@"<#@ template hostspecific=""true"" language=""C#"" #>
+<#@ output extension="".cs"" #>
+<#@ parameter type=""System.String"" name=""TestParameter"" #>
+<#@ import namespace=""System"" #>
+using System;
+<#+
+public bool TestAssignment() {
+	return !string.IsNullOrEmpty(TestParameter);
+}
+#>";
+		#endregion
+
 		#region Expected output strings
 
 		public static string OutputSample1 =
 @"
-namespace Microsoft.VisualStudio.TextTemplating4f504ca0 {
+namespace Mono.VisualStudio.TextTemplating4f504ca0 {
     
     
-    public partial class GeneratedTextTransformation : global::Microsoft.VisualStudio.TextTemplating.TextTransformation {
+    public partial class GeneratedTextTransformation : global::Mono.VisualStudio.TextTemplating.TextTransformation {
         
         
         #line 9 """"
@@ -205,7 +276,7 @@ var foo = 5;
             #line hidden
             
             #line 7 """"
-            this.Write(global::Microsoft.VisualStudio.TextTemplating.ToStringHelper.ToStringWithCulture( bar ));
+            this.Write(global::Mono.VisualStudio.TextTemplating.ToStringHelper.ToStringWithCulture( bar ));
             
             #line default
             #line hidden

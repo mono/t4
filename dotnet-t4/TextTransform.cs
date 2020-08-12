@@ -1,4 +1,4 @@
-﻿// 
+// 
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
 // Copyright (c) Microsoft Corp. (https://www.microsoft.com)
 // 
@@ -27,7 +27,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 using Mono.Options;
 
 namespace Mono.TextTemplating

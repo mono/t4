@@ -22,6 +22,10 @@ This package can be installed into a project using `DotNetCliToolReference`.
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 
@@ -31,4 +35,5 @@ This package can be installed into a project using `DotNetCliToolReference`.
     <Compile Include="..\TextTransform\Options.cs" Link="Options.cs" />
     <Compile Include="..\dotnet-t4\*.cs" />
   </ItemGroup>
+
 </Project>

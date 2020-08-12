@@ -29,8 +29,11 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using Mono.TextTemplating;
+#if NET45
+using Mono.TextTemplating.CodeCompilation;
+#endif
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
 	public sealed class ParameterDirectiveProcessor : DirectiveProcessor, IRecognizeHostSpecific
 	{
@@ -143,23 +146,29 @@ namespace Microsoft.VisualStudio.TextTemplating
 			string fieldName = "_" + name + "Field";
 			var typeRef = new CodeTypeReference (type);
 			var thisRef = new CodeThisReferenceExpression ();
-			var fieldRef = new CodeFieldReferenceExpression (thisRef, fieldName);
+			var fieldRef = new CodeFieldReferenceExpression () {
+				FieldName = fieldName
+			};
 			
 			var property = new CodeMemberProperty () {
 				Name = name,
-				Attributes = MemberAttributes.Public | MemberAttributes.Final,
+				Attributes = MemberAttributes.Public | MemberAttributes.Static | MemberAttributes.Final,
 				HasGet = true,
 				HasSet = false,
 				Type = typeRef
 			};
 			property.GetStatements.Add (new CodeMethodReturnStatement (fieldRef));
-			members.Add (new CodeMemberField (typeRef, fieldName));
+			members.Add (new CodeMemberField (typeRef, fieldName) {
+				Attributes = MemberAttributes.Private | MemberAttributes.Static
+			});
 			members.Add (property);
 			
 			var valRef = new CodeVariableReferenceExpression ("data");
 			var namePrimitive = new CodePrimitiveExpression (name);
 			var sessionRef = new CodePropertyReferenceExpression (thisRef, "Session");
+#if FEATURE_APPDOMAINS
 			var callContextTypeRefExpr = new CodeTypeReferenceExpression ("System.Runtime.Remoting.Messaging.CallContext");
+#endif
 			var nullPrim = new CodePrimitiveExpression (null);
 
 			bool hasAcquiredCheck = hostSpecific
@@ -218,14 +227,20 @@ namespace Microsoft.VisualStudio.TextTemplating
 			}
 
 #if FEATURE_APPDOMAINS
-			//if acquiredVariable is false, tries to gets the value from the call context
-			var checkCallContext = new CodeConditionStatement (
-				IsFalse (acquiredVariableRef),
-				new CodeVariableDeclarationStatement (typeof (object), "data",
-					new CodeMethodInvokeExpression (callContextTypeRefExpr, "LogicalGetData", namePrimitive)),
-				new CodeConditionStatement (NotNull (valRef), checkCastThenAssignVal));
-			
-			this.postStatements.Add (checkCallContext);
+#if NET45
+			if (Settings.RuntimeKind != RuntimeKind.NetCore) {
+#endif
+				//if acquiredVariable is false, tries to gets the value from the call context
+				var checkCallContext = new CodeConditionStatement (
+					IsFalse (acquiredVariableRef),
+					new CodeVariableDeclarationStatement (typeof (object), "data",
+						new CodeMethodInvokeExpression (callContextTypeRefExpr, "LogicalGetData", namePrimitive)),
+					new CodeConditionStatement (NotNull (valRef), checkCastThenAssignVal));
+
+				this.postStatements.Add (checkCallContext);
+#if NET45
+			}
+#endif
 #endif
 		}
 		

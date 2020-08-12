@@ -26,7 +26,7 @@
 
 using System;
 using System.Reflection;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 using System.CodeDom.Compiler;
 using System.Globalization;
 using System.Collections.Generic;
@@ -40,7 +40,7 @@ namespace Mono.TextTemplating
 		IDisposable
 	{
 		ITextTemplatingEngineHost host;
-		object textTransformation;
+		internal object textTransformation;
 		readonly CultureInfo culture;
 		readonly string [] assemblyFiles;
 
@@ -54,12 +54,19 @@ namespace Mono.TextTemplating
 			Load (results, fullName);
 		}
 
+		/// <summary>
+		/// Get the compiled assembly
+		/// </summary>
+		public Assembly Assembly { get; private set; }
+
 		void Load (CompilerResults results, string fullName)
 		{
 			//results.CompiledAssembly doesn't work on .NET core, it throws a cryptic internal error
 			//use Assembly.LoadFile instead
-			var assembly = System.Reflection.Assembly.LoadFile (results.PathToAssembly);
-			Type transformType = assembly.GetType (fullName);
+			//for debugging we need the assembly
+			Assembly = System.Reflection.Assembly.LoadFile (results.PathToAssembly);
+
+			Type transformType = Assembly.GetType (fullName);
 			//MS Templating Engine does not look on the type itself, 
 			//it checks only that required methods are exists in the compiled type 
 			textTransformation = Activator.CreateInstance (transformType);
@@ -82,7 +89,13 @@ namespace Mono.TextTemplating
 			}
 		}
 
-		public string Process ()
+
+		public string Process()
+		{
+			return Process (textTransformation);
+		}
+
+		public string Process (object textTransformation)
 		{
 			var ttType = textTransformation.GetType ();
 

@@ -32,6 +32,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Text;
+using System.Globalization;
 
 namespace Mono.TextTemplating.CodeCompilation
 {
@@ -115,85 +116,96 @@ namespace Mono.TextTemplating.CodeCompilation
 				UseShellExecute = false
 			};
 
-			if (log != null) {
-				log.WriteLine ($"{psi.FileName} {psi.Arguments}");
-			}
-
 			if (runtime.Kind == RuntimeKind.NetCore) {
 				psi.Arguments = $"\"{psi.FileName}\" {psi.Arguments}";
 				psi.FileName = Path.GetFullPath (Path.Combine (runtime.RuntimeDir, "..", "..", "..", "dotnet"));
 			}
 
-			var stdout = new StringWriter ();
-			var stderr = new StringWriter ();
-
-			TextWriter outWriter = stderr, errWriter = stderr;
-			if (log != null) {
-				outWriter = new SplitOutputWriter (log, outWriter);
-				errWriter = new SplitOutputWriter (log, errWriter);
+			if (log != null)
+			{
+				log.WriteLine($"{psi.FileName} {psi.Arguments}");
+				log.WriteLine ("-------------------------------------------------------------------------------");
 			}
 
-			var process = ProcessUtils.StartProcess (psi, outWriter, errWriter, token);
+			using (var stdout = new StringWriter (new StringBuilder(), CultureInfo.CurrentCulture))
+			using (var stderr = new StringWriter (new StringBuilder (), CultureInfo.CurrentCulture))
+			using (TextWriter outWriter = log != null ? new SplitOutputWriter (log, stderr) : (TextWriter)stderr)
+			using (TextWriter errWriter = log != null ? new SplitOutputWriter (log, stderr) : (TextWriter)stderr) {
 
-			var result = await process;
+				var process = ProcessUtils.StartProcess (psi, outWriter, errWriter, token);
 
-			var outputList = new List<string> ();
-			var errors = new List<CodeCompilerError> ();
+				int result = -1;
 
-			void ConsumeOutput (string s)
-			{
-				using (var sw = new StringReader (s)) {
-					string line;
-					while ((line = sw.ReadLine ()) != null) {
-						outputList.Add (line);
-						var err = MSBuildErrorParser.TryParseLine (line);
-						if (err != null) {
-							errors.Add (err);
+				if (!token.IsCancellationRequested) {
+					result = await process.ConfigureAwait (false);
+				}
+
+				var outputList = new List<string> ();
+				var errors = new List<CodeCompilerError> ();
+
+				void ConsumeOutput (string s)
+				{
+					using (var sw = new StringReader (s)) {
+						string line;
+						while ((line = sw.ReadLine ()) != null) {
+							outputList.Add (line);
+							var err = MSBuildErrorParser.TryParseLine (line);
+							if (err != null) {
+								errors.Add (err);
+							}
 						}
 					}
 				}
+
+				ConsumeOutput (stdout.ToString ());
+				ConsumeOutput (stderr.ToString ());
+
+				if (log != null) {
+					log.WriteLine ();
+					log.WriteLine ();
+					log.WriteLine ($"{psi.FileName} {psi.Arguments}");
+				}
+
+				return new CodeCompilerResult {
+					Success = result == 0,
+					Errors = errors,
+					ExitCode = result,
+					Output = outputList,
+					ResponseFile = rspPath
+				};
 			}
-
-			ConsumeOutput (stdout.ToString ());
-			ConsumeOutput (stderr.ToString ());
-
-			if (log != null) {
-				log.WriteLine ($"{psi.FileName} {psi.Arguments}");
-			}
-
-			return new CodeCompilerResult {
-				Success = result == 0,
-				Errors = errors,
-				ExitCode = result,
-				Output = outputList,
-				ResponseFile = rspPath
-			};
 		}
 
 		//we know that ProcessUtils.StartProcess only uses WriteLine and Write(string)
 		class SplitOutputWriter : TextWriter
 		{
-			readonly TextWriter a;
-			readonly TextWriter b;
+			readonly TextWriter logWriter;
+			readonly TextWriter errorWriter;
 
 			public SplitOutputWriter (TextWriter a, TextWriter b)
 			{
-				this.a = a;
-				this.b = b;
+				this.logWriter = a;
+				this.errorWriter = b;
 			}
 
 			public override Encoding Encoding => Encoding.UTF8;
 
 			public override void WriteLine ()
 			{
-				a.WriteLine ();
-				b.WriteLine ();
+				logWriter.WriteLine ();
+				errorWriter.WriteLine ();
+			}
+
+			public override void WriteLine (string value)
+			{
+				logWriter.WriteLine (value);
+				errorWriter.WriteLine (value);
 			}
 
 			public override void Write (string value)
 			{
-				a.Write (value);
-				b.Write (value);
+				logWriter.Write (value);
+				errorWriter.Write (value);
 			}
 		}
 	}

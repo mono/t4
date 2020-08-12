@@ -28,7 +28,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Runtime.Serialization;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
 	[Serializable]
 	public sealed class TextTemplatingSession : Dictionary<string, Object>, ITextTemplatingSession, ISerializable
@@ -40,7 +40,6 @@ namespace Microsoft.VisualStudio.TextTemplating
 		TextTemplatingSession (SerializationInfo info, StreamingContext context)
 			: base (info, context)
 		{
-			Id = (Guid)info.GetValue ("Id", typeof (Guid));
 		}
 
 		public TextTemplatingSession (Guid id)
@@ -49,9 +48,10 @@ namespace Microsoft.VisualStudio.TextTemplating
 		}
 		
 		public Guid Id {
-			get; private set;
+			get => (Guid)this[nameof (Id)];
+			set => this[nameof (Id)] = value;
 		}
-		
+
 		public override int GetHashCode ()
 		{
 			return Id.GetHashCode ();
@@ -76,7 +76,6 @@ namespace Microsoft.VisualStudio.TextTemplating
 		void ISerializable.GetObjectData (SerializationInfo info, StreamingContext context)
 		{
 			base.GetObjectData (info, context);
-			info.AddValue ("Id", Id);
 		}
 	}
 }

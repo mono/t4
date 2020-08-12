@@ -26,11 +26,13 @@
 
 using System;
 using Mono.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 
 namespace Microsoft.VisualStudio.TextTemplating
 {
-	[Obsolete ("Use Mono.TextTemplating.TemplatingEngine directly")]
-	public class Engine : ITextTemplatingEngine
+	[Obsolete ("Use Mono.TextTemplating.TemplatingEngine directly", true)]
+	public class Engine
+		: ITextTemplatingEngine
 	{
 		TemplatingEngine engine = new TemplatingEngine ();
 		
@@ -44,7 +46,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		{
 			return engine.PreprocessTemplate (content, host, className, classNamespace, out language, out references);
 		}
-		
+
 		public const string CacheAssembliesOptionString = "CacheAssemblies";
 	}
 }

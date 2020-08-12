@@ -27,7 +27,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
 	
 	[Serializable]

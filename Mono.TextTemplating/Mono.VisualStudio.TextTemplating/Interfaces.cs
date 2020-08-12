@@ -29,23 +29,105 @@ using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
+#if NET45 || NETSTANDARD
+using System.Threading.Tasks;
+#endif
 using System.Runtime.Serialization;
 using System.Text;
+using Mono.TextTemplating;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
+	using Mono.VisualStudio.TextTemplating.VSHost;
+
 	public interface IRecognizeHostSpecific
 	{
 		void SetProcessingRunIsHostSpecific (bool hostSpecific);
 		bool RequiresProcessingRunIsHostSpecific { get; }
 	}
 
-	[Obsolete("Use Mono.TextTemplating.TemplatingEngine directly")]
+	public interface ITextTemplatingService
+		: ITextTemplatingEngineHost
+		, ITextTemplatingSessionHost
+		, ITextTemplatingComponents
+		, IProcessTextTemplating
+		, ITextTemplating
+	{
+		new IProcessTextTemplatingEngine Engine { get; }
+	}
+
+	public interface IProcessTextTemplating
+		: ITextTemplating
+	{
+		event EventHandler<ProcessTemplateEventArgs> TransformProcessCompleted;
+#if NETSTANDARD || NET45
+		Task<string> ProcessTemplateAsync (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
+#elif NET35
+		void ProcessTemplate (string inputFilename, string content, ITextTemplatingCallback callback, object hierarchy, bool debugging = false);
+#endif
+	}
+
+	public interface ITextTemplating
+	{
+		void BeginErrorSession ();
+		bool EndErrorSession ();
+		string PreprocessTemplate (string inputFile, string content, ITextTemplatingCallback callback, string className, string classNamespace, out string[] references);
+		string ProcessTemplate (string inputFile, string content, ITextTemplatingCallback callback = null, object hierarchy = null);
+	}
+
+	public interface IProcessTransformationRun
+	{
+		string PerformTransformation ();
+
+		CompilerErrorCollection Errors { get; }
+	}
+
+	public interface IProcessTransformationRunFactory
+	{
+		IProcessTransformationRun CreateTransformationRun (Type runnerType, ParsedTemplate pt, ResolveEventHandler resolver);
+
+		string RunTransformation (IProcessTransformationRun transformationRun);
+	}
+
+	public interface IProcessTextTemplatingEngine
+		: ITextTemplatingEngine
+	{
+		IProcessTransformationRun PrepareTransformationRun (string content, ITextTemplatingEngineHost host, IProcessTransformationRunFactory runFactory, bool debugging = false);
+
+		CompiledTemplate CompileTemplate (string content, ITextTemplatingEngineHost host);
+		CompiledTemplate CompileTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, TemplateSettings settings = null);
+	}
+
 	public interface ITextTemplatingEngine
 	{
 		string ProcessTemplate (string content, ITextTemplatingEngineHost host);
 		string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className,
 			string classNamespace, out string language, out string [] references);
+	}
+
+	public interface ITextTemplatingComponents
+	{
+		ITextTemplatingEngineHost Host { get; }
+
+		ITextTemplatingEngine Engine { get; }
+
+		string TemplateFile { get; set; }
+
+		ITextTemplatingCallback Callback { get; set; }
+
+		object Hierarchy { get; set; }
+	}
+
+	public interface ITextTemplatingCallback
+	{
+		bool Errors { get; set; }
+		string Extension { get; }
+		void ErrorCallback (bool warning, string message, int line, int column);
+		void SetFileExtension (string extension);
+		void SetOutputEncoding (Encoding encoding, bool fromOutputDirective);
+		ITextTemplatingCallback DeepCopy ();
+
+		Encoding OutputEncoding { get; }
 	}
 
 	public interface ITextTemplatingEngineHost
@@ -77,7 +159,8 @@ namespace Microsoft.VisualStudio.TextTemplating
 		Guid Id { get; }
 	}
 	
-	public interface ITextTemplatingSessionHost	
+	public interface ITextTemplatingSessionHost
+		: ISerializable
 	{
 		ITextTemplatingSession CreateSession ();
 		ITextTemplatingSession Session { get; set; }
@@ -95,7 +178,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		string GetPreInitializationCodeForProcessingRun ();
 		string[] GetReferencesForProcessingRun ();
 		CodeAttributeDeclarationCollection GetTemplateClassCustomAttributes ();  //TODO
-		void Initialize (ITextTemplatingEngineHost host);
+		void Initialize (ITextTemplatingEngineHost host, TemplateSettings settings);
 		bool IsDirectiveSupported (string directiveName);
 		void ProcessDirective (string directiveName, IDictionary<string, string> arguments);
 		void SetProcessingRunIsHostSpecific (bool hostSpecific);

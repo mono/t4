@@ -27,8 +27,13 @@
 using System;
 using System.Text;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.TextTemplating;
+using Mono.VisualStudio.TextTemplating;
 using System.IO;
+using System.Reflection;
+using System.Threading;
+#if !NET35
+using Mono.TextTemplating.CodeCompilation;
+#endif
 
 namespace Mono.TextTemplating
 {
@@ -45,6 +50,11 @@ namespace Mono.TextTemplating
 		public bool HostSpecific { get; set; }
 		public bool HostPropertyOnBase { get; set; }
 		public bool Debug { get; set; }
+		public bool CachedTemplates { get; set; }
+#if !NET35
+		public CancellationToken CancellationToken { get; set; }
+		public RuntimeKind RuntimeKind { get; set; }
+#endif
 		public TextWriter Log { get; set; }
 		public string Inherits { get; set; }
 		public string Name { get; set; }
@@ -61,10 +71,11 @@ namespace Mono.TextTemplating
 		public Dictionary<string,IDirectiveProcessor> DirectiveProcessors { get; private set; }
 		public bool IncludePreprocessingHelpers { get; set; }
 		public bool IsPreprocessed { get; set; }
-		public bool RelativeLinePragmas { get; set; }
+		public bool UseRelativeLinePragmas { get; set; }
 		public bool NoLinePragmas { get; set; }
 		public bool InternalVisibility { get; set; }
 		public Type HostType { get; set; }
+
 		public string GetFullName () => string.IsNullOrEmpty (Namespace) ? Name : Namespace + "." + Name;
 	}
 	

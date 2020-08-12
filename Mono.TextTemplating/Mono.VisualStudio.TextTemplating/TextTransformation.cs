@@ -27,9 +27,11 @@
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Text;
 
-namespace Microsoft.VisualStudio.TextTemplating
+namespace Mono.VisualStudio.TextTemplating
 {
 	public abstract class TextTransformation : IDisposable
 	{
@@ -48,11 +50,13 @@ namespace Microsoft.VisualStudio.TextTemplating
 		}
 		
 		public abstract string TransformText ();
-		
+
+#pragma warning disable CA2227 // Collection properties should be read only
 		public virtual IDictionary<string, object> Session { get; set; }
-		
+#pragma warning restore CA2227 // Collection properties should be read only
+
 		#region Errors
-		
+
 		public void Error (string message)
 		{
 			Errors.Add (new CompilerError ("", 0, 0, "", message));
@@ -85,8 +89,9 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		public string PopIndent ()
 		{
-			if (Indents.Count == 0)
+			if (Indents.Count == 0) {
 				return "";
+			}
 			int lastPos = currentIndent.Length - Indents.Pop ();
 			string last = currentIndent.Substring (lastPos);
 			currentIndent = currentIndent.Substring (0, lastPos);
@@ -95,8 +100,9 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		public void PushIndent (string indent)
 		{
-			if (indent == null)
-				throw new ArgumentNullException ("indent");
+			if (indent == null) {
+				throw new ArgumentNullException (nameof (indent));
+			}
 			Indents.Push (indent.Length);
 			currentIndent += indent;
 		}
@@ -176,7 +182,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		public void Write (string format, params object[] args)
 		{
-			Write (string.Format (format, args));
+			Write (string.Format (CultureInfo.InvariantCulture, format, args));
 		}
 		
 		public void WriteLine (string textToAppend)
@@ -188,7 +194,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		public void WriteLine (string format, params object[] args)
 		{
-			WriteLine (string.Format (format, args));
+			WriteLine (string.Format (CultureInfo.InvariantCulture, format, args));
 		}
 
 		#endregion
@@ -209,7 +215,20 @@ namespace Microsoft.VisualStudio.TextTemplating
 		{
 			Dispose (false);
 		}
-		
+
+		internal static void AddRequiredReferences (IList<string> standardAssemblies)
+		{
+			if (standardAssemblies == null) {
+				throw new ArgumentNullException (nameof (standardAssemblies));
+			}
+
+			string codeDom = typeof (CompilerErrorCollection).Assembly.Location;
+
+			if (!standardAssemblies.Any (x => x.Equals (codeDom, StringComparison.CurrentCultureIgnoreCase))) {
+				standardAssemblies.Add (codeDom);
+			}
+		}
+
 		#endregion
 
 	}
