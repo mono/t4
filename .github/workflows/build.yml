@@ -10,11 +10,16 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0 # GitVersioning needs deep clone
 
-    - name: Find Windows MSBuild
-      uses: warrenbuckley/Setup-MSBuild@v1
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
       if: startsWith (matrix.os, 'windows')
+
+    - name: Set up NuGet
+      uses: nuget/setup-nuget@v1
 
     - name: Restore
       run: msbuild Mono.TextTemplating.sln -t:Restore -p:Configuration=Release -m
@@ -22,23 +27,19 @@ jobs:
     - name: Build
       run: msbuild Mono.TextTemplating.sln -p:Configuration=Release -m
 
-    - name: Set Mono env var
-      if: startsWith (matrix.os, 'windows') == false
-      run: echo '::set-env name=RUN_EXE::mono'
-
-    - name: Download NuGet
-      run: curl https://dist.nuget.org/win-x86-commandline/v5.3.0/nuget.exe -o nuget.exe
-      shell: bash
-
     - name: Download NUnit
-      run: $RUN_EXE ./nuget.exe install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
+      run: nuget install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
       shell: bash
 
-    - name: Test
-      run: $RUN_EXE ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net472/Mono.TextTemplating.Tests.dll
-      shell: bash
-      
-    - uses: actions/upload-artifact@master
+    - name: Test (Windows)
+      if: startsWith (matrix.os, 'windows')
+      run: testrunner\NUnit.ConsoleRunner.3.8.0\tools\nunit3-console.exe Mono.TextTemplating.Tests\bin\Release\net472\Mono.TextTemplating.Tests.dll
+
+    - name: Test (Linux/Mac)
+      if: startsWith (matrix.os, 'windows') == false
+      run: mono ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net472/Mono.TextTemplating.Tests.dll
+
+    - uses: actions/upload-artifact@v2
       with:
         name: packages
         path: packages/Release
@@ -47,11 +48,11 @@ jobs:
     needs: build
     runs-on: windows-latest
     steps:
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v2
         with:
           path: packages
           name: packages
-      - uses: warrenbuckley/Setup-Nuget@v1
+      - uses: nuget/setup-nuget@v1
       - name: Publish to GPR
         run: |
           nuget source Add -Name "GPR" -Source "https://nuget.pkg.github.com/mono/index.json" -UserName mono -Password ${{ secrets.GITHUB_TOKEN }}
