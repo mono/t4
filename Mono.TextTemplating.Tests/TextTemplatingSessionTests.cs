@@ -1,4 +1,4 @@
-﻿//
+//
 // TextTemplatingSessionTests.cs
 //
 // Author:
@@ -68,6 +68,38 @@ namespace Mono.TextTemplating.Tests
 				);
 			Assert.True (success);
 			Assert.AreEqual ("TestHost", outContent);
+		}
+
+		[Test]
+		public void HostSpecificNonStringParameter ()
+		{
+			string template =
+@"<#@ template language=""C#"" hostspecific=""true"" #>
+<#@ parameter name=""TestParam"" type=""System.Int32"" #>
+<#=TestParam + 3#>";
+
+			var gen = new TestHost ();
+			gen.AddParameter (null, null, "TestParam", "5");
+			var outFilename = "test.txt";
+			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
+			Assert.True (success);
+			Assert.AreEqual ("8", outContent);
+		}
+
+		[Test]
+		public void HostSpecificStringParameter ()
+		{
+			string template =
+@"<#@ template language=""C#"" hostspecific=""true"" #>
+<#@ parameter name=""TestParam"" type=""string"" #>
+Hello <#=TestParam#>!";
+
+			var gen = new TestHost ();
+			gen.AddParameter (null, null, "TestParam", "World");
+			var outFilename = "test.txt";
+			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
+			Assert.True (success);
+			Assert.AreEqual ("Hello World!", outContent);
 		}
 	}
 }
