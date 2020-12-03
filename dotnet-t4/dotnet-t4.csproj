@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <!-- work around older msbuild versions that don't understand the net5.0 TFM-->
+    <TargetFramework>netcoreapp5.0</TargetFramework>
     <PackAsTool>true</PackAsTool>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
