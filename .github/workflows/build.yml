@@ -52,8 +52,20 @@ jobs:
         with:
           path: packages
           name: packages
-      - uses: nuget/setup-nuget@v1
+
+      - name: Set up NuGet
+        uses: nuget/setup-nuget@v1
+
       - name: Publish to GPR
-        run: |
-          nuget source Add -Name "GPR" -Source "https://nuget.pkg.github.com/mono/index.json" -UserName mono -Password ${{ secrets.GITHUB_TOKEN }}
-          nuget push packages\**\*.nupkg -Source "GPR" -SkipDuplicate
+        run: \
+          nuget push "packages\**\*.nupkg" \
+          --api-key ${{ secrets.GITHUB_TOKEN }}
+          -Source https://nuget.pkg.github.com/${{ github.repository_owner }}
+          -SkipDuplicate
+
+      - name: Publish to NuGet.org
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: \
+          nuget push "packages\**\*.nupkg" \
+          --api-key ${{ secrets.NUGETAPIKEY }}
+          -SkipDuplicate
