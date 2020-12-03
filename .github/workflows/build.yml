@@ -14,16 +14,9 @@ jobs:
       with:
         fetch-depth: 0 # GitVersioning needs deep clone
 
-    - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
-      if: startsWith (matrix.os, 'windows')
-
     - uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '5.0.x'
-
-    - name: Set up NuGet
-      uses: nuget/setup-nuget@v1
 
     - name: Restore
       run: dotnet restore Mono.TextTemplating.sln -p:Configuration=Release -m
@@ -31,8 +24,15 @@ jobs:
     - name: Build
       run: dotnet build Mono.TextTemplating.sln -p:Configuration=Release -m --no-restore
 
-    - name: Test
+    - name: Test (Windows)
+      if: startsWith (matrix.os, 'windows')
       run: dotnet test --no-build
+
+    - name: Test (Linux/Mac)
+      if: startsWith (matrix.os, 'windows') == false
+      run: \
+        nuget install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
+        mono ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net472/Mono.TextTemplating.Tests.dll
 
     - uses: actions/upload-artifact@v2
       with:
