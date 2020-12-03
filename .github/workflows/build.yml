@@ -18,6 +18,9 @@ jobs:
       with:
         dotnet-version: '5.0.x'
 
+    - name: Set up NuGet
+      uses: nuget/setup-nuget@v1
+
     - name: Restore
       run: dotnet restore Mono.TextTemplating.sln -p:Configuration=Release -m
 
@@ -26,7 +29,7 @@ jobs:
 
     - name: Test (Windows)
       if: startsWith (matrix.os, 'windows')
-      run: dotnet test --no-build
+      run: dotnet test
 
     - name: Test (Linux/Mac)
       if: startsWith (matrix.os, 'windows') == false
