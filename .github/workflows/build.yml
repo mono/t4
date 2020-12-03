@@ -26,10 +26,10 @@ jobs:
       uses: nuget/setup-nuget@v1
 
     - name: Restore
-      run: msbuild Mono.TextTemplating.sln -t:Restore -p:Configuration=Release -m
+      run: dotnet restore Mono.TextTemplating.sln -p:Configuration=Release -m
 
     - name: Build
-      run: msbuild Mono.TextTemplating.sln -p:Configuration=Release -m
+      run: dotnet build Mono.TextTemplating.sln -p:Configuration=Release -m
 
     - name: Download NUnit
       run: nuget install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
