@@ -18,6 +18,10 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.2
       if: startsWith (matrix.os, 'windows')
 
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0.x'
+
     - name: Set up NuGet
       uses: nuget/setup-nuget@v1
 
