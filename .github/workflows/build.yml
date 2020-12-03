@@ -29,19 +29,10 @@ jobs:
       run: dotnet restore Mono.TextTemplating.sln -p:Configuration=Release -m
 
     - name: Build
-      run: dotnet build Mono.TextTemplating.sln -p:Configuration=Release -m
+      run: dotnet build Mono.TextTemplating.sln -p:Configuration=Release -m --no-restore
 
-    - name: Download NUnit
-      run: nuget install NUnit.ConsoleRunner -Version 3.8.0 -OutputDirectory testrunner
-      shell: bash
-
-    - name: Test (Windows)
-      if: startsWith (matrix.os, 'windows')
-      run: testrunner\NUnit.ConsoleRunner.3.8.0\tools\nunit3-console.exe Mono.TextTemplating.Tests\bin\Release\net472\Mono.TextTemplating.Tests.dll
-
-    - name: Test (Linux/Mac)
-      if: startsWith (matrix.os, 'windows') == false
-      run: mono ./testrunner/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Mono.TextTemplating.Tests/bin/Release/net472/Mono.TextTemplating.Tests.dll
+    - name: Test
+      run: dotnet test --no-build
 
     - uses: actions/upload-artifact@v2
       with:
