@@ -15,7 +15,6 @@ This package allows embedding the T4 engine in an application.
 * To install in a project as a `DotNetCliToolReference`, use `dotnet-t4-project-tool` instead.]]>
     </Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <DefineConstants>$(DefineConstants);FEATURE_ROSLYN</DefineConstants>
     <DefineConstants Condition="'$(TargetFramework)'=='net472'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>

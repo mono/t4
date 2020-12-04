@@ -33,11 +33,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+
 using Microsoft.CSharp;
 using Microsoft.VisualStudio.TextTemplating;
-#if FEATURE_ROSLYN
+
 using Mono.TextTemplating.CodeCompilation;
-#endif
 
 namespace Mono.TextTemplating
 {
@@ -49,8 +49,6 @@ namespace Mono.TextTemplating
 		ITextTemplatingEngine
 #pragma warning restore 618
 	{
-
-#if FEATURE_ROSLYN
 		Func<RuntimeInfo,CodeCompilation.CodeCompiler> createCompilerFunc;
 		CodeCompilation.CodeCompiler cachedCompiler;
 
@@ -71,7 +69,6 @@ namespace Mono.TextTemplating
 			}
 			return cachedCompiler;
 		}
-#endif
 
 		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
 		{
@@ -227,7 +224,6 @@ namespace Mono.TextTemplating
 			return new CompiledTemplate (host, results, settings.GetFullName (), settings.Culture, references.ToArray ());
 		}
 
-#if FEATURE_ROSLYN
 		CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
 		{
 			string sourceText;
@@ -288,28 +284,6 @@ namespace Mono.TextTemplating
 
 			return r;
 		}
-#else
-		static CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
-		{
-			var pars = new CompilerParameters {
-				GenerateExecutable = false,
-				CompilerOptions = settings.CompilerOptions,
-				IncludeDebugInformation = settings.Debug,
-				GenerateInMemory = false,
-			};
-
-			foreach (var r in references)
-				pars.ReferencedAssemblies.Add (r);
-
-			if (settings.Debug)
-				pars.TempFiles.KeepFiles = true;
-			if (StringUtil.IsNullOrWhiteSpace (pars.CompilerOptions))
-				pars.CompilerOptions = "/noconfig";
-			else if (!pars.CompilerOptions.Contains ("/noconfig"))
-				pars.CompilerOptions = "/noconfig " + pars.CompilerOptions;
-			return settings.Provider.CompileAssemblyFromDom (pars, ccu);
-		}
-#endif
 
 		static string [] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)
 		{
