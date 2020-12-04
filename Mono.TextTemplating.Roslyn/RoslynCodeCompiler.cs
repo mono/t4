@@ -26,38 +26,59 @@ namespace Mono.TextTemplating
 			this.runtime = runtime;
 		}
 
-		public override async Task<CodeCompilerResult> CompileFile (
+		public override Task<CodeCompilerResult> CompileFile (
+			CodeCompilerArguments arguments,
+			TextWriter log,
+			CancellationToken token)
+			=> Task.FromResult (CompileFileInternal (arguments, log, token));
+
+		CodeCompilerResult CompileFileInternal (
 			CodeCompilerArguments arguments,
 			TextWriter log,
 			CancellationToken token)
 		{
+			CSharpCommandLineArguments args = null;
+			if (arguments.AdditionalArguments != null) {
+				var splitArgs = CommandLineParser.SplitCommandLineIntoArguments (arguments.AdditionalArguments, false);
+				if (splitArgs.Any ()) {
+					args = CSharpCommandLineParser.Default.Parse (splitArgs, arguments.TempDirectory, null, null);
+				}
+			}
+
 			var references = new List<MetadataReference> ();
 			foreach (var assemblyReference in AssemblyResolver.GetResolvedReferences (runtime, arguments.AssemblyReferences)) {
 				references.Add (MetadataReference.CreateFromFile (assemblyReference));
 			}
 
+			var parseOptions = args?.ParseOptions ?? new CSharpParseOptions();
+
+
 			var syntaxTrees = new List<SyntaxTree> ();
 			foreach (var sourceFile in arguments.SourceFiles) {
 				using var stream = File.OpenRead (sourceFile);
 				var sourceText = SourceText.From (stream, Encoding.UTF8);
-				syntaxTrees.Add (CSharpSyntaxTree.ParseText (sourceText));
+				syntaxTrees.Add (CSharpSyntaxTree.ParseText (sourceText, parseOptions, cancellationToken: token));
 			}
+
+			var compilationOptions = (args?.CompilationOptions ?? new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+				.WithOutputKind (OutputKind.DynamicallyLinkedLibrary);
 
 			var compilation = CSharpCompilation.Create (
 				"GeneratedTextTransformation",
 				syntaxTrees,
 				references,
-				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary)
+				compilationOptions
 			);
 
-			EmitOptions emitOptions = null;
+
+			EmitOptions emitOptions = args?.EmitOptions ?? new EmitOptions();
 			if (arguments.Debug) {
 				var embeddedTexts = syntaxTrees.Select (st => EmbeddedText.FromSource (st.FilePath, st.GetText ())).ToList ();
-				emitOptions = new EmitOptions (debugInformationFormat: DebugInformationFormat.Embedded);
+				emitOptions = emitOptions.WithDebugInformationFormat (DebugInformationFormat.Embedded);
 			}
 
 			using var fs = File.OpenWrite (arguments.OutputPath);
-			EmitResult result = compilation.Emit (fs, options: emitOptions);
+			EmitResult result = compilation.Emit (fs, options: emitOptions, cancellationToken: token);
 
 			if (result.Success) {
 				return new CodeCompilerResult {
