@@ -278,7 +278,7 @@ namespace Mono.TextTemplating
 				r.Errors.Add (new CompilerError (null, 0, 0, null, $"The compiler exited with code {result.ExitCode}"));
 			}
 
-			if (!args.Debug) {
+			if (!args.Debug && !r.Errors.HasErrors) {
 				r.TempFiles.Delete ();
 			}
 
