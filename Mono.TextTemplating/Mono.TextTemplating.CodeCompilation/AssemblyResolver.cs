@@ -54,7 +54,7 @@ namespace Mono.TextTemplating.CodeCompilation
 					var asmPath = Path.Combine (runtime.RuntimeDir, asm);
 					if (File.Exists (asmPath)) {
 						asmFileNames.Add (asm);
-						yield return Path.Combine (runtime.RuntimeDir, asm);
+						yield return asmPath;
 					}
 				}
 
@@ -63,7 +63,7 @@ namespace Mono.TextTemplating.CodeCompilation
 					var asmPath = Path.Combine (runtime.RuntimeFacadesDir, asm);
 					if (File.Exists (asmPath)) {
 						asmFileNames.Add (asm);
-						yield return Path.Combine (runtime.RuntimeDir, asm);
+						yield return asmPath;
 					}
 				}
 			}
@@ -87,8 +87,8 @@ namespace Mono.TextTemplating.CodeCompilation
 				return resolved;
 			}
 
-			if (runtime.Kind != RuntimeKind.NetCore) {
-				resolved = Path.Combine (runtime.RuntimeDir, "Facades", reference);
+			if (runtime.RuntimeFacadesDir != null && runtime.RuntimeFacadesDir != runtime.RuntimeDir) {
+				resolved = Path.Combine (runtime.RuntimeFacadesDir, reference);
 				if (File.Exists (resolved)) {
 					return resolved;
 				}
