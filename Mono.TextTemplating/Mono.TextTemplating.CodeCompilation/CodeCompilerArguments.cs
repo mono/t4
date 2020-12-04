@@ -35,5 +35,6 @@ namespace Mono.TextTemplating.CodeCompilation
 		public bool Debug { get; set; }
 		public string OutputPath { get; set; }
 		public string TempDirectory { get; set; }
+		public string LangVersion { get; set; }
 	}
 }

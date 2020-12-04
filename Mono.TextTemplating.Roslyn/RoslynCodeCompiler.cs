@@ -52,6 +52,16 @@ namespace Mono.TextTemplating
 
 			var parseOptions = args?.ParseOptions ?? new CSharpParseOptions();
 
+			if (arguments.LangVersion != null) {
+				if (LanguageVersionFacts.TryParse(arguments.LangVersion, out var langVersion)) {
+					parseOptions = parseOptions.WithLanguageVersion (langVersion);
+				} else {
+					throw new System.Exception($"Unknown value '{arguments.LangVersion}' for langversion");
+				}
+			} else {
+				// need to update this when updating referenced roslyn binaries
+				CSharpLangVersionHelper.GetBestSupportedLangVersion (runtime, CSharpLangVersion.v9_0);
+			}
 
 			var syntaxTrees = new List<SyntaxTree> ();
 			foreach (var sourceFile in arguments.SourceFiles) {

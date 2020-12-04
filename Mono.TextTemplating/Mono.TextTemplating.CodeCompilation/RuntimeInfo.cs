@@ -50,6 +50,8 @@ namespace Mono.TextTemplating.CodeCompilation
 		public string RuntimeDir { get; private set; }
 		public string CscPath { get; private set; }
 		public bool IsValid => Error == null;
+		public Version Version { get; private set; }
+		public CSharpLangVersion MaxSupportedLangVersion { get; private set; }
 
 		public string RefAssembliesDir { get; private set; }
 		public string RuntimeFacadesDir { get; internal set; }
@@ -82,6 +84,10 @@ namespace Mono.TextTemplating.CodeCompilation
 				CscPath = csc,
 				RuntimeDir = runtimeDir,
 				RuntimeFacadesDir = Path.Combine (runtimeDir, "Facades"),
+				// we don't really care about the version if it's not .net core
+				Version = new Version ("4.7.2"),
+				//if mono has csc at all, we know it at least supports 6.0
+				MaxSupportedLangVersion = CSharpLangVersion.v6_0
 			};
 		}
 
@@ -96,16 +102,10 @@ namespace Mono.TextTemplating.CodeCompilation
 				CscPath = csc,
 				RuntimeDir = runtimeDir,
 				RuntimeFacadesDir = runtimeDir,
+				// we don't really care about the version if it's not .net core
+				Version = new Version ("4.7.2"),
+				MaxSupportedLangVersion = CSharpLangVersion.v5_0
 			};
-		}
-
-		static bool TryParseVersionIgnoringSuffix(string versionString, out Version version)
-		{
-			var dashIdx = versionString.IndexOf (';');
-			if (dashIdx > -1) {
-				versionString = versionString.Substring (0, dashIdx);
-			}
-			return Version.TryParse (versionString, out version);
 		}
 
 		static RuntimeInfo GetDotNetCoreSdk ()
@@ -125,31 +125,36 @@ namespace Mono.TextTemplating.CodeCompilation
 			if (hostVersion.Major < 5)
 			{
 				var versionPathComponent = Path.GetFileName (runtimeDir);
-				if (!TryParseVersionIgnoringSuffix (versionPathComponent, out hostVersion))
-				{
+				if (SemVersion.TryParse (versionPathComponent, out var hostSemVersion)) {
+					hostVersion = new Version (hostSemVersion.Major, hostSemVersion.Minor, hostSemVersion.Patch);
+				}
+				else {
 					return FromError (RuntimeKind.NetCore, "Could not determine host runtime version");
 				}
 			}
 
 			string MakeCscPath (string d) => Path.Combine (d, "Roslyn", "bincore", "csc.dll");
-			var sdkDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "sdk"), d => File.Exists (MakeCscPath (d)));
+			var sdkDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "sdk"), d => File.Exists (MakeCscPath (d)), out var sdkVersion);
 			if (sdkDir == null) {
 				return FromError (RuntimeKind.NetCore, "Could not find csc.dll in any .NET Core SDK");
 			}
+			var maxCSharpVersion = CSharpLangVersionHelper.FromNetCoreSdkVersion (sdkVersion);
 
 			// it's ok if this is null, we may be running on an older SDK that didn't support packs
+			//in which case we fall back to resolving from the runtime dir
 			var refAssembliesDir = FindHighestVersionedDirectory (
 				Path.Combine (dotnetRoot, "packs", "Microsoft.NETCore.App.Ref"),
-				d => File.Exists (Path.Combine (d, $"net{hostVersion.Major}.{hostVersion.Minor}", "System.Runtime.dll"))
+				d => File.Exists (Path.Combine (d, $"net{hostVersion.Major}.{hostVersion.Minor}", "System.Runtime.dll")),
+				out _
 			);
 
-			return new RuntimeInfo (RuntimeKind.NetCore) { RuntimeDir = runtimeDir, RefAssembliesDir = refAssembliesDir, CscPath = MakeCscPath (sdkDir) };
+			return new RuntimeInfo (RuntimeKind.NetCore) { RuntimeDir = runtimeDir, RefAssembliesDir = refAssembliesDir, CscPath = MakeCscPath (sdkDir), MaxSupportedLangVersion = maxCSharpVersion, Version = hostVersion };
 		}
 
-		static string FindHighestVersionedDirectory (string parentFolder, Func<string, bool> validate)
+		static string FindHighestVersionedDirectory (string parentFolder, Func<string, bool> validate, out SemVersion bestVersion)
 		{
 			string bestMatch = null;
-			var bestVersion = SemVersion.Zero;
+			bestVersion = SemVersion.Zero;
 			foreach (var dir in Directory.EnumerateDirectories (parentFolder)) {
 				var name = Path.GetFileName (dir);
 				if (SemVersion.TryParse (name, out var version) && version.Major >= 0) {
