@@ -34,6 +34,7 @@ namespace Mono.TextTemplating.Tests
 	[TestFixture]
 	public class TextTemplatingSessionTests
 	{
+		#if FEATURE_APPDOMAINS
 		[Test]
 		public void AppDomainSerializationTest ()
 		{
@@ -52,6 +53,7 @@ namespace Mono.TextTemplating.Tests
 
 			Assert.AreEqual (guid, session.Id);
 		}
+		#endif
 
 		class TestHost : TemplateGenerator { }
 
