@@ -63,14 +63,11 @@ jobs:
           path: packages
           name: packages
 
-      - name: Set up NuGet
-        uses: nuget/setup-nuget@v1
-
       - name: Publish to GPR
         run: |
-          nuget push "packages\**\*.nupkg" --api-key ${{ secrets.GITHUB_TOKEN }} -Source https://nuget.pkg.github.com/${{ github.repository_owner }} -SkipDuplicate
+          dotnet nuget push "packages\**\*.nupkg" --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}
 
       - name: Publish to NuGet.org
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          nuget push "packages\**\*.nupkg" --api-key ${{ secrets.NUGETAPIKEY }} -SkipDuplicate
+          dotnet nuget push "packages\**\*.nupkg" --api-key ${{ secrets.NUGETAPIKEY }} --source https://api.nuget.org/v3/index.json
