@@ -811,11 +811,58 @@ namespace Mono.Options
 			return false;
 		}
 
+		static IEnumerable<string> StringSplitWithEscaping(string s, char[] separators)
+		{
+			bool IsSeparator (char c)
+			{
+				foreach (var sepChar in separators) {
+					if (c == sepChar) {
+						return true;
+					}
+				}
+				return false;
+			}
+
+			var sb = new StringBuilder ();
+
+			for (int i = 0; i < s.Length; i++) {
+				char c = s[i];
+				if (!IsSeparator (c)) {
+					sb.Append (c);
+					continue;
+				}
+
+				// if prev char was escape char, this is escaped, so don't split
+				if (sb.Length > 0 && sb[sb.Length-1] == '\\') {
+					// remove the escape char by replacing it with the escaped char
+					// the escape char is ignored (left as-is) except when it's used to escape a separator
+					sb[sb.Length-1] = c;
+					continue;
+				}
+
+				yield return sb.ToString ();
+				sb.Length = 0;
+			}
+			yield return sb.ToString ();
+		}
+
+		// hack in the ability to escape separators
+		// but for now, only when all the separators are single char
+		static IEnumerable<string> SplitAndSupportEscapingIfCharSeparators (string s, string[] separators)
+		{
+			foreach (var sep in separators) {
+				if (sep.Length != 1) {
+					return s.Split (separators, StringSplitOptions.None);
+				}
+			}
+			return StringSplitWithEscaping (s, Array.ConvertAll (separators, x => x[0]));
+		}
+
 		private void ParseValue (string option, OptionContext c)
 		{
 			if (option != null)
 				foreach (string o in c.Option.ValueSeparators != null 
-						? option.Split (c.Option.ValueSeparators, StringSplitOptions.None)
+						? SplitAndSupportEscapingIfCharSeparators (option, c.Option.ValueSeparators)
 						: new string[]{option}) {
 					c.OptionValues.Add (o);
 				}
