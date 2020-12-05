@@ -14,10 +14,12 @@ namespace Mono.TextTemplating.CodeCompilation
 		{
 			var asmFileNames = new HashSet<string> (StringComparer.OrdinalIgnoreCase);
 
-			var forceImplAsms = Environment.GetEnvironmentVariable ("T4_DEBUG_DISABLE_REF_ASMS") is string s && s switch {
-				"y" => true,
+			var disableRefAsms = Environment.GetEnvironmentVariable ("T4_DEBUG_DISABLE_REF_ASMS") is string s && s switch {
 				"true" => true,
+				"y" => true,
+				"yes" => true,
 				"false" => false,
+				"n" => false,
 				"no" => false,
 				_ => throw new Exception ($"T4_DEBUG_DISABLE_REF_ASMS env var has unknown value '{s}'")
 			};
@@ -26,7 +28,7 @@ namespace Mono.TextTemplating.CodeCompilation
 			// as that's the behavior expected in .NET Core project files
 			if (runtime.Kind == RuntimeKind.NetCore)
 			{
-				if (runtime.RefAssembliesDir != null && !forceImplAsms)
+				if (runtime.RefAssembliesDir != null && !disableRefAsms)
 				{
 					foreach (var asm in Directory.EnumerateFiles(runtime.RefAssembliesDir, "*.dll")) {
 						asmFileNames.Add (Path.GetFileName (asm));
