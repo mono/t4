@@ -6,7 +6,6 @@
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
     <PackageId>Mono.TextTemplating.Roslyn</PackageId>
     <DefaultNamespace>Mono.TextTemplating</DefaultNamespace>
-    <LangVersion>8.0</LangVersion>
     <Description>
       <![CDATA[In-process Roslyn compiler for the Mono.TextTemplating T4 templating engine
 
@@ -17,14 +16,21 @@ templates will be much faster.
 This can also be used to guarantee a specific version of the C# compiler rather than relying on the system version.
 
 To enable the in-process C# compiler, use the TemplatingEngine.UseInProcessCompiler() extension method.
-
       ]]>
     </Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.3.1" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" />
   </ItemGroup>
 
   <ItemGroup>

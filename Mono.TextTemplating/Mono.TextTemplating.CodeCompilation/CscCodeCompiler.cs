@@ -28,10 +28,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-using System.Text;
 
 namespace Mono.TextTemplating.CodeCompilation
 {
@@ -87,6 +86,11 @@ namespace Mono.TextTemplating.CodeCompilation
 					rsp.WriteLine ("-debug");
 				}
 
+				var langVersionArg = CSharpLangVersionHelper.GetLangVersionArg (arguments, runtime);
+				if (langVersionArg != null) {
+					rsp.WriteLine (langVersionArg);
+				}
+
 				foreach (var reference in AssemblyResolver.GetResolvedReferences (runtime, arguments.AssemblyReferences)) {
 					rsp.Write ("-r:");
 					rsp.Write ("\"");
@@ -99,6 +103,10 @@ namespace Mono.TextTemplating.CodeCompilation
 				rsp.Write (arguments.OutputPath);
 				rsp.WriteLine ("\"");
 
+				if (arguments.AdditionalArguments != null) {
+					rsp.WriteLine (arguments.AdditionalArguments);
+				}
+
 				//in older versions of csc, these must come last
 				foreach (var file in arguments.SourceFiles) {
 					rsp.Write ("\"");
@@ -108,7 +116,7 @@ namespace Mono.TextTemplating.CodeCompilation
 			}
 
 			var psi = new System.Diagnostics.ProcessStartInfo (runtime.CscPath) {
-				Arguments = $"-nologo -noconfig \"@{rspPath}\" {arguments.AdditionalArguments}",
+				Arguments = $"-nologo -noconfig \"@{rspPath}\"",
 				CreateNoWindow = true,
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,

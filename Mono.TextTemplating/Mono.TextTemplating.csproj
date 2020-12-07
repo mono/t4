@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45;net35</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -15,11 +15,16 @@ This package allows embedding the T4 engine in an application.
 * To install in a project as a `DotNetCliToolReference`, use `dotnet-t4-project-tool` instead.]]>
     </Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <DefineConstants Condition="'$(TargetFramework)'!='netstandard2.0'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
-    <DefineConstants Condition="'$(TargetFramework)'!='net35'">$(DefineConstants);FEATURE_ROSLYN</DefineConstants>
-    <DefaultItemExcludes Condition="'$(TargetFramework)'=='net35'">$(DefaultItemExcludes);Mono.TextTemplating.CodeCompilation\**</DefaultItemExcludes>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net35' AND '$(OS)' == 'Windows_NT'">$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Client</FrameworkPathOverride>
+    <DefineConstants Condition="'$(TargetFramework)'=='net472'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="System.CodeDom" Version="4.4.0" Condition="'$(TargetFramework)'=='netstandard2.0'" />
   </ItemGroup>

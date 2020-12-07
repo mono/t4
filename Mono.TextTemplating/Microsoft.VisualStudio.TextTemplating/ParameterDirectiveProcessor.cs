@@ -27,6 +27,7 @@
 using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using Mono.TextTemplating;
 
@@ -198,21 +199,53 @@ namespace Microsoft.VisualStudio.TextTemplating
 			var checkSession = new CodeConditionStatement (
 				new CodeBinaryOperatorExpression (NotNull (sessionRef), CodeBinaryOperatorType.BooleanAnd,
 					new CodeMethodInvokeExpression (sessionRef, "ContainsKey", namePrimitive)),
-				new CodeVariableDeclarationStatement (typeof (object), "data", new CodeIndexerExpression (sessionRef, namePrimitive)),
+				new CodeVariableDeclarationStatement (typeof (object), valRef.VariableName, new CodeIndexerExpression (sessionRef, namePrimitive)),
 				checkCastThenAssignVal);
 			
 			this.postStatements.Add (checkSession);
 			
 			//if acquiredVariable is false, tries to gets the value from the host
 			if (hostSpecific) {
+				var typeDescriptorRef = new CodeTypeReferenceExpression ("System.ComponentModel.TypeDescriptor");
+				var valTypeRef = new CodeVariableReferenceExpression ("dataType");
+				var converterRef = new CodeVariableReferenceExpression ("dataTypeConverter");
+
+				var convertIfNotStringAndAssign = type == "System.String"
+					? new CodeStatement[] {
+						new CodeAssignStatement (fieldRef, valRef)
+					}
+					: new CodeStatement[] {
+						new CodeVariableDeclarationStatement (typeof (TypeConverter), "dataTypeConverter", new CodeMethodInvokeExpression(typeDescriptorRef, "GetConverter", new CodeTypeOfExpression(type))),
+						new CodeConditionStatement (
+							BooleanAnd(NotNull(converterRef), new CodeMethodInvokeExpression(converterRef, "CanConvertFrom", new CodeTypeOfExpression (typeof (string)))),
+							new CodeStatement[] {
+								new CodeAssignStatement (
+									fieldRef,
+									new CodeCastExpression (
+										typeRef,
+										new CodeMethodInvokeExpression(converterRef, "ConvertFromString", valRef)
+									)
+								)
+							},
+							new CodeStatement[] {
+								new CodeExpressionStatement (
+									new CodeMethodInvokeExpression (
+										thisRef,
+										"Error",
+										new CodePrimitiveExpression ("The host parameter '" + name + "' could not be converted to the type '" + type + "' specified in the template")
+									)
+								),
+							}
+						)
+					};
+
 				var hostRef = new CodePropertyReferenceExpression (thisRef, "Host");
 				var checkHost = new CodeConditionStatement (
 					BooleanAnd (IsFalse (acquiredVariableRef), NotNull (hostRef)),
-					new CodeVariableDeclarationStatement (typeof (string), "data",
+					new CodeVariableDeclarationStatement (typeof (string), valRef.VariableName,
 						new CodeMethodInvokeExpression (hostRef, "ResolveParameterValue", nullPrim, nullPrim,  namePrimitive)),
-					new CodeConditionStatement (
-						NotNull (valRef),
-						checkCastThenAssignVal));
+					new CodeConditionStatement (NotNull (valRef), convertIfNotStringAndAssign)
+				);
 				
 				this.postStatements.Add (checkHost);
 			}

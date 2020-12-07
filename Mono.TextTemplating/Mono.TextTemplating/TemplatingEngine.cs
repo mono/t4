@@ -33,11 +33,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+
 using Microsoft.CSharp;
 using Microsoft.VisualStudio.TextTemplating;
-#if FEATURE_ROSLYN
+
 using Mono.TextTemplating.CodeCompilation;
-#endif
 
 namespace Mono.TextTemplating
 {
@@ -49,8 +49,6 @@ namespace Mono.TextTemplating
 		ITextTemplatingEngine
 #pragma warning restore 618
 	{
-
-#if FEATURE_ROSLYN
 		Func<RuntimeInfo,CodeCompilation.CodeCompiler> createCompilerFunc;
 		CodeCompilation.CodeCompiler cachedCompiler;
 
@@ -71,7 +69,6 @@ namespace Mono.TextTemplating
 			}
 			return cachedCompiler;
 		}
-#endif
 
 		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
 		{
@@ -227,7 +224,6 @@ namespace Mono.TextTemplating
 			return new CompiledTemplate (host, results, settings.GetFullName (), settings.Culture, references.ToArray ());
 		}
 
-#if FEATURE_ROSLYN
 		CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
 		{
 			string sourceText;
@@ -255,9 +251,14 @@ namespace Mono.TextTemplating
 			args.AssemblyReferences.AddRange (references);
 			args.Debug = settings.Debug;
 			args.SourceFiles.Add (sourceFilename);
-			args.AdditionalArguments = settings.CompilerOptions;
+
+			if (settings.CompilerOptions != null) {
+				args.AdditionalArguments = settings.CompilerOptions;
+			}
+
 			args.OutputPath = Path.Combine (tempFolder, settings.Name + ".dll");
 			args.TempDirectory = tempFolder;
+			args.LangVersion = settings.LangVersion;
 
 			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
 
@@ -282,34 +283,12 @@ namespace Mono.TextTemplating
 				r.Errors.Add (new CompilerError (null, 0, 0, null, $"The compiler exited with code {result.ExitCode}"));
 			}
 
-			if (!args.Debug) {
+			if (!args.Debug && !r.Errors.HasErrors) {
 				r.TempFiles.Delete ();
 			}
 
 			return r;
 		}
-#else
-		static CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
-		{
-			var pars = new CompilerParameters {
-				GenerateExecutable = false,
-				CompilerOptions = settings.CompilerOptions,
-				IncludeDebugInformation = settings.Debug,
-				GenerateInMemory = false,
-			};
-
-			foreach (var r in references)
-				pars.ReferencedAssemblies.Add (r);
-
-			if (settings.Debug)
-				pars.TempFiles.KeepFiles = true;
-			if (StringUtil.IsNullOrWhiteSpace (pars.CompilerOptions))
-				pars.CompilerOptions = "/noconfig";
-			else if (!pars.CompilerOptions.Contains ("/noconfig"))
-				pars.CompilerOptions = "/noconfig " + pars.CompilerOptions;
-			return settings.Provider.CompileAssemblyFromDom (pars, ccu);
-		}
-#endif
 
 		static string [] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)
 		{
@@ -345,6 +324,8 @@ namespace Mono.TextTemplating
 					string val = dt.Extract ("language");
 					if (val != null)
 						settings.Language = val;
+					if (dt.Extract ("langversion") is string langVersion)
+						settings.LangVersion = langVersion;
 					val = dt.Extract ("debug");
 					if (val != null)
 						settings.Debug = string.Compare (val, "true", StringComparison.OrdinalIgnoreCase) == 0;
@@ -465,16 +446,16 @@ namespace Mono.TextTemplating
 				settings.Namespace = string.Format (typeof (TextTransformation).Namespace + "{0:x}", new Random ().Next ());
 
 			//resolve the CodeDOM provider
-			if (String.IsNullOrEmpty (settings.Language)) {
+			if (string.IsNullOrEmpty (settings.Language)) {
 				settings.Language = "C#";
 			}
 
 			if (settings.Language == "C#v3.5") {
+				pt.LogWarning ("The \"C#3.5\" Language attribute in template directives is deprecated, use the langversion attribute instead");
 				var providerOptions = new Dictionary<string, string> ();
 				providerOptions.Add ("CompilerVersion", "v3.5");
 				settings.Provider = new CSharpCodeProvider (providerOptions);
-			}
-			else {
+			} else {
 				settings.Provider = CodeDomProvider.CreateProvider (settings.Language);
 			}
 
