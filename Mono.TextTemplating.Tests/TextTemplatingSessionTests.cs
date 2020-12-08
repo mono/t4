@@ -34,7 +34,7 @@ namespace Mono.TextTemplating.Tests
 	public class TextTemplatingSessionTests
 	{
 		#if FEATURE_APPDOMAINS
-		[Test]
+		[Fact]
 		public void AppDomainSerializationTest ()
 		{
 			var guid = Guid.NewGuid ();
@@ -71,7 +71,7 @@ namespace Mono.TextTemplating.Tests
 			Assert.Equal ("TestHost", outContent);
 		}
 
-		[Test]
+		[Fact]
 		public void HostSpecificNonStringParameter ()
 		{
 			string template =
@@ -84,10 +84,10 @@ namespace Mono.TextTemplating.Tests
 			var outFilename = "test.txt";
 			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
 			Assert.True (success);
-			Assert.AreEqual ("8", outContent);
+			Assert.Equal ("8", outContent);
 		}
 
-		[Test]
+		[Fact]
 		public void HostSpecificStringParameter ()
 		{
 			string template =
@@ -100,7 +100,7 @@ Hello <#=TestParam#>!";
 			var outFilename = "test.txt";
 			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
 			Assert.True (success);
-			Assert.AreEqual ("Hello World!", outContent);
+			Assert.Equal ("Hello World!", outContent);
 		}
 	}
 }

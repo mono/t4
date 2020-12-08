@@ -44,7 +44,7 @@ namespace Mono.TextTemplating.Tests
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
 		}
 
-		[Test]
+		[Fact]
 		public void CSharp9Records ()
 		{
 			string template = "<#+ public record Foo(string bar); #>";
@@ -54,14 +54,14 @@ namespace Mono.TextTemplating.Tests
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 #if NET5_0
-			Assert.IsNull (firstError);
+			Assert.Null (firstError);
 #else
 			Assert.NotNull (firstError);
 #endif
 		}
 
 #if !NET472
-		[Test]
+		[Fact]
 		public void SetLangVersionViaAttribute ()
 		{
 			string template = "<#@ template langversion='5' #><#+ public int Foo { get; } = 5; #>";
@@ -72,10 +72,10 @@ namespace Mono.TextTemplating.Tests
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 
 			Assert.NotNull (firstError);
-			Assert.IsTrue (gen.Errors.OfType<CompilerError> ().All (c => c.ErrorText.Contains ("not available in C# 5")));
+			Assert.True (gen.Errors.OfType<CompilerError> ().All (c => c.ErrorText.Contains ("not available in C# 5")));
 		}
 
-		[Test]
+		[Fact]
 		public void SetLangVersionViaAttributeInProcess ()
 		{
 			string template = "<#@ template langversion='5' #><#+ public int Foo { get; } = 5; #>";
@@ -86,10 +86,10 @@ namespace Mono.TextTemplating.Tests
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 			Assert.NotNull (firstError);
-			Assert.IsTrue (gen.Errors.OfType<CompilerError> ().All (c => c.ErrorText.Contains ("not available in C# 5")));
+			Assert.True (gen.Errors.OfType<CompilerError> ().All (c => c.ErrorText.Contains ("not available in C# 5")));
 		}
 
-		[Test]
+		[Fact]
 		public void SetLangVersionViaAdditionalArgs ()
 		{
 			string template = "<#@ template compilerOptions='-langversion:5' #><#+ public int Foo { get; } = 5; #>";
@@ -99,10 +99,10 @@ namespace Mono.TextTemplating.Tests
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 			Assert.NotNull (firstError);
-			Assert.IsTrue (gen.Errors.OfType<CompilerError> ().All (c => c.ErrorText.Contains ("not available in C# 5")));
+			Assert.True (gen.Errors.OfType<CompilerError> ().All (c => c.ErrorText.Contains ("not available in C# 5")));
 		}
 
-		[Test]
+		[Fact]
 		public void SetLangVersionViaAdditionalArgsInProcess ()
 		{
 			string template = "<#@ template compilerOptions='-langversion:5' #><#+ public int Foo { get; } = 5; #>";
@@ -113,11 +113,11 @@ namespace Mono.TextTemplating.Tests
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 			Assert.NotNull (firstError);
-			Assert.IsTrue (firstError.ErrorText.Contains ("not available in C# 5"));
+			Assert.Contains ("not available in C# 5", firstError.ErrorText);
 		}
 #endif
 
-		[Test]
+		[Fact]
 		public void ImportReferencesTest ()
 		{
 			var gen = new TemplateGenerator ();

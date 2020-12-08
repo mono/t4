@@ -27,7 +27,7 @@ namespace Mono.TextTemplating.Tests
 			CopyDirectory (srcDir, destDir);
 
 			string configName = Path.GetFileName (asmDir);
-			string buildTargetsProjectDir = Path.GetFullPath (Path.Combine (asmDir, "..", "..", "..", "Mono.TextTemplating.Build"));
+			string buildTargetsProjectDir = Path.GetFullPath (Path.Combine (asmDir, "..", "..", "..", "..", "Mono.TextTemplating.Build"));
 
 			//reference this so xunit shadow copies it and we don't lock it
 			string buildTasksPath = typeof (TextTransform).Assembly.Location;
