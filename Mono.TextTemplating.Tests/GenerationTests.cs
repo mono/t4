@@ -25,10 +25,12 @@
 // THE SOFTWARE.
 
 using System;
-using System.IO;
-using Microsoft.VisualStudio.TextTemplating;
-using System.Linq;
 using System.CodeDom.Compiler;
+using System.IO;
+using System.Linq;
+
+using Microsoft.VisualStudio.TextTemplating;
+
 using Xunit;
 
 namespace Mono.TextTemplating.Tests
@@ -123,7 +125,7 @@ namespace Mono.TextTemplating.Tests
 			var gen = new TemplateGenerator ();
 			string tmp = null;
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
-			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (System.Linq.Enumerable).Assembly.Location));
+			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Enumerable).Assembly.Location));
 			gen.ProcessTemplate (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
 		}
@@ -135,8 +137,20 @@ namespace Mono.TextTemplating.Tests
 			gen.UseInProcessCompiler ();
 			string tmp = null;
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
-			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (System.Linq.Enumerable).Assembly.Location));
+			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Enumerable).Assembly.Location));
 			gen.ProcessTemplate (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
+			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
+		}
+
+		[Fact]
+		public void InProcessCompilerDebugTest ()
+		{
+			var gen = new TemplateGenerator ();
+			gen.UseInProcessCompiler ();
+			string tmp = null;
+			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
+			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Enumerable).Assembly.Location));
+			gen.ProcessTemplate (null, "<#@ template debug=\"true\" #><#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
 		}
 
