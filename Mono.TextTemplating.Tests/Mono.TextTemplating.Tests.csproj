@@ -7,6 +7,7 @@
     <DefineConstants Condition="'$(TargetFramework)'=='net472'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\external\MSBuildLocator\src\MSBuildLocator\Microsoft.Build.Locator.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating.Build\Mono.TextTemplating.Build.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj" />

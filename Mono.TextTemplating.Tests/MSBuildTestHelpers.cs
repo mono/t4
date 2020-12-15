@@ -6,7 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+
+using Microsoft.Build.Locator;
 
 // based on MonoDevelop.MSBuild.Tests.MSBuildTestHelpers from  MonoDevelop.MSBuildEditor
 namespace Mono.TextTemplating.Tests
@@ -23,12 +24,12 @@ namespace Mono.TextTemplating.Tests
 			registeredAssemblies = true;
 
 			if (Platform.IsWindows) {
-				Microsoft.Build.Locator.MSBuildLocator.RegisterDefaults ();
+				MSBuildLocator.RegisterDefaults ();
 				return;
 			}
 
 			if (Platform.IsMac) {
-				Microsoft.Build.Locator.MSBuildLocator.RegisterMSBuildPath (
+				MSBuildLocator.RegisterMSBuildPath (
 					"/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/msbuild/Current/bin"
 				);
 				return;
@@ -43,7 +44,7 @@ namespace Mono.TextTemplating.Tests
 				var filename = tokens.FirstOrDefault (t => t.EndsWith ("MSBuild.dll", StringComparison.OrdinalIgnoreCase));
 				if (filename != null && File.Exists (filename)) {
 					var dir = Path.GetDirectoryName (filename);
-					Microsoft.Build.Locator.MSBuildLocator.RegisterMSBuildPath (dir);
+					MSBuildLocator.RegisterMSBuildPath (dir);
 					Console.WriteLine ("Discovered MSBuild from launch script: {0}", dir);
 					return;
 				}
@@ -51,7 +52,7 @@ namespace Mono.TextTemplating.Tests
 
 			foreach (var dir in GetPossibleMSBuildDirectoriesLinux ()) {
 				if (File.Exists (Path.Combine (dir, "MSBuild.dll"))) {
-					Microsoft.Build.Locator.MSBuildLocator.RegisterMSBuildPath (dir);
+					MSBuildLocator.RegisterMSBuildPath (dir);
 					Console.WriteLine ("Discovered MSBuild at well known location: {0}", dir);
 					return;
 				}
