@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
+
 using Microsoft.Build.Evaluation;
 using Microsoft.Build.Framework;
 using Mono.TextTemplating.Build;
@@ -15,12 +17,12 @@ namespace Mono.TextTemplating.Tests
 {
 	public class MSBuildTests : IClassFixture<MSBuildFixture>
 	{
-		Project LoadTestProject (string name)
+		Project LoadTestProject (string name, [CallerMemberName] string testName = null)
 		{
 			var asmDir = Environment.CurrentDirectory;
 			var srcDir = Path.Combine (asmDir, "MSBuildTestCases", name);
 
-			var destDir = Path.Combine (asmDir, "test-output", name);
+			var destDir = Path.Combine (asmDir, "test-output", testName ?? name);
 
 			if (Directory.Exists (destDir)) {
 				Directory.Delete (destDir, true);
@@ -48,8 +50,8 @@ namespace Mono.TextTemplating.Tests
 			var logger = new ListLogger ();
 			var success = instance.Build ("TransformTemplates", new[] { logger });
 
-			Assert.Empty (logger.Errors);
-			Assert.Empty (logger.Warnings);
+			AssertNoErrors (logger.Errors);
+			AssertNoWarnings (logger.Warnings);
 			Assert.True (success);
 
 			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
@@ -72,8 +74,8 @@ namespace Mono.TextTemplating.Tests
 			var instance = proj.CreateProjectInstance ();
 			var success = instance.Build (new string[] { "Build" }, new[] { logger });
 
-			Assert.Empty (logger.Errors);
-			Assert.Empty (logger.Warnings);
+			AssertNoErrors (logger.Errors);
+			AssertNoWarnings (logger.Warnings);
 			Assert.True (success);
 
 			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
@@ -95,8 +97,8 @@ namespace Mono.TextTemplating.Tests
 			var instance = proj.CreateProjectInstance ();
 			var success = instance.Build (new string[] { "Build" }, new[] { logger });
 
-			Assert.Empty (logger.Errors);
-			Assert.Empty (logger.Warnings);
+			AssertNoErrors (logger.Errors);
+			AssertNoWarnings (logger.Warnings);
 			Assert.True (success);
 
 			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
@@ -115,8 +117,8 @@ namespace Mono.TextTemplating.Tests
 			var logger = new ListLogger ();
 			var success = instance.Build ("TransformTemplates", new[] { logger });
 
-			Assert.Empty (logger.Errors);
-			Assert.Empty (logger.Warnings);
+			AssertNoErrors (logger.Errors);
+			AssertNoWarnings (logger.Warnings);
 			Assert.True (success);
 
 			var generated = Path.Combine (proj.DirectoryPath, "foo.cs");
@@ -138,8 +140,8 @@ namespace Mono.TextTemplating.Tests
 			var instance = proj.CreateProjectInstance ();
 			var success = instance.Build (new string[] { "Build" }, new[] { logger });
 
-			Assert.Empty (logger.Errors);
-			Assert.Empty (logger.Warnings);
+			AssertNoErrors (logger.Errors);
+			AssertNoWarnings (logger.Warnings);
 			Assert.True (success);
 
 			var generated = Path.Combine (proj.DirectoryPath, "obj", "Debug", "netstandard2.0", "TextTransform", "foo.cs");
@@ -163,8 +165,8 @@ namespace Mono.TextTemplating.Tests
 			var instance = proj.CreateProjectInstance ();
 			var success = instance.Build (new string[] { "CoreCompile" }, new[] { logger });
 
-			Assert.Empty (logger.Errors);
-			Assert.Empty (logger.Warnings);
+			AssertNoErrors (logger.Errors);
+			AssertNoWarnings (logger.Warnings);
 			Assert.True (success);
 
 			var generated = Path.Combine (proj.DirectoryPath, "obj", "Debug", "netstandard2.0", "TextTransform", "foo.cs");
@@ -182,8 +184,8 @@ namespace Mono.TextTemplating.Tests
 
 			var success = instance.Build (new string[] { "Restore" }, new[] { logger });
 
-			Assert.Empty (logger.Errors);
-			Assert.Empty (logger.Warnings);
+			AssertNoErrors (logger.Errors);
+			AssertNoWarnings (logger.Warnings);
 			Assert.True (success);
 
 			// removing this property forces the project to re-evaluate next time a ProjectInstance is created
@@ -228,6 +230,26 @@ namespace Mono.TextTemplating.Tests
 			public void Shutdown ()
 			{
 			}
+		}
+
+		static void AssertNoErrors (List<BuildEventArgs> list)
+		{
+			if (list.Count == 0) {
+				return;
+			}
+
+			Assert.Null (list[0].Message);
+			Assert.Empty (list);
+		}
+
+		static void AssertNoWarnings (List<BuildWarningEventArgs> list)
+		{
+			if (list.Count == 0) {
+				return;
+			}
+
+			Assert.Null (list[0].Message);
+			Assert.Empty (list);
 		}
 	}
 
