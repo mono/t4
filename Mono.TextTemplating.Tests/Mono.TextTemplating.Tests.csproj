@@ -14,13 +14,21 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.3" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+    <!--
+    Microsoft.NET.Test.Sdk brings in a version of NuGet.Frameworks that's older than the one used by MSBuild
+    and loads first, thereby breaking loading of MSBuild assemblies. Force-upgrade it.
+    -->
+    <PackageReference Include="NuGet.Frameworks" Version="5.8.0" />
+    <!--
     <PackageReference Include="Microsoft.Build.Locator" Version="1.2.6" />
+    -->
     <PackageReference Include="Microsoft.Build" Version="16.8.0" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.Build.Framework" Version="16.8.0" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.8.0" ExcludeAssets="runtime" />
     <!-- fix conflicts in indirect references -->
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" PrivateAssets="all" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="MSBuildTestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
