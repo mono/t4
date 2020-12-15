@@ -9,6 +9,8 @@ using Microsoft.Build.Framework;
 using Mono.TextTemplating.Build;
 using Xunit;
 
+#if NET5_0 || NET472
+
 namespace Mono.TextTemplating.Tests
 {
 	public class MSBuildTests : IClassFixture<MSBuildFixture>
@@ -237,3 +239,5 @@ namespace Mono.TextTemplating.Tests
 		}
 	}
 }
+
+#endif
