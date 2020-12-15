@@ -221,7 +221,7 @@ namespace Mono.TextTemplating
 			}
 #endif
 
-			return new CompiledTemplate (host, results, settings.GetFullName (), settings.Culture, references.ToArray ());
+			return new CompiledTemplate (host, results.PathToAssembly, settings.GetFullName (), settings.Culture, references);
 		}
 
 		CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)

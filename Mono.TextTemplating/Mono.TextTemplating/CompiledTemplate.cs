@@ -25,11 +25,13 @@
 // THE SOFTWARE.
 
 using System;
-using System.Reflection;
-using Microsoft.VisualStudio.TextTemplating;
 using System.CodeDom.Compiler;
-using System.Globalization;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Reflection;
+using System.IO;
+
+using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating
 {
@@ -44,24 +46,34 @@ namespace Mono.TextTemplating
 		readonly CultureInfo culture;
 		readonly string [] assemblyFiles;
 
-		public CompiledTemplate (ITextTemplatingEngineHost host, CompilerResults results, string fullName, CultureInfo culture,
-			string [] assemblyFiles)
+		public CompiledTemplate (ITextTemplatingEngineHost host, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
 		{
+#if NETFRAMEWORK
 			AppDomain.CurrentDomain.AssemblyResolve += ResolveReferencedAssemblies;
+#endif
+
 			this.host = host;
 			this.culture = culture;
-			this.assemblyFiles = assemblyFiles;
-			Load (results, fullName);
+
+			assemblyFiles = new string[referenceAssemblyFiles.Length + 1];
+			assemblyFiles[0] = templateAssemblyFile;
+			Array.Copy (referenceAssemblyFiles, 0, assemblyFiles, 1, referenceAssemblyFiles.Length);
+
+			Load (fullName);
 		}
 
-		void Load (CompilerResults results, string fullName)
+		void Load (string fullName)
 		{
-			//results.CompiledAssembly doesn't work on .NET core, it throws a cryptic internal error
-			//use Assembly.LoadFile instead
-			var assembly = System.Reflection.Assembly.LoadFile (results.PathToAssembly);
+#if NETFRAMEWORK
+			var assembly = Assembly.LoadFile(assemblyFiles[0]);
+#else
+			var templateContext = new TemplateAssemblyLoadContext (assemblyFiles, host);
+			var assembly = templateContext.LoadFromAssemblyPath (assemblyFiles[0]);
+#endif
+
+			//MS Templating Engine does not care about the type itself
+			//it only requires the expected members to be on the compiled type 
 			Type transformType = assembly.GetType (fullName);
-			//MS Templating Engine does not look on the type itself, 
-			//it checks only that required methods are exists in the compiled type 
 			textTransformation = Activator.CreateInstance (transformType);
 
 			//set the host property if it exists
@@ -126,6 +138,7 @@ namespace Mono.TextTemplating
 		}
 
 
+#if NETFRAMEWORK
 		Assembly ResolveReferencedAssemblies (object sender, ResolveEventArgs args)
 		{
 			AssemblyName asmName = new AssemblyName (args.Name);
@@ -140,12 +153,15 @@ namespace Mono.TextTemplating
 
 			return null;
 		}
+#endif
 
 		public void Dispose ()
 		{
 			if (host != null) {
 				host = null;
+#if NETFRAMEWORK
 				AppDomain.CurrentDomain.AssemblyResolve -= ResolveReferencedAssemblies;
+#endif
 			}
 		}
 	}
