@@ -137,9 +137,12 @@ namespace Mono.TextTemplating
 			remainingArgs = compatOptionSet.Parse (remainingArgs);
 
 			string inputContent = null;
+			bool inputIsFromStdin = false;
+
 			if (remainingArgs.Count != 1) {
 				if (Console.IsInputRedirected) {
 					inputContent = Console.In.ReadToEnd ();
+					inputIsFromStdin = true;
 				} else {
 					Console.Error.WriteLine ("No input file specified.");
 					return 1;
@@ -152,7 +155,8 @@ namespace Mono.TextTemplating
 				}
 			}
 
-			bool writeToStdout = outputFile == "-";
+			bool writeToStdout = outputFile == "-" || (inputIsFromStdin && string.IsNullOrEmpty (outputFile));
+
 			if (!writeToStdout && string.IsNullOrEmpty (outputFile)) {
 				outputFile = inputFile;
 				if (Path.HasExtension (outputFile)) {
