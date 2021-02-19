@@ -49,7 +49,7 @@ namespace Mono.TextTemplating
 
 		static int MainInternal (string [] args)
 		{
-			if (args.Length == 0) {
+			if (args.Length == 0 && !Console.IsInputRedirected) {
 				ShowHelp (true);
 			}
 
