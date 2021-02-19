@@ -243,7 +243,10 @@ namespace Microsoft.VisualStudio.TextTemplating
 				var checkHost = new CodeConditionStatement (
 					BooleanAnd (IsFalse (acquiredVariableRef), NotNull (hostRef)),
 					new CodeVariableDeclarationStatement (typeof (string), valRef.VariableName,
-						new CodeMethodInvokeExpression (hostRef, "ResolveParameterValue", nullPrim, nullPrim,  namePrimitive)),
+						new CodeMethodInvokeExpression (
+							// if the host uses SpecificHostType, this only be accessible via the interface
+							new CodeCastExpression(typeof(ITextTemplatingEngineHost), hostRef),
+							"ResolveParameterValue", nullPrim, nullPrim,  namePrimitive)),
 					new CodeConditionStatement (NotNull (valRef), convertIfNotStringAndAssign)
 				);
 				
