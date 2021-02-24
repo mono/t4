@@ -54,22 +54,75 @@ namespace Mono.TextTemplating.Tests
 		}
 		#endif
 
-		class TestHost : TemplateGenerator { }
+		public class CustomHost : TemplateGenerator {
+			public int TestProperty {get; set; }
+		}
 
 		[Fact]
 		public void TestCustomHost ()
 		{
-			var gen = new TestHost ();
+			var gen = new CustomHost { TestProperty = 3 };
+			gen.Refs.Add(typeof(CustomHost).Assembly.Location);
+			gen.Imports.Add("Mono.TextTemplating.Tests");
+
 			var outFilename = "test.txt";
 			var success = gen.ProcessTemplate (
 				"test.tt",
-				"<#@ template hostspecific=\"true\" #><#=Host.GetType().Name#>",
+				"<#@ template hostspecific=\"true\" #><#= ((TextTemplatingSessionTests.CustomHost)Host).TestProperty * 5 #>",
 				ref outFilename,
 				out var outContent
 				);
 			Assert.True (success);
-			Assert.Equal ("TestHost", outContent);
+			Assert.Equal ("15", outContent);
 		}
+
+		public class CustomHostWithSpecificHostType : TemplateGenerator {
+			public int TestProperty {get; set; }
+			public override Type SpecificHostType => typeof(CustomHostWithSpecificHostType);
+		}
+
+		[Fact]
+		public void TestCustomHostWithSpecificHostType ()
+		{
+			var gen = new CustomHostWithSpecificHostType { TestProperty = 3 };
+			gen.Refs.Add(typeof(CustomHostWithSpecificHostType).Assembly.Location);
+			gen.Imports.Add("Mono.TextTemplating.Tests");
+
+			var outFilename = "test.txt";
+			var success = gen.ProcessTemplate (
+				"test.tt",
+				"<#@ template hostspecific=\"true\" #><#= Host.TestProperty * 5 #>",
+				ref outFilename,
+				out var outContent
+				);
+			Assert.True (success);
+			Assert.Equal ("15", outContent);
+		}
+
+		public abstract class TestBaseClassWithSpecificHostType : Microsoft.VisualStudio.TextTemplating.TextTransformation
+		{
+			public TextTemplatingSessionTests.CustomHostWithSpecificHostType Host { get; set; }
+			public int TestProperty => Host.TestProperty;
+		}
+
+		[Fact]
+		public void TestCustomBaseClassWithSpecificHostType ()
+		{
+			var gen = new CustomHostWithSpecificHostType { TestProperty = 17 };
+			gen.Refs.Add(typeof(CustomHostWithSpecificHostType).Assembly.Location);
+			gen.Imports.Add("Mono.TextTemplating.Tests");
+
+			var outFilename = "test.txt";
+			var success = gen.ProcessTemplate (
+				"test.tt",
+				"<#@ template hostspecific=\"trueFromBase\" inherits=\"TextTemplatingSessionTests.TestBaseClassWithSpecificHostType\" #><#= TestProperty * 2 #>",
+				ref outFilename,
+				out var outContent
+				);
+			Assert.True (success);
+			Assert.Equal ("34", outContent);
+		}
+
 
 		[Fact]
 		public void HostSpecificNonStringParameter ()
@@ -79,7 +132,7 @@ namespace Mono.TextTemplating.Tests
 <#@ parameter name=""TestParam"" type=""System.Int32"" #>
 <#=TestParam + 3#>";
 
-			var gen = new TestHost ();
+			var gen = new TemplateGenerator ();
 			gen.AddParameter (null, null, "TestParam", "5");
 			var outFilename = "test.txt";
 			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
@@ -95,7 +148,24 @@ namespace Mono.TextTemplating.Tests
 <#@ parameter name=""TestParam"" type=""string"" #>
 Hello <#=TestParam#>!";
 
-			var gen = new TestHost ();
+			var gen = new TemplateGenerator ();
+			gen.AddParameter (null, null, "TestParam", "World");
+			var outFilename = "test.txt";
+			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
+			Assert.True (success);
+			Assert.Equal ("Hello World!", outContent);
+		}
+
+		// check the generated parameters can access the host via SpecificHostType
+		[Fact]
+		public void HostSpecificStringParameterWithSpecificHostType ()
+		{
+			string template =
+@"<#@ template language=""C#"" hostspecific=""true"" #>
+<#@ parameter name=""TestParam"" type=""string"" #>
+Hello <#=TestParam#>!";
+
+			var gen = new CustomHostWithSpecificHostType ();
 			gen.AddParameter (null, null, "TestParam", "World");
 			var outFilename = "test.txt";
 			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);

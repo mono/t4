@@ -1,6 +1,6 @@
 name: Build
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -55,6 +55,7 @@ jobs:
         path: packages/Release
 
   publish:
+    if: github.event_name == 'push'
     needs: build
     runs-on: windows-latest
     steps:

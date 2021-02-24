@@ -1,6 +1,6 @@
 # Mono.TextTemplating
 
-[![Gitter](https://badges.gitter.im/mono/t4.svg)](https://gitter.im/mono/t4?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Build](https://github.com/mono/t4/actions/workflows/build.yml/badge.svg)](https://github.com/mono/t4/actions/workflows/build.yml) [![Gitter](https://badges.gitter.im/mono/t4.svg)](https://gitter.im/mono/t4?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Mono.TextTemplating is an open-source implementation of the T4 text templating engine, a simple general-purpose way to use C# to generate any kind of text files.
 
@@ -22,13 +22,9 @@ For more advanced use cases, the engine itself is also available as a library ca
 
 Package | Description
 --- | ---
-[Mono.TextTemplating](https://www.nuget.org/packages/Mono.TextTemplating) | T4 engine
-[dotnet-t4](https://www.nuget.org/packages/dotnet-t4/) | T4 command-line tool
-[dotnet-t4-project-tool](https://www.nuget.org/packages/dotnet-t4-project-tool/) | T4 command-line tool (DotNetCliToolReference version)
+[dotnet-t4](https://www.nuget.org/packages/dotnet-t4/) | T4 command-line tool for executing .tt files and generating runtime template classes
+[Mono.TextTemplating](https://www.nuget.org/packages/Mono.TextTemplating) | T4 engine for custom hosting
+[Mono.TextTemplating.Roslyn](https://www.nuget.org/packages/Mono.TextTemplating.Roslyn) | Optional in-process compiler for Mono.TextTemplating hosts
+[dotnet-t4-project-tool](https://www.nuget.org/packages/dotnet-t4-project-tool/) | `DotNetCliToolReference` version of `dotnet-t4` (deprecated)
 
-## Build Status
-
-Status | Platform | Runtimes
---- | --- | ---
-[![Build Status](https://travis-ci.org/mono/t4.svg?branch=master)](https://travis-ci.org/mono/t4) | Linux | Mono
-[![Build status](https://ci.appveyor.com/api/projects/status/odtvq3m1aocccb5b?svg=true)](https://ci.appveyor.com/project/mhutch/t4) | Windows | .NET Framework
+CI builds are published to [GitHub Packages](https://github.com/orgs/mono/packages?repo_name=t4).

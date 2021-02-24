@@ -1,11 +1,12 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.TextTemplating", "Mono.TextTemplating\Mono.TextTemplating.csproj", "{A2364D6A-00EF-417C-80A6-815726C70032}"
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30914.41
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.TextTemplating", "Mono.TextTemplating\Mono.TextTemplating.csproj", "{A2364D6A-00EF-417C-80A6-815726C70032}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.TextTemplating.Tests", "Mono.TextTemplating.Tests\Mono.TextTemplating.Tests.csproj", "{CB590106-8331-4CBE-8131-B154E7BF79E1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.TextTemplating.Tests", "Mono.TextTemplating.Tests\Mono.TextTemplating.Tests.csproj", "{CB590106-8331-4CBE-8131-B154E7BF79E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextTransform", "TextTransform\TextTransform.csproj", "{D1D35409-C814-47F6-B038-B9B5BF0FE490}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextTransform", "TextTransform\TextTransform.csproj", "{D1D35409-C814-47F6-B038-B9B5BF0FE490}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{EEE624A1-0ED3-4D57-96B4-5D1B22E72697}"
 	ProjectSection(SolutionItems) = preProject
@@ -14,13 +15,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		LICENSE = LICENSE
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dotnet-t4", "dotnet-t4\dotnet-t4.csproj", "{6AA924D8-7119-4593-9B56-11D17AC3578E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dotnet-t4", "dotnet-t4\dotnet-t4.csproj", "{6AA924D8-7119-4593-9B56-11D17AC3578E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dotnet-t4-project-tool", "dotnet-t4-project-tool\dotnet-t4-project-tool.csproj", "{114B7AEF-61DA-453A-9A84-6DDEA13460B7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dotnet-t4-project-tool", "dotnet-t4-project-tool\dotnet-t4-project-tool.csproj", "{114B7AEF-61DA-453A-9A84-6DDEA13460B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.TextTemplating.Build", "Mono.TextTemplating.Build\Mono.TextTemplating.Build.csproj", "{12F53C72-56EC-4740-B6B2-FF31A1B3D3B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.TextTemplating.Build", "Mono.TextTemplating.Build\Mono.TextTemplating.Build.csproj", "{12F53C72-56EC-4740-B6B2-FF31A1B3D3B8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.TextTemplating.Roslyn", "Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj", "{8DB780A9-27C1-44B4-860F-50C4419FD349}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.TextTemplating.Roslyn", "Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj", "{8DB780A9-27C1-44B4-860F-50C4419FD349}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Build.Locator", "external\MSBuildLocator\src\MSBuildLocator\Microsoft.Build.Locator.csproj", "{7CA5FD84-B806-43B7-AE52-4C1FEAA95EF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -56,6 +59,10 @@ Global
 		{8DB780A9-27C1-44B4-860F-50C4419FD349}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8DB780A9-27C1-44B4-860F-50C4419FD349}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8DB780A9-27C1-44B4-860F-50C4419FD349}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7CA5FD84-B806-43B7-AE52-4C1FEAA95EF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CA5FD84-B806-43B7-AE52-4C1FEAA95EF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CA5FD84-B806-43B7-AE52-4C1FEAA95EF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CA5FD84-B806-43B7-AE52-4C1FEAA95EF8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
