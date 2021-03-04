@@ -236,8 +236,12 @@ namespace Mono.TextTemplating
 			// this may throw, so do it before writing source files
 			var compiler = GetOrCreateCompiler ();
 
-			var tempFolder = Path.GetTempFileName ();
-			File.Delete (tempFolder);
+			// GetTempFileName guarantees that the returned file name is unique, but
+			// there are no equivalent for directories, so we create a directory
+			// based on the file name, which *should* be unique as long as the file
+			// exists.
+			var tempFile = Path.GetTempFileName ();
+			var tempFolder = tempFile + "dir";
 			Directory.CreateDirectory (tempFolder);
 
 			if (settings.Log != null) {
@@ -286,7 +290,9 @@ namespace Mono.TextTemplating
 
 			if (!args.Debug && !r.Errors.HasErrors) {
 				r.TempFiles.Delete ();
+				// we can delete our temporary file after our temporary folder is deleted.
 				Directory.Delete (tempFolder);
+				File.Delete (tempFile);
 			}
 
 			return r;
