@@ -53,35 +53,41 @@ namespace Mono.TextTemplating.Build
 
 			Directory.CreateDirectory (IntermediateDirectory);
 
-			var lastSession = LoadSession (IntermediateDirectory);
+			string buildStateFilename = Path.Combine (IntermediateDirectory, "t4-build-state.msgpack");
 
-			var session = new TemplateSessionInfo {
+			var msgPackOptions = MessagePackSerializerOptions.Standard
+				.WithAllowAssemblyVersionMismatch (false)
+				.WithCompression (MessagePackCompression.Lz4BlockArray)
+				.WithSecurity (MessagePackSecurity.TrustedData);
+
+			var previousBuildState = LoadBuildState (buildStateFilename, msgPackOptions);
+
+			var buildState = new TemplateBuildState {
 				IntermediateDirectory = IntermediateDirectory,
 				DefaultNamespace = DefaultNamespace
 			};
 
-			success &= AddParameters (session);
-			success &= AddDirectiveProcessors (session);
+			success &= AddParameters (buildState);
+			success &= AddDirectiveProcessors (buildState);
 
 			if (!success) {
 				return false;
 			}
 
-
 			if (IncludePaths != null) {
-				session.IncludePaths = new List<string> (IncludePaths.Select (i => i.ItemSpec));
+				buildState.IncludePaths = new List<string> (IncludePaths.Select (i => i.ItemSpec));
 			}
 
 			if (ReferencePaths != null) {
-				session.ReferencePaths = new List<string> (ReferencePaths.Select (i => i.ItemSpec));
+				buildState.ReferencePaths = new List<string> (ReferencePaths.Select (i => i.ItemSpec));
 			}
 
 			if (AssemblyReferences != null) {
-				session.AssemblyReferences = new List<string> (AssemblyReferences.Select (i => i.ItemSpec));
+				buildState.AssemblyReferences = new List<string> (AssemblyReferences.Select (i => i.ItemSpec));
 			}
 
 			if (PreprocessTemplates != null) {
-				session.PreprocessTemplates = new List<PreprocessedTemplateInfo> ();
+				buildState.PreprocessTemplates = new List<TemplateBuildState.PreprocessedTemplate> ();
 				foreach (var ppt in PreprocessTemplates) {
 					string inputFile = ppt.ItemSpec;
 					string outputFile;
@@ -91,7 +97,7 @@ namespace Mono.TextTemplating.Build
 						//FIXME: this could cause collisions. generate a path based on relative path and link metadata
 						outputFile = Path.Combine (IntermediateDirectory, Path.ChangeExtension (inputFile, ".cs"));
 					}
-					session.PreprocessTemplates.Add (new PreprocessedTemplateInfo {
+					buildState.PreprocessTemplates.Add (new TemplateBuildState.PreprocessedTemplate {
 						InputFile = inputFile,
 						OutputFile = outputFile
 					});
@@ -99,11 +105,11 @@ namespace Mono.TextTemplating.Build
 			}
 
 			if (TransformTemplates != null) {
-				session.TransformTemplates = new List<TransformTemplateInfo> ();
+				buildState.TransformTemplates = new List<TemplateBuildState.TransformTemplate> ();
 				foreach (var tt in TransformTemplates) {
 					string inputFile = tt.ItemSpec;
 					string outputFile = Path.ChangeExtension (inputFile, ".txt");
-					session.TransformTemplates.Add (new TransformTemplateInfo {
+					buildState.TransformTemplates.Add (new TemplateBuildState.TransformTemplate {
 						InputFile = inputFile,
 						OutputFile = outputFile
 					});
@@ -111,19 +117,19 @@ namespace Mono.TextTemplating.Build
 			}
 
 			var processor = new TextTransformProcessor (Log);
-			processor.Process (lastSession, session, PreprocessOnly);
+			processor.Process (previousBuildState, buildState, PreprocessOnly);
 
-			if (session.TransformTemplates != null) {
-				TransformTemplateOutput = new ITaskItem[session.TransformTemplates.Count];
-				for (int i = 0; i < session.TransformTemplates.Count; i++) {
-					TransformTemplateOutput[i] = new TaskItem (session.TransformTemplates[i].OutputFile);
+			if (buildState.TransformTemplates != null) {
+				TransformTemplateOutput = new ITaskItem[buildState.TransformTemplates.Count];
+				for (int i = 0; i < buildState.TransformTemplates.Count; i++) {
+					TransformTemplateOutput[i] = new TaskItem (buildState.TransformTemplates[i].OutputFile);
 				}
 			}
 
-			if (session.PreprocessTemplates != null) {
-				PreprocessedTemplateOutput = new ITaskItem[session.PreprocessTemplates.Count];
-				for (int i = 0; i < session.PreprocessTemplates.Count; i++) {
-					PreprocessedTemplateOutput[i] = new TaskItem (session.PreprocessTemplates[i].OutputFile);
+			if (buildState.PreprocessTemplates != null) {
+				PreprocessedTemplateOutput = new ITaskItem[buildState.PreprocessTemplates.Count];
+				for (int i = 0; i < buildState.PreprocessTemplates.Count; i++) {
+					PreprocessedTemplateOutput[i] = new TaskItem (buildState.PreprocessTemplates[i].OutputFile);
 				}
 			}
 
@@ -136,10 +142,14 @@ namespace Mono.TextTemplating.Build
 			//settings.Log
 			//metadata to override output name, class name and namespace
 
+			SaveBuildState (buildState, buildStateFilename, msgPackOptions);
+
+			//var stateJson = MessagePackSerializer.ConvertToJson (File.ReadAllBytes (buildStateFilename), msgPackOptions);
+
 			return success;
 		}
 
-		bool AddParameters (TemplateSessionInfo sessionInfo)
+		bool AddParameters (TemplateBuildState buildState)
 		{
 			bool success = true;
 
@@ -147,7 +157,7 @@ namespace Mono.TextTemplating.Build
 				return true;
 			}
 
-			sessionInfo.Parameters = new List<ParameterInfo> ();
+			buildState.Parameters = new List<TemplateBuildState.Parameter> ();
 
 			foreach (var par in ParameterValues) {
 				string paramName = par.ItemSpec;
@@ -165,7 +175,7 @@ namespace Mono.TextTemplating.Build
 					continue;
 				}
 
-				sessionInfo.Parameters.Add (new ParameterInfo {
+				buildState.Parameters.Add (new TemplateBuildState.Parameter {
 					Processor = processorName,
 					Directive = directiveName,
 					Name = paramName,
@@ -176,13 +186,13 @@ namespace Mono.TextTemplating.Build
 			return success;
 		}
 
-		bool AddDirectiveProcessors (TemplateSessionInfo sessionInfo)
+		bool AddDirectiveProcessors (TemplateBuildState buildState)
 		{
 			if (DirectiveProcessors == null) {
 				return true;
 			}
 
-			sessionInfo.DirectiveProcessors = new List<DirectiveProcessorInfo> ();
+			buildState.DirectiveProcessors = new List<TemplateBuildState.DirectiveProcessor> ();
 
 			bool hasErrors = false;
 
@@ -198,7 +208,7 @@ namespace Mono.TextTemplating.Build
 						hasErrors = true;
 					}
 
-					sessionInfo.DirectiveProcessors.Add (new DirectiveProcessorInfo {
+					buildState.DirectiveProcessors.Add (new TemplateBuildState.DirectiveProcessor {
 						Name = name,
 						Class = className,
 						Assembly = assembly
@@ -223,7 +233,7 @@ namespace Mono.TextTemplating.Build
 					}
 				}
 
-				sessionInfo.DirectiveProcessors.Add (new DirectiveProcessorInfo {
+				buildState.DirectiveProcessors.Add (new TemplateBuildState.DirectiveProcessor {
 					Name = split[0],
 					Class = split[1],
 					Assembly = split[2]
@@ -233,9 +243,51 @@ namespace Mono.TextTemplating.Build
 			return !hasErrors;
 		}
 
-		TemplateSessionInfo LoadSession (string path)
+		TemplateBuildState LoadBuildState (string filePath, MessagePackSerializerOptions options)
 		{
+			if (!File.Exists(filePath)) {
+				return null;
+			}
+
+			try {
+				using var stream = File.OpenRead (filePath);
+
+				var state =  MessagePackSerializer.Deserialize<TemplateBuildState> (stream, options);
+
+				if (state.FormatVersion != TemplateBuildState.CURRENT_FORMAT_VERSION) {
+					Log.LogMessage (MessageImportance.Low, "T4 build state format has changed. All T4 files will be reprocessed.");
+				}
+
+				return state;
+			}
+			catch (MessagePackSerializationException) {
+				Log.LogMessage (MessageImportance.Low, "T4 build state could not be deserialized. The format may have changed. All T4 files will be reprocessed.");
+			}
+			catch (Exception ex) {
+				//FIXME: better handling here
+				Log.LogWarning ("Failed to load T4 build state. All T4 files will be reprocessed.");
+				Log.LogMessage (MessageImportance.Low, ex.ToString());
+			}
+
 			return null;
+		}
+
+		void SaveBuildState (TemplateBuildState buildState, string filePath, MessagePackSerializerOptions options)
+		{
+			try {
+				using var stream = File.Create (filePath);
+				MessagePackSerializer.Serialize (stream, buildState, options);
+			}
+			catch (Exception ex) {
+				//FIXME: better handling here
+				Log.LogWarning ("Failed to save T4 build state. The next build will not be incremental.");
+				Log.LogMessage (MessageImportance.Low, ex.ToString ());
+				try {
+					File.Delete (filePath);
+				}
+				catch {
+				}
+			}
 		}
 	}
 }

@@ -22,7 +22,7 @@ namespace Mono.TextTemplating.Build
 			Log = log;
 		}
 
-		public bool Process (TemplateSessionInfo previousSession, TemplateSessionInfo session, bool preprocessOnly)
+		public bool Process (TemplateBuildState previousSession, TemplateBuildState session, bool preprocessOnly)
 		{
 			(var transforms, var preprocessed) = session.GetStaleAndNewTemplates (previousSession, preprocessOnly, new WriteTimeCache ().GetWriteTime);
 

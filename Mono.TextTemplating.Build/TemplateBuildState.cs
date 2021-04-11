@@ -9,20 +9,34 @@ using MessagePack;
 
 namespace Mono.TextTemplating.Build
 {
-	[MessagePackObject (keyAsPropertyName: true)]
-	class TemplateSessionInfo
+	// messagepack requires this to be public
+	[MessagePackObject]
+	public class TemplateBuildState
 	{
-		public string DefaultNamespace { get; set; }
-		public string IntermediateDirectory { get; set; }
-		public List<string> IncludePaths { get; set; }
-		public List<DirectiveProcessorInfo> DirectiveProcessors { get; set; }
-		public List<string> AssemblyReferences { get; set; }
-		public List<string> ReferencePaths { get; set; }
-		public List<PreprocessedTemplateInfo> PreprocessTemplates { get; set; }
-		public List<TransformTemplateInfo> TransformTemplates { get; set; }
-		public List<ParameterInfo> Parameters { get; set; }
+		public static int CURRENT_FORMAT_VERSION = 0;
 
-		internal (List<TransformTemplateInfo> transforms, List<PreprocessedTemplateInfo> preprocessed) GetStaleAndNewTemplates (TemplateSessionInfo previousSession, bool preprocessOnly, Func<string, DateTime> getFileWriteTime)
+		[Key (0)]
+		public int FormatVersion { get; set; } = CURRENT_FORMAT_VERSION;
+		[Key (1)]
+		public string DefaultNamespace { get; set; }
+		[Key (2)]
+		public string IntermediateDirectory { get; set; }
+		[Key (3)]
+		public List<string> IncludePaths { get; set; }
+		[Key (4)]
+		public List<DirectiveProcessor> DirectiveProcessors { get; set; }
+		[Key (5)]
+		public List<string> AssemblyReferences { get; set; }
+		[Key (6)]
+		public List<string> ReferencePaths { get; set; }
+		[Key (7)]
+		public List<PreprocessedTemplate> PreprocessTemplates { get; set; }
+		[Key (8)]
+		public List<TransformTemplate> TransformTemplates { get; set; }
+		[Key (9)]
+		public List<Parameter> Parameters { get; set; }
+
+		internal (List<TransformTemplate> transforms, List<PreprocessedTemplate> preprocessed) GetStaleAndNewTemplates (TemplateBuildState previousSession, bool preprocessOnly, Func<string, DateTime> getFileWriteTime)
 		{
 			bool regenTransform, regenPreprocessed;
 
@@ -32,7 +46,7 @@ namespace Mono.TextTemplating.Build
 				(regenTransform, regenPreprocessed) = CompareSessions (previousSession, this);
 			}
 
-			List<TransformTemplateInfo> staleOrNewTransforms;
+			List<TransformTemplate> staleOrNewTransforms;
 			if (preprocessOnly) {
 				// if not transforming, re-use all transform values so they get cached appropriately
 				TransformTemplates = previousSession?.TransformTemplates;
@@ -41,7 +55,7 @@ namespace Mono.TextTemplating.Build
 				if (regenTransform || TransformTemplates == null) {
 					staleOrNewTransforms = TransformTemplates;
 				} else {
-					staleOrNewTransforms = new List<TransformTemplateInfo> ();
+					staleOrNewTransforms = new List<TransformTemplate> ();
 					var previousTransforms = previousSession.TransformTemplates.ToDictionary (t => t.InputFile);
 
 					foreach (var t in TransformTemplates) {
@@ -57,11 +71,11 @@ namespace Mono.TextTemplating.Build
 				}
 			}
 
-			List<PreprocessedTemplateInfo> staleOrNewPreprocessed;
+			List<PreprocessedTemplate> staleOrNewPreprocessed;
 			if (regenTransform || PreprocessTemplates == null) {
 				staleOrNewPreprocessed = PreprocessTemplates;
 			} else {
-				staleOrNewPreprocessed = new List<PreprocessedTemplateInfo> ();
+				staleOrNewPreprocessed = new List<PreprocessedTemplate> ();
 				var previousPreprocessed = previousSession.PreprocessTemplates.ToDictionary (t => t.InputFile);
 
 				foreach (var t in PreprocessTemplates) {
@@ -81,7 +95,7 @@ namespace Mono.TextTemplating.Build
 
 		// many of these comparisons could be case insensitive or order independent but let's keep it simple
 		// minimizing incremental rebuild when case or order changes is not something we care about
-		static (bool regenTransform, bool regenPreprocessed) CompareSessions (TemplateSessionInfo lastSession, TemplateSessionInfo session)
+		static (bool regenTransform, bool regenPreprocessed) CompareSessions (TemplateBuildState lastSession, TemplateBuildState session)
 		{
 			(bool, bool) regenAll = (true, true);
 			(bool, bool) regenTransforms = (true, false);
@@ -142,83 +156,98 @@ namespace Mono.TextTemplating.Build
 
 			return true;
 		}
-	}
 
-	[MessagePackObject (keyAsPropertyName: true)]
-	class DirectiveProcessorInfo : IEquatable<DirectiveProcessorInfo>
-	{
-		public string Name { get; set; }
-		public string Class { get; set; }
-		public string Assembly { get; set; }
-
-		public bool Equals (DirectiveProcessorInfo other)
-			=> Name == other?.Name && Class == other.Name && Assembly == other?.Assembly;
-	}
-
-	[MessagePackObject (keyAsPropertyName: true)]
-	class ParameterInfo : IEquatable<ParameterInfo>
-	{
-		public string Processor { get; set; }
-		public string Directive { get; set; }
-		public string Name { get; set; }
-		public string Value { get; set; }
-
-		public bool Equals (ParameterInfo other)
-			=> Processor == other?.Processor && Directive == other.Directive && Name == other?.Name && Value == other?.Value;
-	}
-
-	// TODO: cache warnings
-	[MessagePackObject (keyAsPropertyName: true)]
-	class TransformTemplateInfo
-	{
-		public string InputFile { get; set; }
-		public string OutputFile { get; set; }
-		public List<string> Dependencies { get; set; }
-		public List<string> References { get; set; }
-
-		public bool IsStale (Func<string,DateTime> getFileWriteTime)
+		[MessagePackObject]
+		public class DirectiveProcessor : IEquatable<DirectiveProcessor>
 		{
-			var outputTime = getFileWriteTime (OutputFile);
-			if (getFileWriteTime (InputFile) > outputTime) {
-				return true;
-			}
-			foreach (var dep in Dependencies) {
-				if (getFileWriteTime (dep) > outputTime) {
-					return true;
-				}
-			}
-			foreach (var reference in References) {
-				if (getFileWriteTime (reference) > outputTime) {
-					return true;
-				}
-			}
-			return false;
+			[Key (0)]
+			public string Name { get; set; }
+			[Key (1)]
+			public string Class { get; set; }
+			[Key (2)]
+			public string Assembly { get; set; }
+
+			public bool Equals (DirectiveProcessor other)
+				=> Name == other?.Name && Class == other.Name && Assembly == other?.Assembly;
 		}
-	}
 
-	// TODO: cache warnings
-	[MessagePackObject (keyAsPropertyName: true)]
-	class PreprocessedTemplateInfo
-	{
-		public string InputFile { get; set; }
-		public string OutputFile { get; set; }
-		public List<string> Dependencies { get; set; }
-		public List<string> References { get; set; }
-
-		public bool IsStale (Func<string, DateTime> getFileWriteTime)
+		[MessagePackObject]
+		public class Parameter : IEquatable<Parameter>
 		{
-			var outputTime = getFileWriteTime (OutputFile);
-			if (getFileWriteTime (InputFile) > outputTime) {
-				return true;
-			}
-			foreach (var dep in Dependencies) {
-				if (getFileWriteTime (dep) > outputTime) {
+			[Key (0)]
+			public string Processor { get; set; }
+			[Key (1)]
+			public string Directive { get; set; }
+			[Key (2)]
+			public string Name { get; set; }
+			[Key (3)]
+			public string Value { get; set; }
+
+			public bool Equals (Parameter other)
+				=> Processor == other?.Processor && Directive == other.Directive && Name == other?.Name && Value == other?.Value;
+		}
+
+		// TODO: cache warnings
+		[MessagePackObject]
+		public class TransformTemplate
+		{
+			[Key (0)]
+			public string InputFile { get; set; }
+			[Key (1)]
+			public string OutputFile { get; set; }
+			[Key (2)]
+			public List<string> Dependencies { get; set; }
+			[Key (3)]
+			public List<string> References { get; set; }
+
+			public bool IsStale (Func<string, DateTime> getFileWriteTime)
+			{
+				var outputTime = getFileWriteTime (OutputFile);
+				if (getFileWriteTime (InputFile) > outputTime) {
 					return true;
 				}
+				foreach (var dep in Dependencies) {
+					if (getFileWriteTime (dep) > outputTime) {
+						return true;
+					}
+				}
+				foreach (var reference in References) {
+					if (getFileWriteTime (reference) > outputTime) {
+						return true;
+					}
+				}
+				return false;
 			}
-			// don't check references, for preprocessed templates they're not used by
-			// the generator, they're just text values to be returned
-			return false;
+		}
+
+		// TODO: cache warnings
+		[MessagePackObject]
+		public class PreprocessedTemplate
+		{
+			[Key (0)]
+			public string InputFile { get; set; }
+			[Key (1)]
+			public string OutputFile { get; set; }
+			[Key (2)]
+			public List<string> Dependencies { get; set; }
+			[Key (3)]
+			public List<string> References { get; set; }
+
+			public bool IsStale (Func<string, DateTime> getFileWriteTime)
+			{
+				var outputTime = getFileWriteTime (OutputFile);
+				if (getFileWriteTime (InputFile) > outputTime) {
+					return true;
+				}
+				foreach (var dep in Dependencies) {
+					if (getFileWriteTime (dep) > outputTime) {
+						return true;
+					}
+				}
+				// don't check references, for preprocessed templates they're not used by
+				// the generator, they're just text values to be returned
+				return false;
+			}
 		}
 	}
 }
