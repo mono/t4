@@ -8,6 +8,7 @@
 *.targets text
 *.md text
 *.snk binary
+*.config text
 
 # ensure this can be open by VS even if copied from unix to windows
 *.sln text eol=crlf
