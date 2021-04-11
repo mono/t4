@@ -49,5 +49,11 @@ namespace Mono.TextTemplating.Build
 				return result;
 			}
 		}
+
+		protected override bool LoadIncludeText (string requestFileName, out string content, out string location)
+		{
+			// TODO: record the filename
+			return base.LoadIncludeText (requestFileName, out content, out location);
+		}
 	}
 }

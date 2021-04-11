@@ -4,11 +4,12 @@
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
+
+using MessagePack;
+
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TextTemplating;
@@ -52,140 +53,78 @@ namespace Mono.TextTemplating.Build
 
 			Directory.CreateDirectory (IntermediateDirectory);
 
-			var generator = new MSBuildTemplateGenerator ();
+			var lastSession = LoadSession (IntermediateDirectory);
 
-			success &= AddParameters (generator, out var parsedParameters);
-			success &= AddDirectiveProcessors (generator);
+			var session = new TemplateSessionInfo {
+				IntermediateDirectory = IntermediateDirectory,
+				DefaultNamespace = DefaultNamespace
+			};
+
+			success &= AddParameters (session);
+			success &= AddDirectiveProcessors (session);
 
 			if (!success) {
 				return false;
 			}
 
-			AddIncludePaths (generator);
 
-			ParsedTemplate LoadTemplate (string filename, out string inputContent)
-			{
-				if (!File.Exists (filename)) {
-					Log.LogError ("Template file '{0}' does not exist", filename);
-					success = false;
-					inputContent = null;
-					return null;
-				}
-
-				try {
-					inputContent = File.ReadAllText (filename);
-				}
-				catch (IOException ex) {
-					Log.LogErrorFromException (ex, true, true, filename);
-					success = false;
-					inputContent = null;
-					return null;
-				}
-
-				return ParsedTemplate.FromText (inputContent, generator);
+			if (IncludePaths != null) {
+				session.IncludePaths = new List<string> (IncludePaths.Select (i => i.ItemSpec));
 			}
 
-			void WriteOutput (string outputFile, string outputContent, Encoding encoding)
-			{
-				try {
-					File.WriteAllText (outputFile, outputContent, encoding ?? new UTF8Encoding (encoderShouldEmitUTF8Identifier: false));
-				}
-				catch (IOException ex) {
-					Log.LogErrorFromException (ex, true, true, outputFile);
-					success = false;
-				}
+			if (ReferencePaths != null) {
+				session.ReferencePaths = new List<string> (ReferencePaths.Select (i => i.ItemSpec));
 			}
 
-			var processedOutput = new List<string> ();
-
-			if (TransformTemplates != null && !PreprocessOnly) {
-				AddReferencePaths (generator);
-				success &= AddReferences (generator);
-
-				if (!success) {
-					return false;
-				}
-
-				foreach (var transform in TransformTemplates) {
-					string inputFile = transform.ItemSpec;
-					string outputFile = Path.ChangeExtension (inputFile, ".txt");
-					var pt = LoadTemplate (inputFile, out var inputContent);
-					TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
-					AddCoercedSessionParameters (generator, pt, parsedParameters);
-
-					if (LogAndClear (pt.Errors, transform.ItemSpec)) {
-						success = false;
-						continue;
-					}
-
-					var outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile, settings);
-
-					if (LogAndClear (generator.Errors, inputFile)) {
-						success = false;
-						continue;
-					}
-
-					WriteOutput (outputFile, outputContent, settings.Encoding);
-
-					processedOutput.Add (outputFile);
-				}
+			if (AssemblyReferences != null) {
+				session.AssemblyReferences = new List<string> (AssemblyReferences.Select (i => i.ItemSpec));
 			}
-
-			var preprocessedOutput = new List<string> ();
 
 			if (PreprocessTemplates != null) {
-				foreach (var preprocess in PreprocessTemplates) {
-					string inputFile = preprocess.ItemSpec;
-
+				session.PreprocessTemplates = new List<PreprocessedTemplateInfo> ();
+				foreach (var ppt in PreprocessTemplates) {
+					string inputFile = ppt.ItemSpec;
 					string outputFile;
-
 					if (UseLegacyPreprocessingMode) {
 						outputFile = Path.ChangeExtension (inputFile, ".cs");
 					} else {
 						//FIXME: this could cause collisions. generate a path based on relative path and link metadata
 						outputFile = Path.Combine (IntermediateDirectory, Path.ChangeExtension (inputFile, ".cs"));
 					}
-
-					var pt = LoadTemplate (inputFile, out var inputContent);
-					TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
-					if (settings.Namespace == null) {
-						settings.Namespace = DefaultNamespace;
-					}
-
-					if (LogAndClear (pt.Errors, preprocess.ItemSpec)) {
-						success = false;
-						continue;
-					}
-
-					//FIXME: escaping
-					//FIXME: namespace name based on relative path and link metadata
-					string preprocessClassName = Path.GetFileNameWithoutExtension (inputFile);
-
-					var outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, preprocessClassName, settings);
-
-					if (LogAndClear (generator.Errors, inputFile)) {
-						success = false;
-						continue;
-					}
-
-					WriteOutput (outputFile, outputContent, settings.Encoding);
-
-					preprocessedOutput.Add (outputFile);
+					session.PreprocessTemplates.Add (new PreprocessedTemplateInfo {
+						InputFile = inputFile,
+						OutputFile = outputFile
+					});
 				}
 			}
 
-			if (LogAndClear (generator.Errors, null)) {
-				success = false;
+			if (TransformTemplates != null) {
+				session.TransformTemplates = new List<TransformTemplateInfo> ();
+				foreach (var tt in TransformTemplates) {
+					string inputFile = tt.ItemSpec;
+					string outputFile = Path.ChangeExtension (inputFile, ".txt");
+					session.TransformTemplates.Add (new TransformTemplateInfo {
+						InputFile = inputFile,
+						OutputFile = outputFile
+					});
+				}
 			}
 
-			TransformTemplateOutput = new ITaskItem[processedOutput.Count];
-			for (int i = 0; i < processedOutput.Count; i++) {
-				TransformTemplateOutput[i] = new TaskItem (processedOutput[i]);
+			var processor = new TextTransformProcessor (Log);
+			processor.Process (lastSession, session, PreprocessOnly);
+
+			if (session.TransformTemplates != null) {
+				TransformTemplateOutput = new ITaskItem[session.TransformTemplates.Count];
+				for (int i = 0; i < session.TransformTemplates.Count; i++) {
+					TransformTemplateOutput[i] = new TaskItem (session.TransformTemplates[i].OutputFile);
+				}
 			}
 
-			PreprocessedTemplateOutput = new ITaskItem[preprocessedOutput.Count];
-			for (int i = 0; i < preprocessedOutput.Count; i++) {
-				PreprocessedTemplateOutput[i] = new TaskItem (preprocessedOutput[i]);
+			if (session.PreprocessTemplates != null) {
+				PreprocessedTemplateOutput = new ITaskItem[session.PreprocessTemplates.Count];
+				for (int i = 0; i < session.PreprocessTemplates.Count; i++) {
+					PreprocessedTemplateOutput[i] = new TaskItem (session.PreprocessTemplates[i].OutputFile);
+				}
 			}
 
 			//TODO
@@ -200,78 +139,15 @@ namespace Mono.TextTemplating.Build
 			return success;
 		}
 
-		bool LogAndClear (CompilerErrorCollection errors, string file)
-		{
-			bool hasErrors = false;
-
-			foreach (CompilerError err in errors) {
-				if (err.IsWarning) {
-					Log.LogWarning (null, err.ErrorNumber, null, err.FileName ?? file, err.Line, err.Column, 0, 0, err.ErrorText);
-				} else {
-					hasErrors = true;
-					Log.LogError (null, err.ErrorNumber, null, err.FileName ?? file, err.Line, err.Column, 0, 0, err.ErrorText);
-				}
-			}
-
-			errors.Clear ();
-
-			return hasErrors;
-		}
-
-		void AddReferencePaths (MSBuildTemplateGenerator generator)
-		{
-			if (AssemblyReferences == null) {
-				return;
-			}
-
-			foreach (var path in ReferencePaths) {
-				generator.ReferencePaths.Add (path.ItemSpec);
-			}
-		}
-
-		//pre-resolve the refs and add them to the standard refs, which themselves are already resolved
-		//this means the templates don't all have to re-resolve them
-		bool AddReferences (MSBuildTemplateGenerator generator)
-		{
-			if (AssemblyReferences == null) {
-				return true;
-			}
-
-			bool success = true;
-			var host = (ITextTemplatingEngineHost)generator;
-
-			foreach (var reference in AssemblyReferences) {
-				var resolved = host.ResolveAssemblyReference (reference.ItemSpec);
-				if (resolved == null) {
-					Log.LogError ("Could not resolve T4 assembly reference '{0}'", reference.ItemSpec);
-					success = false;
-				} else {
-					generator.Refs.Add (reference.ItemSpec);
-				}
-			}
-			return success;
-		}
-
-		void AddIncludePaths (MSBuildTemplateGenerator generator)
-		{
-			if (IncludePaths == null) {
-				return;
-			}
-
-			foreach (var path in IncludePaths) {
-				generator.IncludePaths.Add (path.ItemSpec);
-			}
-		}
-
-		bool AddParameters (MSBuildTemplateGenerator generator, out Dictionary<string, string> parsedParameters)
+		bool AddParameters (TemplateSessionInfo sessionInfo)
 		{
 			bool success = true;
-
-			parsedParameters = new Dictionary<string, string> ();
 
 			if (ParameterValues == null) {
 				return true;
 			}
+
+			sessionInfo.Parameters = new List<ParameterInfo> ();
 
 			foreach (var par in ParameterValues) {
 				string paramName = par.ItemSpec;
@@ -289,80 +165,24 @@ namespace Mono.TextTemplating.Build
 					continue;
 				}
 
-				generator.AddParameter (processorName, directiveName, paramName, paramVal);
-
-				if (string.IsNullOrEmpty (directiveName) && string.IsNullOrEmpty (processorName)) {
-					parsedParameters.Add (paramName, paramVal);
-				}
+				sessionInfo.Parameters.Add (new ParameterInfo {
+					Processor = processorName,
+					Directive = directiveName,
+					Name = paramName,
+					Value = paramVal
+				});
 			}
 
 			return success;
 		}
 
-		static void AddCoercedSessionParameters (MSBuildTemplateGenerator generator, ParsedTemplate pt, Dictionary<string, string> properties)
-		{
-			if (properties.Count == 0) {
-				return;
-			}
-
-			var session = generator.GetOrCreateSession ();
-
-			foreach (var p in properties) {
-				var directive = pt.Directives.FirstOrDefault (d =>
-					d.Name == "parameter" &&
-					d.Attributes.TryGetValue ("name", out string attVal) &&
-					attVal == p.Key);
-
-				if (directive != null) {
-					directive.Attributes.TryGetValue ("type", out string typeName);
-					var mappedType = ParameterDirectiveProcessor.MapTypeName (typeName);
-					if (mappedType != "System.String") {
-						if (ConvertType (mappedType, p.Value, out object converted)) {
-							session[p.Key] = converted;
-							continue;
-						}
-
-						pt.Errors.Add (
-							new CompilerError (
-								null, 0, 0, null,
-								$"Could not convert property '{p.Key}'='{p.Value}' to parameter type '{typeName}'"
-							)
-						);
-					}
-				}
-				session[p.Key] = p.Value;
-			}
-		}
-
-		static bool ConvertType (string typeName, string value, out object converted)
-		{
-			converted = null;
-			try {
-				var type = Type.GetType (typeName);
-				if (type == null) {
-					return false;
-				}
-				Type stringType = typeof (string);
-				if (type == stringType) {
-					return true;
-				}
-				var converter = System.ComponentModel.TypeDescriptor.GetConverter (type);
-				if (converter == null || !converter.CanConvertFrom (stringType)) {
-					return false;
-				}
-				converted = converter.ConvertFromString (value);
-				return true;
-			}
-			catch {
-			}
-			return false;
-		}
-
-		bool AddDirectiveProcessors (TemplateGenerator generator)
+		bool AddDirectiveProcessors (TemplateSessionInfo sessionInfo)
 		{
 			if (DirectiveProcessors == null) {
 				return true;
 			}
+
+			sessionInfo.DirectiveProcessors = new List<DirectiveProcessorInfo> ();
 
 			bool hasErrors = false;
 
@@ -377,7 +197,12 @@ namespace Mono.TextTemplating.Build
 						Log.LogError ("Directive '{0}' is missing 'Assembly' metadata", name);
 						hasErrors = true;
 					}
-					generator.AddDirectiveProcessor (name, className, assembly);
+
+					sessionInfo.DirectiveProcessors.Add (new DirectiveProcessorInfo {
+						Name = name,
+						Class = className,
+						Assembly = assembly
+					});
 					continue;
 				}
 
@@ -398,10 +223,19 @@ namespace Mono.TextTemplating.Build
 					}
 				}
 
-				generator.AddDirectiveProcessor (split[0], split[1], split[2]);
+				sessionInfo.DirectiveProcessors.Add (new DirectiveProcessorInfo {
+					Name = split[0],
+					Class = split[1],
+					Assembly = split[2]
+				});
 			}
 
 			return !hasErrors;
+		}
+
+		TemplateSessionInfo LoadSession (string path)
+		{
+			return null;
 		}
 	}
 }
