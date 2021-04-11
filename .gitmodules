@@ -1,3 +1,0 @@
-[submodule "external/MSBuildLocator"]
-	path = external/MSBuildLocator
-	url = https://github.com/mhutch/MSBuildLocator.git
