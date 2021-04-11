@@ -43,7 +43,7 @@ jobs:
       if: startsWith (matrix.os, 'windows') == false
       # dotnet test doesn't support mono so we have to use the xunit console runner
       run: |
-        nuget install xunit.runner.console -Version 3.11.1 -OutputDirectory testrunner
+        nuget install xunit.runner.console -Version 2.4.1 -OutputDirectory testrunner
         mono ./testrunner/xunit.runner.console.2.4.1/tools/net472/xunit.console.exe ./Mono.TextTemplating.Tests/bin/${{ matrix.config }}/net472/Mono.TextTemplating.Tests.dll  -parallel none -noshadow -noappdomain
         dotnet test -c ${{ matrix.config }} --no-build -f netcoreapp2.1
         dotnet test -c ${{ matrix.config }} --no-build -f netcoreapp3.1
