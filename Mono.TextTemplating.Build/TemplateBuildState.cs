@@ -36,27 +36,29 @@ namespace Mono.TextTemplating.Build
 		[Key (9)]
 		public List<Parameter> Parameters { get; set; }
 
-		internal (List<TransformTemplate> transforms, List<PreprocessedTemplate> preprocessed) GetStaleAndNewTemplates (TemplateBuildState previousSession, bool preprocessOnly, Func<string, DateTime> getFileWriteTime)
+		internal (List<TransformTemplate> transforms, List<PreprocessedTemplate> preprocessed) GetStaleAndNewTemplates (
+			TemplateBuildState previousBuildState, bool preprocessOnly, Func<string, DateTime> getFileWriteTime
+			)
 		{
 			bool regenTransform, regenPreprocessed;
 
-			if (previousSession == null) {
+			if (previousBuildState == null) {
 				regenTransform = regenPreprocessed = true;
 			} else {
-				(regenTransform, regenPreprocessed) = CompareSessions (previousSession, this);
+				(regenTransform, regenPreprocessed) = CompareSessions (previousBuildState, this);
 			}
 
 			List<TransformTemplate> staleOrNewTransforms;
 			if (preprocessOnly) {
 				// if not transforming, re-use all transform values so they get cached appropriately
-				TransformTemplates = previousSession?.TransformTemplates;
+				TransformTemplates = previousBuildState?.TransformTemplates;
 				staleOrNewTransforms = null;
 			} else {
 				if (regenTransform || TransformTemplates == null) {
 					staleOrNewTransforms = TransformTemplates;
 				} else {
 					staleOrNewTransforms = new List<TransformTemplate> ();
-					var previousTransforms = previousSession.TransformTemplates.ToDictionary (t => t.InputFile);
+					var previousTransforms = previousBuildState.TransformTemplates.ToDictionary (t => t.InputFile);
 
 					foreach (var t in TransformTemplates) {
 						if (previousTransforms.TryGetValue (t.InputFile, out var pt) && !pt.IsStale (getFileWriteTime)) {
@@ -76,7 +78,7 @@ namespace Mono.TextTemplating.Build
 				staleOrNewPreprocessed = PreprocessTemplates;
 			} else {
 				staleOrNewPreprocessed = new List<PreprocessedTemplate> ();
-				var previousPreprocessed = previousSession.PreprocessTemplates.ToDictionary (t => t.InputFile);
+				var previousPreprocessed = previousBuildState.PreprocessTemplates.ToDictionary (t => t.InputFile);
 
 				foreach (var t in PreprocessTemplates) {
 					if (previousPreprocessed.TryGetValue (t.InputFile, out var pt) && !pt.IsStale (getFileWriteTime)) {

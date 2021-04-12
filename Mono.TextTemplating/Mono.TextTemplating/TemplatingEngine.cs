@@ -157,7 +157,7 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			return CompileTemplateInternal (pt, content, host);
+			return CompileTemplateInternal (pt, content, host, out var _);
 		}
 
 		public CompiledTemplate CompileTemplate (
@@ -165,21 +165,32 @@ namespace Mono.TextTemplating
 			string content,
 			ITextTemplatingEngineHost host,
 			TemplateSettings settings = null)
+			=> CompileTemplate (pt, content, host, out var _, settings);
+
+		public CompiledTemplate CompileTemplate (
+			ParsedTemplate pt,
+			string content,
+			ITextTemplatingEngineHost host,
+			out string[] references,
+			TemplateSettings settings = null)
 		{
 			if (pt == null)
 				throw new ArgumentNullException (nameof (pt));
 			if (host == null)
 				throw new ArgumentNullException (nameof (host));
 
-			return CompileTemplateInternal (pt, content, host, settings);
+			return CompileTemplateInternal (pt, content, host, out references, settings);
 		}
 
 		CompiledTemplate CompileTemplateInternal (
 			ParsedTemplate pt,
 			string content,
 			ITextTemplatingEngineHost host,
+			out string[] references,
 			TemplateSettings settings = null)
 		{
+			references = null;
+
 			settings = settings ?? GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
@@ -195,7 +206,7 @@ namespace Mono.TextTemplating
 			}
 
 			var ccu = GenerateCompileUnit (host, content, pt, settings);
-			var references = ProcessReferences (host, pt, settings);
+			references = ProcessReferences (host, pt, settings);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;

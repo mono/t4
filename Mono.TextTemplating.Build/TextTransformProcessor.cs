@@ -22,34 +22,15 @@ namespace Mono.TextTemplating.Build
 			Log = log;
 		}
 
-		public bool Process (TemplateBuildState previousSession, TemplateBuildState session, bool preprocessOnly)
+		public bool Process (TemplateBuildState previousBuildState, TemplateBuildState buildState, bool preprocessOnly)
 		{
-			(var transforms, var preprocessed) = session.GetStaleAndNewTemplates (previousSession, preprocessOnly, new WriteTimeCache ().GetWriteTime);
+			(var transforms, var preprocessed) = buildState.GetStaleAndNewTemplates (previousBuildState, preprocessOnly, new WriteTimeCache ().GetWriteTime);
 
 			if ((transforms == null || transforms.Count == 0) && (preprocessed == null || preprocessed.Count == 0)) {
 				return true;
 			}
 
-			var generator = new MSBuildTemplateGenerator ();
-			if (session.ReferencePaths != null) {
-				generator.ReferencePaths.AddRange (session.ReferencePaths);
-			}
-			if (session.AssemblyReferences != null) {
-				generator.Refs.AddRange (session.AssemblyReferences);
-			}
-			if (session.IncludePaths != null) {
-				generator.IncludePaths.AddRange (session.IncludePaths);
-			}
-			if (session.DirectiveProcessors != null) {
-				foreach (var dp in session.DirectiveProcessors) {
-					generator.AddDirectiveProcessor(dp.Name, dp.Class, dp.Assembly);
-				}
-			}
-			if (session.Parameters != null) {
-				foreach (var par in session.Parameters) {
-					generator.AddParameter (par.Processor, par.Directive, par.Name, par.Value);
-				}
-			}
+			MSBuildTemplateGenerator generator = CreateGenerator (buildState);
 
 			bool success = true;
 
@@ -60,9 +41,11 @@ namespace Mono.TextTemplating.Build
 					return false;
 				}
 
-				var parameterMap = session.Parameters?.ToDictionary (p => p.Name, p => p.Value);
+				var parameterMap = buildState.Parameters?.ToDictionary (p => p.Name, p => p.Value);
 
 				foreach (var transform in transforms) {
+					generator.Reset ();
+
 					string inputFile = transform.InputFile;
 					string outputFile = Path.ChangeExtension (inputFile, ".txt");
 					var pt = LoadTemplate (inputFile, out var inputContent);
@@ -77,7 +60,7 @@ namespace Mono.TextTemplating.Build
 						continue;
 					}
 
-					var outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile, settings);
+					var outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile, out var references, settings);
 
 					if (LogAndClear (generator.Errors, inputFile)) {
 						success = false;
@@ -85,6 +68,8 @@ namespace Mono.TextTemplating.Build
 					}
 
 					transform.OutputFile = outputFile;
+					transform.Dependencies = new List<string> (generator.IncludedFiles);
+					transform.References = new List<string> (references);
 
 					WriteOutput (outputFile, outputContent, settings.Encoding);
 				}
@@ -94,12 +79,14 @@ namespace Mono.TextTemplating.Build
 
 			if (preprocessed != null) {
 				foreach (var preprocess in preprocessed) {
+					generator.Reset ();
+
 					string inputFile = preprocess.InputFile;
 
 					var pt = LoadTemplate (inputFile, out var inputContent);
 					TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
 					if (settings.Namespace == null) {
-						settings.Namespace = session.DefaultNamespace;
+						settings.Namespace = buildState.DefaultNamespace;
 					}
 
 					if (LogAndClear (pt.Errors, preprocess.InputFile)) {
@@ -111,12 +98,15 @@ namespace Mono.TextTemplating.Build
 					//FIXME: namespace name based on relative path and link metadata
 					string preprocessClassName = Path.GetFileNameWithoutExtension (inputFile);
 
-					var outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, preprocessClassName, settings);
+					var outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, preprocessClassName, out var references, settings);
 
 					if (LogAndClear (generator.Errors, inputFile)) {
 						success = false;
 						continue;
 					}
+
+					preprocess.Dependencies = new List<string> (generator.IncludedFiles);
+					preprocess.References = new List<string> (references);
 
 					WriteOutput (preprocess.OutputFile, outputContent, settings.Encoding);
 				}
@@ -156,6 +146,32 @@ namespace Mono.TextTemplating.Build
 					success = false;
 				}
 			}
+		}
+
+		static MSBuildTemplateGenerator CreateGenerator (TemplateBuildState buildState)
+		{
+			var generator = new MSBuildTemplateGenerator ();
+			if (buildState.ReferencePaths != null) {
+				generator.ReferencePaths.AddRange (buildState.ReferencePaths);
+			}
+			if (buildState.AssemblyReferences != null) {
+				generator.Refs.AddRange (buildState.AssemblyReferences);
+			}
+			if (buildState.IncludePaths != null) {
+				generator.IncludePaths.AddRange (buildState.IncludePaths);
+			}
+			if (buildState.DirectiveProcessors != null) {
+				foreach (var dp in buildState.DirectiveProcessors) {
+					generator.AddDirectiveProcessor (dp.Name, dp.Class, dp.Assembly);
+				}
+			}
+			if (buildState.Parameters != null) {
+				foreach (var par in buildState.Parameters) {
+					generator.AddParameter (par.Processor, par.Directive, par.Name, par.Value);
+				}
+			}
+
+			return generator;
 		}
 
 		class WriteTimeCache

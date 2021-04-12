@@ -461,6 +461,8 @@ namespace Mono.TextTemplating
 		ITextTemplatingSession ITextTemplatingSessionHost.Session { get => session; set => session = value; }
 		ITextTemplatingSession ITextTemplatingSessionHost.CreateSession () => session = CreateSession ();
 
+		public void ClearSession () => session = null;
+
 		#endregion ITextTemplatingSession
 
 		struct ParameterKey : IEquatable<ParameterKey>
