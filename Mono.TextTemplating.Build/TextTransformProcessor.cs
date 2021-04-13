@@ -3,26 +3,21 @@
 
 using System;
 using System.CodeDom.Compiler;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating.Build
 {
-	class TextTransformProcessor
+	static class TextTransformProcessor
 	{
-		TaskLoggingHelper Log { get; }
-
-		public TextTransformProcessor (TaskLoggingHelper log)
-		{
-			Log = log;
-		}
-
-		public bool Process (TemplateBuildState previousBuildState, TemplateBuildState buildState, bool preprocessOnly)
+		public static bool Process (TaskLoggingHelper taskLog, TemplateBuildState previousBuildState, TemplateBuildState buildState, bool preprocessOnly)
 		{
 			(var transforms, var preprocessed) = buildState.GetStaleAndNewTemplates (previousBuildState, preprocessOnly, new WriteTimeCache ().GetWriteTime);
 
@@ -30,121 +25,158 @@ namespace Mono.TextTemplating.Build
 				return true;
 			}
 
-			MSBuildTemplateGenerator generator = CreateGenerator (buildState);
-
-			bool success = true;
-
-			var processedOutput = new List<string> ();
-
-			if (transforms != null) {
-				if (!success) {
-					return false;
+			IEnumerable<(string templateFile, Action<MSBuildTemplateGenerator> generate)> GetTransformActions ()
+			{
+				if (transforms == null) {
+					yield break;
 				}
 
 				var parameterMap = buildState.Parameters?.ToDictionary (p => p.Name, p => p.Value);
 
 				foreach (var transform in transforms) {
-					generator.Reset ();
+					yield return (transform.InputFile, (generator) => {
+						string inputFile = transform.InputFile;
+						string outputFile = Path.ChangeExtension (inputFile, ".txt");
+						var pt = LoadTemplate (generator, inputFile, out var inputContent);
+						TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
 
-					string inputFile = transform.InputFile;
-					string outputFile = Path.ChangeExtension (inputFile, ".txt");
-					var pt = LoadTemplate (inputFile, out var inputContent);
-					TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
+						if (parameterMap != null) {
+							AddCoercedSessionParameters (generator, pt, parameterMap);
+						}
 
-					if (parameterMap != null) {
-						AddCoercedSessionParameters (generator, pt, parameterMap);
+						generator.Errors.AddRange (pt.Errors);
+						if (generator.Errors.HasErrors) {
+							return;
+						}
+
+						var outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile, out var references, settings);
+
+						if (generator.Errors.HasErrors) {
+							return;
+						}
+
+						transform.OutputFile = outputFile;
+						transform.Dependencies = new List<string> (generator.IncludedFiles);
+						transform.References = new List<string> (references);
+
+						WriteOutput (generator, outputFile, outputContent, settings.Encoding);
 					}
-
-					if (LogAndClear (pt.Errors, transform.InputFile)) {
-						success = false;
-						continue;
-					}
-
-					var outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile, out var references, settings);
-
-					if (LogAndClear (generator.Errors, inputFile)) {
-						success = false;
-						continue;
-					}
-
-					transform.OutputFile = outputFile;
-					transform.Dependencies = new List<string> (generator.IncludedFiles);
-					transform.References = new List<string> (references);
-
-					WriteOutput (outputFile, outputContent, settings.Encoding);
-				}
+					);
+				};
 			}
 
-			var preprocessedOutput = new List<string> ();
+			IEnumerable<(string templateFile, Action<MSBuildTemplateGenerator> generate)> GetPreprocessedActions ()
+			{
+				if (preprocessed == null) {
+					yield break;
+				}
 
-			if (preprocessed != null) {
 				foreach (var preprocess in preprocessed) {
+					yield return (preprocess.InputFile, (generator) => {
+
+						string inputFile = preprocess.InputFile;
+
+						var pt = LoadTemplate (generator, inputFile, out var inputContent);
+						TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
+						if (settings.Namespace == null) {
+							settings.Namespace = buildState.DefaultNamespace;
+						}
+
+						generator.Errors.AddRange (pt.Errors);
+						if (generator.Errors.HasErrors) {
+							return;
+						}
+
+						//FIXME: escaping
+						//FIXME: namespace name based on relative path and link metadata
+						string preprocessClassName = Path.GetFileNameWithoutExtension (inputFile);
+
+						var outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, preprocessClassName, out var references, settings);
+
+						if (generator.Errors.HasErrors) {
+							return;
+						}
+
+						preprocess.Dependencies = new List<string> (generator.IncludedFiles);
+						preprocess.References = new List<string> (references);
+
+						WriteOutput (generator, preprocess.OutputFile, outputContent, settings.Encoding);
+					}
+					);
+				}
+			}
+
+			var templateErrorSets = new ConcurrentQueue<(string filename, CompilerErrorCollection errors)> ();
+
+			Parallel.ForEach (
+				GetTransformActions ().Concat (GetPreprocessedActions ()),
+				() => CreateGenerator (buildState),
+				(action, state, generator) => {
+					try {
+						action.generate (generator);
+					}
+					catch (Exception ex) {
+						generator.Errors.Add (new CompilerError (null, -1, -1, null, $"Internal error: {ex}"));
+					}
+					templateErrorSets.Enqueue ((action.templateFile, new CompilerErrorCollection (generator.Errors)));
 					generator.Reset ();
+					return generator;
+				},
+				(generator) => { }
+			);
 
-					string inputFile = preprocess.InputFile;
+			bool hasErrors = false;
 
-					var pt = LoadTemplate (inputFile, out var inputContent);
-					TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
-					if (settings.Namespace == null) {
-						settings.Namespace = buildState.DefaultNamespace;
-					}
+			foreach (var templateErrorGroup in templateErrorSets) {
+				hasErrors |= LogErrors (taskLog, templateErrorGroup.filename, templateErrorGroup.errors);
+			}
 
-					if (LogAndClear (pt.Errors, preprocess.InputFile)) {
-						success = false;
-						continue;
-					}
+			return !hasErrors;
+		}
 
-					//FIXME: escaping
-					//FIXME: namespace name based on relative path and link metadata
-					string preprocessClassName = Path.GetFileNameWithoutExtension (inputFile);
+		static bool LogErrors (TaskLoggingHelper taskLog, string filename, CompilerErrorCollection errors)
+		{
+			bool hasErrors = false;
 
-					var outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, preprocessClassName, out var references, settings);
-
-					if (LogAndClear (generator.Errors, inputFile)) {
-						success = false;
-						continue;
-					}
-
-					preprocess.Dependencies = new List<string> (generator.IncludedFiles);
-					preprocess.References = new List<string> (references);
-
-					WriteOutput (preprocess.OutputFile, outputContent, settings.Encoding);
+			foreach (CompilerError err in errors) {
+				if (err.IsWarning) {
+					taskLog.LogWarning (null, err.ErrorNumber, null, err.FileName ?? filename, err.Line, err.Column, 0, 0, err.ErrorText);
+				} else {
+					hasErrors = true;
+					taskLog.LogError (null, err.ErrorNumber, null, err.FileName ?? filename, err.Line, err.Column, 0, 0, err.ErrorText);
 				}
 			}
 
-			return success;
+			return hasErrors;
+		}
 
-			ParsedTemplate LoadTemplate (string filename, out string inputContent)
-			{
-				if (!File.Exists (filename)) {
-					Log.LogError ("Template file '{0}' does not exist", filename);
-					success = false;
-					inputContent = null;
-					return null;
-				}
-
-				try {
-					inputContent = File.ReadAllText (filename);
-				}
-				catch (IOException ex) {
-					Log.LogErrorFromException (ex, true, true, filename);
-					success = false;
-					inputContent = null;
-					return null;
-				}
-
-				return ParsedTemplate.FromText (inputContent, generator);
+		static ParsedTemplate LoadTemplate (MSBuildTemplateGenerator generator, string filename, out string inputContent)
+		{
+			if (!File.Exists (filename)) {
+				generator.Errors.Add (new CompilerError (filename, -1, -1, null, $"Template file '{filename}' does not exist"));
+				inputContent = null;
+				return null;
 			}
 
-			void WriteOutput (string outputFile, string outputContent, Encoding encoding)
-			{
-				try {
-					File.WriteAllText (outputFile, outputContent, encoding ?? new UTF8Encoding (encoderShouldEmitUTF8Identifier: false));
-				}
-				catch (IOException ex) {
-					Log.LogErrorFromException (ex, true, true, outputFile);
-					success = false;
-				}
+			try {
+				inputContent = File.ReadAllText (filename);
+			}
+			catch (IOException ex) {
+				generator.Errors.Add (new CompilerError (filename, -1, -1, null, $"Internal error: {ex}"));
+				inputContent = null;
+				return null;
+			}
+
+			return ParsedTemplate.FromText (inputContent, generator);
+		}
+
+		static void WriteOutput (MSBuildTemplateGenerator generator, string outputFile, string outputContent, Encoding encoding)
+		{
+			try {
+				File.WriteAllText (outputFile, outputContent, encoding ?? new UTF8Encoding (encoderShouldEmitUTF8Identifier: false));
+			}
+			catch (IOException ex) {
+				generator.Errors.Add (new CompilerError (outputFile, -1, -1, null, $"Internal error: {ex}"));
 			}
 		}
 
@@ -184,25 +216,6 @@ namespace Mono.TextTemplating.Build
 				return value;
 			}
 			readonly Dictionary<string, DateTime> writeTimeCache = new ();
-		}
-
-
-		bool LogAndClear (CompilerErrorCollection errors, string file)
-		{
-			bool hasErrors = false;
-
-			foreach (CompilerError err in errors) {
-				if (err.IsWarning) {
-					Log.LogWarning (null, err.ErrorNumber, null, err.FileName ?? file, err.Line, err.Column, 0, 0, err.ErrorText);
-				} else {
-					hasErrors = true;
-					Log.LogError (null, err.ErrorNumber, null, err.FileName ?? file, err.Line, err.Column, 0, 0, err.ErrorText);
-				}
-			}
-
-			errors.Clear ();
-
-			return hasErrors;
 		}
 
 		static void AddCoercedSessionParameters (MSBuildTemplateGenerator generator, ParsedTemplate pt, Dictionary<string, string> properties)
