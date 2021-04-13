@@ -4,9 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 using Microsoft.Build.Evaluation;
+using Microsoft.Build.Execution;
 using Microsoft.Build.Framework;
 using Mono.TextTemplating.Build;
 using Xunit;
@@ -175,6 +177,93 @@ namespace Mono.TextTemplating.Tests
 
 			Assert.Empty (instance.GetItems ("GeneratedTemplates"));
 			Assert.Equal (generated, Assert.Single (instance.GetItems ("PreprocessedTemplates")).GetMetadataValue ("FullPath"));
+		}
+
+		[Fact]
+		public void IncrementalTransform ()
+		{
+			var proj = LoadTestProject ("TransformWithInclude");
+			var logger = new ListLogger ();
+
+			RestoreProject (proj, logger);
+
+			var fooGenerated = Path.Combine (proj.DirectoryPath, "foo.txt");
+			var fooTemplate = Path.Combine (proj.DirectoryPath, "foo.tt");
+			var barGenerated = Path.Combine (proj.DirectoryPath, "bar.txt");
+			var barTemplate = Path.Combine (proj.DirectoryPath, "bar.tt");
+			var includeFile = Path.Combine (proj.DirectoryPath, "helper.ttinclude");
+
+			void ExecuteAndValidate()
+			{
+				var instance = proj.CreateProjectInstance ();
+				var success = instance.Build (new string[] { "TransformTemplates" }, new[] { logger });
+
+				AssertNoErrors (logger.Errors);
+				AssertNoWarnings (logger.Warnings);
+				Assert.True (success);
+
+				var generatedItems = instance.GetItems ("GeneratedTemplates");
+				Assert.Collection(generatedItems, a => Assert.Equal(fooGenerated, a.GetMetadataValue ("FullPath")), b => Assert.Equal (barGenerated, b.GetMetadataValue ("FullPath")));
+				Assert.Empty (instance.GetItems ("PreprocessedTemplates"));
+				Assert.True (File.Exists (fooGenerated));
+			}
+
+			ExecuteAndValidate ();
+
+			Assert.StartsWith ("Helper says Hello 2019!", File.ReadAllText (fooGenerated));
+			var fooWriteTime = File.GetLastWriteTime (fooGenerated);
+			var barWriteTime = File.GetLastWriteTime (barGenerated);
+
+			ExecuteAndValidate ();
+			var fooWriteTimeAfterNoChange = File.GetLastWriteTime (fooGenerated);
+			var barWriteTimeAfterNoChange = File.GetLastWriteTime (barGenerated);
+			Assert.Equal (fooWriteTime, fooWriteTimeAfterNoChange);
+			Assert.Equal (barWriteTime, barWriteTimeAfterNoChange);
+
+			// check touching a template causes rebuild of that file only
+			File.SetLastWriteTime (fooTemplate, DateTime.Now);
+			ExecuteAndValidate ();
+			fooWriteTime = File.GetLastWriteTime (fooGenerated);
+			barWriteTime = File.GetLastWriteTime (barGenerated);
+			Assert.True (fooWriteTime > fooWriteTimeAfterNoChange);
+			Assert.True (barWriteTime == barWriteTimeAfterNoChange);
+
+			ExecuteAndValidate ();
+			fooWriteTimeAfterNoChange = File.GetLastWriteTime (fooGenerated);
+			barWriteTimeAfterNoChange = File.GetLastWriteTime (barGenerated);
+			Assert.Equal (fooWriteTime, fooWriteTimeAfterNoChange);
+			Assert.Equal (barWriteTime, barWriteTimeAfterNoChange);
+
+			// check touching the include causes rebuild of the file that uses it
+			File.SetLastWriteTime (includeFile, DateTime.Now);
+			ExecuteAndValidate ();
+			fooWriteTime = File.GetLastWriteTime (fooGenerated);
+			barWriteTime = File.GetLastWriteTime (barGenerated);
+			Assert.True (fooWriteTime > fooWriteTimeAfterNoChange);
+			Assert.True (barWriteTime == barWriteTimeAfterNoChange);
+
+			ExecuteAndValidate ();
+			fooWriteTimeAfterNoChange = File.GetLastWriteTime (fooGenerated);
+			barWriteTimeAfterNoChange = File.GetLastWriteTime (barGenerated);
+			Assert.Equal (fooWriteTime, fooWriteTimeAfterNoChange);
+			Assert.Equal (barWriteTime, barWriteTimeAfterNoChange);
+
+			// check changing a parameter causes rebuild of both files
+			File.SetLastWriteTime (includeFile, DateTime.Now);
+			var yearArg = proj.GetItems ("T4Argument").Single (i => i.UnevaluatedInclude == "Year");
+			yearArg.SetMetadataValue ("Value", "2021");
+			ExecuteAndValidate ();
+			Assert.StartsWith ("Helper says Hello 2021!", File.ReadAllText (fooGenerated));
+			fooWriteTime = File.GetLastWriteTime (fooGenerated);
+			barWriteTime = File.GetLastWriteTime (barGenerated);
+			Assert.True (fooWriteTime > fooWriteTimeAfterNoChange);
+			Assert.True (barWriteTime > barWriteTimeAfterNoChange);
+
+			ExecuteAndValidate ();
+			fooWriteTimeAfterNoChange = File.GetLastWriteTime (fooGenerated);
+			barWriteTimeAfterNoChange = File.GetLastWriteTime (barGenerated);
+			Assert.Equal (fooWriteTime, fooWriteTimeAfterNoChange);
+			Assert.Equal (barWriteTime, barWriteTimeAfterNoChange);
 		}
 
 		void RestoreProject (Project project, ListLogger logger)

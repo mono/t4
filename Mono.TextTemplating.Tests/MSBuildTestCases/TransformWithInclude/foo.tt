@@ -1,0 +1,5 @@
+<#@ template language="C#" #>
+<#@ parameter name="Year" type="int" #>
+<#@ parameter name="Greeting" #>
+<#=Greet(Greeting, Year)#>
+<#@ include file="helper.ttinclude" #>
