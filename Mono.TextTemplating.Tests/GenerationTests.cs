@@ -28,6 +28,7 @@ using System;
 using System.CodeDom.Compiler;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.TextTemplating;
 
@@ -38,21 +39,20 @@ namespace Mono.TextTemplating.Tests
 	public class GenerationTests
 	{	
 		[Fact]
-		public void TemplateGeneratorTest ()
+		public async Task TemplateGeneratorTest ()
 		{
 			var gen = new TemplateGenerator ();
-			string tmp = null;
-			gen.ProcessTemplate (null, "<#@ template language=\"C#\" #>", ref tmp, out tmp);
+			await gen.ProcessTemplateAsync (null, "<#@ template language=\"C#\" #>", null);
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
 		}
 
 		[Fact]
-		public void CSharp9Records ()
+		public async Task CSharp9Records ()
 		{
 			string template = "<#+ public record Foo(string bar); #>";
 			var gen = new TemplateGenerator ();
 			string outputName = null;
-			gen.ProcessTemplate (null, template, ref outputName, out _);
+			await gen.ProcessTemplateAsync (null, template, outputName);
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 #if NET5_0
@@ -64,12 +64,11 @@ namespace Mono.TextTemplating.Tests
 
 #if !NET472
 		[Fact]
-		public void SetLangVersionViaAttribute ()
+		public async Task SetLangVersionViaAttribute ()
 		{
 			string template = "<#@ template langversion='5' #><#+ public int Foo { get; } = 5; #>";
 			var gen = new TemplateGenerator ();
-			string outputName = null;
-			gen.ProcessTemplate (null, template, ref outputName, out _);
+			await gen.ProcessTemplateAsync (null, template, null);
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 
@@ -78,13 +77,12 @@ namespace Mono.TextTemplating.Tests
 		}
 
 		[Fact]
-		public void SetLangVersionViaAttributeInProcess ()
+		public async Task SetLangVersionViaAttributeInProcess ()
 		{
 			string template = "<#@ template langversion='5' #><#+ public int Foo { get; } = 5; #>";
 			var gen = new TemplateGenerator ();
 			gen.UseInProcessCompiler ();
-			string outputName = null;
-			gen.ProcessTemplate (null, template, ref outputName, out _);
+			await gen.ProcessTemplateAsync (null, template, null);
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 			Assert.NotNull (firstError);
@@ -92,12 +90,11 @@ namespace Mono.TextTemplating.Tests
 		}
 
 		[Fact]
-		public void SetLangVersionViaAdditionalArgs ()
+		public async Task SetLangVersionViaAdditionalArgs ()
 		{
 			string template = "<#@ template compilerOptions='-langversion:5' #><#+ public int Foo { get; } = 5; #>";
 			var gen = new TemplateGenerator ();
-			string outputName = null;
-			gen.ProcessTemplate (null, template, ref outputName, out _);
+			await gen.ProcessTemplateAsync (null, template, null);
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 			Assert.NotNull (firstError);
@@ -105,13 +102,12 @@ namespace Mono.TextTemplating.Tests
 		}
 
 		[Fact]
-		public void SetLangVersionViaAdditionalArgsInProcess ()
+		public async Task SetLangVersionViaAdditionalArgsInProcess ()
 		{
 			string template = "<#@ template compilerOptions='-langversion:5' #><#+ public int Foo { get; } = 5; #>";
 			var gen = new TemplateGenerator ();
 			gen.UseInProcessCompiler ();
-			string outputName = null;
-			gen.ProcessTemplate (null, template, ref outputName, out _);
+			await gen.ProcessTemplateAsync (null, template, null);
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 			Assert.NotNull (firstError);
@@ -120,46 +116,42 @@ namespace Mono.TextTemplating.Tests
 #endif
 
 		[Fact]
-		public void ImportReferencesTest ()
+		public async Task ImportReferencesTest ()
 		{
 			var gen = new TemplateGenerator ();
-			string tmp = null;
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Enumerable).Assembly.Location));
-			gen.ProcessTemplate (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
+			await gen.ProcessTemplateAsync (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", null);
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
 		}
 
 		[Fact]
-		public void InProcessCompilerTest ()
+		public async Task InProcessCompilerTest ()
 		{
 			var gen = new TemplateGenerator ();
 			gen.UseInProcessCompiler ();
-			string tmp = null;
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Enumerable).Assembly.Location));
-			gen.ProcessTemplate (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
+			await gen.ProcessTemplateAsync (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", null);
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
 		}
 
 		[Fact]
-		public void InProcessCompilerDebugTest ()
+		public async Task InProcessCompilerDebugTest ()
 		{
 			var gen = new TemplateGenerator ();
 			gen.UseInProcessCompiler ();
-			string tmp = null;
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Enumerable).Assembly.Location));
-			gen.ProcessTemplate (null, "<#@ template debug=\"true\" #><#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
+			await gen.ProcessTemplateAsync (null, "<#@ template debug=\"true\" #><#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", null);
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
 		}
 
 		[Fact]
-		public void IncludeFileThatDoesNotExistTest ()
+		public async Task IncludeFileThatDoesNotExistTest ()
 		{
 			var gen = new TemplateGenerator ();
-			string tmp = null;
-			gen.ProcessTemplate (null, "<#@ include file=\"none.tt\" #>", ref tmp, out tmp);
+			await gen.ProcessTemplateAsync (null, "<#@ include file=\"none.tt\" #>", null);
 			Assert.StartsWith ("Could not read included file 'none.tt'", gen.Errors.OfType<CompilerError> ().First ().ErrorText);
 		}
 
