@@ -36,6 +36,7 @@ namespace Mono.TextTemplating.Tests
 		public readonly static bool IsWindows;
 		public readonly static bool IsMac;
 		public readonly static bool IsLinux;
+		public readonly static bool IsMono;
 
 		public static Version OSVersion { get; private set; }
 
@@ -45,6 +46,7 @@ namespace Mono.TextTemplating.Tests
 			IsMac = !IsWindows && IsRunningOnMac ();
 			IsLinux = !IsMac && !IsWindows;
 			OSVersion = Environment.OSVersion.Version;
+			IsMono = Type.GetType ("Mono.Runtime") != null;
 		}
 
 		public static void Initialize ()

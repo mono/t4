@@ -23,7 +23,7 @@ namespace Mono.TextTemplating.Tests
 			}
 			registeredAssemblies = true;
 
-			if (Platform.IsWindows) {
+			if (Platform.IsWindows || !Platform.IsMono) {
 				MSBuildLocator.RegisterDefaults ();
 				return;
 			}
