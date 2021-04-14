@@ -8,16 +8,17 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 
 using Microsoft.Build.Evaluation;
-using Microsoft.Build.Execution;
 using Microsoft.Build.Framework;
+
 using Mono.TextTemplating.Build;
+
 using Xunit;
 
 #if NET5_0 || NET472
 
 namespace Mono.TextTemplating.Tests
 {
-	public class MSBuildTests : IClassFixture<MSBuildFixture>
+	public class MSBuildExecutionTests : IClassFixture<MSBuildFixture>
 	{
 		Project LoadTestProject (string name, [CallerMemberName] string testName = null)
 		{
