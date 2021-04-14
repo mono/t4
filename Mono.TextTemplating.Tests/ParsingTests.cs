@@ -31,7 +31,7 @@ namespace Mono.TextTemplating.Tests
 {
 	public class ParsingTests
 	{
-		public static string ParseSample1 = 
+		public static string ParseSample1 =
 @"<#@ template language=""C#v3.5"" #>
 Line One
 Line Two
@@ -55,25 +55,25 @@ var s = ""baz \\#>"";
 			Assert.True (tk.Advance ());
 			Assert.Equal (new Location (tf, 1, 1), tk.Location);
 			Assert.Equal (State.Content, tk.State);
-			Assert.Equal ("", tk.Value);
+			Assert.Equal ("", tk.Value);
 			Assert.True (tk.Advance ());
 			Assert.Equal (State.Directive, tk.State);
 			Assert.True (tk.Advance ());
 			Assert.Equal (new Location (tf, 1, 5), tk.Location);
 			Assert.Equal (State.DirectiveName, tk.State);
-			Assert.Equal ("template", tk.Value);
+			Assert.Equal ("template", tk.Value);
 			Assert.True (tk.Advance ());
 			Assert.Equal (State.Directive, tk.State);
 			Assert.True (tk.Advance ());
 			Assert.Equal (new Location (tf, 1, 14), tk.Location);
 			Assert.Equal (State.DirectiveName, tk.State);
-			Assert.Equal ("language", tk.Value);
+			Assert.Equal ("language", tk.Value);
 			Assert.True (tk.Advance ());
 			Assert.Equal (State.Directive, tk.State);
 			Assert.True (tk.Advance ());
 			Assert.Equal (State.DirectiveValue, tk.State);
 			Assert.Equal (new Location (tf, 1, 23), tk.Location);
-			Assert.Equal ("C#v3.5", tk.Value);
+			Assert.Equal ("C#v3.5", tk.Value);
 			Assert.True (tk.Advance ());
 			Assert.Equal (State.Directive, tk.State);
 
@@ -81,7 +81,7 @@ var s = ""baz \\#>"";
 			Assert.True (tk.Advance ());
 			Assert.Equal (new Location (tf, 2, 1), tk.Location);
 			Assert.Equal (State.Content, tk.State);
-			Assert.Equal ("Line One\nLine Two\n", tk.Value);
+			Assert.Equal ("Line One\nLine Two\n", tk.Value);
 
 			//line 4, 5, 6
 			Assert.True (tk.Advance ());
@@ -89,25 +89,25 @@ var s = ""baz \\#>"";
 			Assert.Equal (new Location (tf, 4, 3), tk.Location);
 			Assert.Equal (new Location (tf, 6, 3), tk.TagEndLocation);
 			Assert.Equal (State.Block, tk.State);
-			Assert.Equal ("\nvar foo = 5;\n", tk.Value);
+			Assert.Equal ("\nvar foo = 5;\n", tk.Value);
 
 			//line 7
 			Assert.True (tk.Advance ());
 			Assert.Equal (new Location (tf, 7, 1), tk.Location);
 			Assert.Equal (State.Content, tk.State);
-			Assert.Equal ("Line Three ", tk.Value);
+			Assert.Equal ("Line Three ", tk.Value);
 			Assert.True (tk.Advance ());
 			Assert.Equal (new Location (tf, 7, 12), tk.TagStartLocation);
 			Assert.Equal (new Location (tf, 7, 15), tk.Location);
 			Assert.Equal (new Location (tf, 7, 22), tk.TagEndLocation);
 			Assert.Equal (State.Expression, tk.State);
-			Assert.Equal (" bar ", tk.Value);
+			Assert.Equal (" bar ", tk.Value);
 
 			//line 8
 			Assert.True (tk.Advance ());
 			Assert.Equal (new Location (tf, 7, 22), tk.Location);
 			Assert.Equal (State.Content, tk.State);
-			Assert.Equal ("\nLine Four\n", tk.Value);
+			Assert.Equal ("\nLine Four\n", tk.Value);
 
 			//line 9, 10, 11
 			Assert.True (tk.Advance ());
@@ -115,13 +115,13 @@ var s = ""baz \\#>"";
 			Assert.Equal (new Location (tf, 9, 4), tk.Location);
 			Assert.Equal (new Location (tf, 11, 3), tk.TagEndLocation);
 			Assert.Equal (State.Helper, tk.State);
-			Assert.Equal (" \nvar s = \"baz \\\\#>\";\n", tk.Value);
+			Assert.Equal (" \nvar s = \"baz \\\\#>\";\n", tk.Value);
 
 			//line 12
 			Assert.True (tk.Advance ());
 			Assert.Equal (new Location (tf, 12, 1), tk.Location);
 			Assert.Equal (State.Content, tk.State);
-			Assert.Equal ("", tk.Value);
+			Assert.Equal ("", tk.Value);
 
 			//EOF
 			Assert.False (tk.Advance ());
@@ -133,7 +133,7 @@ var s = ""baz \\#>"";
 		public void ParseTest ()
 		{
 			string tf = "test.input";
-			
+
 			var pt = new ParsedTemplate ("test.input");
 			var tk = new Tokeniser (tf, ParseSample1.NormalizeNewlines ());
 			var host = new DummyHost ();
@@ -180,6 +180,60 @@ var s = ""baz \\#>"";
 			Assert.Equal (new Location (tf, 6, 3), content[1].EndLocation);
 			Assert.Equal (new Location (tf, 7, 22), content[3].EndLocation);
 			Assert.Equal (new Location (tf, 11, 3), content[5].EndLocation);
+		}
+
+		const string IncludeSample =
+@"One
+<#@ include file=""foo.ttinclude"" #>
+Two
+<#@ include file=""bar.ttinclude"" #>
+Three
+<#@ include file=""foo.ttinclude"" once=""true"" #>
+Four
+<#@ include file=""bar.ttinclude"" #>
+Five
+";
+
+		const string ImportDedupSample =
+@"<#@ import file=""foo.ttinclude"" #>
+<#@ import file=""foo.ttinclude"" #>";
+
+		const string FooIncludeName = "foo.ttinclude";
+		const string FooInclude = "Foo\n";
+		const string BarIncludeName = "bar.ttinclude";
+		const string BarInclude = "Bar\n";
+
+		[Fact]
+		public void IncludeOnceTest ()
+		{
+			string tf = "test.tt";
+
+			var pt = new ParsedTemplate ("test.tt");
+			var tk = new Tokeniser (tf, IncludeSample.NormalizeNewlines ());
+
+			var host = new DummyHost ();
+			host.Locations.Add (FooIncludeName, FooIncludeName);
+			host.Contents.Add (FooIncludeName, FooInclude.NormalizeNewlines ());
+			host.Locations.Add (BarIncludeName, BarIncludeName);
+			host.Contents.Add (BarIncludeName, BarInclude.NormalizeNewlines ());
+
+			pt.Parse (host, tk);
+
+			Assert.Empty (pt.Errors);
+			var content = new List<TemplateSegment> (pt.Content);
+			var dirs = new List<Directive> (pt.Directives);
+
+			Assert.Empty (dirs);
+			Assert.Collection (content,
+				t => Assert.Equal ("One\n", t.Text),
+				t => Assert.Equal ("Foo\n", t.Text),
+				t => Assert.Equal ("Two\n", t.Text),
+				t => Assert.Equal ("Bar\n", t.Text),
+				t => Assert.Equal ("Three\n", t.Text),
+				t => Assert.Equal ("Four\n", t.Text),
+				t => Assert.Equal ("Bar\n", t.Text),
+				t => Assert.Equal ("Five\n", t.Text)
+			);
 		}
 	}
 }
