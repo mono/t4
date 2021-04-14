@@ -33,6 +33,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.CSharp;
 using Microsoft.VisualStudio.TextTemplating;
@@ -70,9 +71,15 @@ namespace Mono.TextTemplating
 			return cachedCompiler;
 		}
 
+		[Obsolete("Use ProcessTemplateAsync")]
 		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
 		{
-			using (var tpl = CompileTemplate (content, host)) {
+			return ProcessTemplateAsync (content, host).Result;
+		}
+
+		public async Task<string> ProcessTemplateAsync (string content, ITextTemplatingEngineHost host, CancellationToken token = default)
+		{
+			using (var tpl = await CompileTemplateAsync (content, host, token)) {
 				return tpl?.Process ();
 			}
 		}
@@ -144,7 +151,11 @@ namespace Mono.TextTemplating
 			}
 		}
 
+		[Obsolete("Use CompileTemplateAsync")]
 		public CompiledTemplate CompileTemplate (string content, ITextTemplatingEngineHost host)
+			=> CompileTemplateAsync (content, host, CancellationToken.None).Result;
+
+		public async Task<CompiledTemplate> CompileTemplateAsync (string content, ITextTemplatingEngineHost host, CancellationToken token)
 		{
 			if (content == null)
 				throw new ArgumentNullException (nameof (content));
@@ -157,9 +168,10 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			return CompileTemplateInternal (pt, content, host, out var _);
+			return (await CompileTemplateInternal (pt, content, host, null, token))?.template;
 		}
 
+		[Obsolete("Use CompileTemplateAsync")]
 		public CompiledTemplate CompileTemplate (
 			ParsedTemplate pt,
 			string content,
@@ -167,6 +179,7 @@ namespace Mono.TextTemplating
 			TemplateSettings settings = null)
 			=> CompileTemplate (pt, content, host, out var _, settings);
 
+		[Obsolete("Use CompileTemplateAsync")]
 		public CompiledTemplate CompileTemplate (
 			ParsedTemplate pt,
 			string content,
@@ -174,24 +187,36 @@ namespace Mono.TextTemplating
 			out string[] references,
 			TemplateSettings settings = null)
 		{
+			var result = CompileTemplateAsync (pt, content, host, settings, CancellationToken.None).Result;
+			references = result?.references;
+			return result?.template;
+		}
+
+		public Task<(CompiledTemplate template, string[] references)?> CompileTemplateAsync (
+			ParsedTemplate pt,
+			string content,
+			ITextTemplatingEngineHost host,
+			TemplateSettings settings = null,
+			CancellationToken token = default)
+		{
 			if (pt == null)
 				throw new ArgumentNullException (nameof (pt));
 			if (host == null)
 				throw new ArgumentNullException (nameof (host));
 
-			return CompileTemplateInternal (pt, content, host, out references, settings);
+			return CompileTemplateInternal (pt, content, host, settings, token);
 		}
 
-		CompiledTemplate CompileTemplateInternal (
+		async Task<(CompiledTemplate template, string[] references)?> CompileTemplateInternal (
 			ParsedTemplate pt,
 			string content,
 			ITextTemplatingEngineHost host,
-			out string[] references,
-			TemplateSettings settings = null)
+			TemplateSettings settings,
+			CancellationToken token
+			)
 		{
-			references = null;
 
-			settings = settings ?? GetSettings (host, pt);
+			settings ??= GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
@@ -206,13 +231,13 @@ namespace Mono.TextTemplating
 			}
 
 			var ccu = GenerateCompileUnit (host, content, pt, settings);
-			references = ProcessReferences (host, pt, settings);
+			var references = ProcessReferences (host, pt, settings);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
 			}
 
-			var results = CompileCode (references, settings, ccu);
+			var results = await CompileCode (references, settings, ccu, token);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
@@ -228,14 +253,14 @@ namespace Mono.TextTemplating
 					type.FullName,
 					new object[] { host, results, templateClassFullName, settings.Culture, references.ToArray () });
 				
-				return (CompiledTemplate)obj;
+				return ((CompiledTemplate)obj, references);
 			}
 #endif
 
-			return new CompiledTemplate (host, results.PathToAssembly, settings.GetFullName (), settings.Culture, references);
+			return (new CompiledTemplate (host, results.PathToAssembly, settings.GetFullName (), settings.Culture, references), references);
 		}
 
-		CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
+		async Task<CompilerResults> CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu, CancellationToken token)
 		{
 			string sourceText;
 			var genOptions = new CodeGeneratorOptions ();
@@ -271,7 +296,7 @@ namespace Mono.TextTemplating
 			args.TempDirectory = tempFolder;
 			args.LangVersion = settings.LangVersion;
 
-			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
+			var result = await compiler.CompileFile (args, settings.Log, token);
 
 			var r = new CompilerResults (new TempFileCollection ());
 			r.TempFiles.AddFile (sourceFilename, false);

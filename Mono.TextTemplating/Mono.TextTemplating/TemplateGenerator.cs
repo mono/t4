@@ -31,6 +31,8 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using Microsoft.VisualStudio.TextTemplating;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Mono.TextTemplating
 {
@@ -79,8 +81,11 @@ namespace Mono.TextTemplating
 			Refs.Add (typeof (StringReader).Assembly.Location);
 			Imports.Add ("System");
 		}
-		
-		public CompiledTemplate CompileTemplate (string content)
+
+		[Obsolete("Use CompileTemplateAsync")]
+		public CompiledTemplate CompileTemplate (string content) => CompileTemplateAsync (content, CancellationToken.None).Result;
+
+		public Task<CompiledTemplate> CompileTemplateAsync (string content, CancellationToken token = default)
 		{
 			if (string.IsNullOrEmpty (content))
 				throw new ArgumentNullException (nameof (content));
@@ -88,7 +93,7 @@ namespace Mono.TextTemplating
 			Errors.Clear ();
 			encoding = Utf8.BomlessEncoding;
 			
-			return Engine.CompileTemplate (content, this);
+			return Engine.CompileTemplateAsync (content, this, token);
 		}
 		
 		protected internal TemplatingEngine Engine {
@@ -99,7 +104,11 @@ namespace Mono.TextTemplating
 			}
 		}
 		
+		[Obsolete("Use ProcessTemplateAsync")]
 		public bool ProcessTemplate (string inputFile, string outputFile)
+			=> ProcessTemplateAsync (inputFile, outputFile, CancellationToken.None).Result;
+
+		public async Task<bool> ProcessTemplateAsync (string inputFile, string outputFile, CancellationToken token = default)
 		{
 			if (string.IsNullOrEmpty (inputFile))
 				throw new ArgumentNullException (nameof (inputFile));
@@ -108,36 +117,55 @@ namespace Mono.TextTemplating
 			
 			string content;
 			try {
+#if NETCOREAPP2_1_OR_GREATER
+				content = await File.ReadAllTextAsync (inputFile, token);
+#else
 				content = File.ReadAllText (inputFile);
-			} catch (IOException ex) {
+#endif
+			}
+			catch (IOException ex) {
 				Errors.Clear ();
 				AddError ("Could not read input file '" + inputFile + "':\n" + ex);
 				return false;
 			}
 
-			ProcessTemplate (inputFile, content, ref outputFile, out var output);
+			var result = await ProcessTemplateAsync (inputFile, content, outputFile, token);
 
 			try {
-				if (!Errors.HasErrors)
-					File.WriteAllText (outputFile, output, encoding);
+				if (!Errors.HasErrors) {
+#if NETCOREAPP2_1_OR_GREATER
+					await File.WriteAllTextAsync (result.fileName, result.content, encoding, token);
+#else
+					File.WriteAllText (result.fileName, result.content, encoding);
+#endif
+				}
 			} catch (IOException ex) {
 				AddError ("Could not write output file '" + outputFile + "':\n" + ex);
 			}
 			
 			return !Errors.HasErrors;
 		}
-		
+
+		[Obsolete("Use ProcessTemplateAsync")]
 		public bool ProcessTemplate (string inputFileName, string inputContent, ref string outputFileName, out string outputContent)
+		{
+			var result = ProcessTemplateAsync (inputFileName, inputContent, outputFileName, CancellationToken.None).Result;
+			outputFileName = result.fileName;
+			outputContent = result.content;
+			return result.success;
+		}
+
+		public async Task<(string fileName, string content, bool success)> ProcessTemplateAsync (string inputFileName, string inputContent, string outputFileName, CancellationToken token = default)
 		{
 			Errors.Clear ();
 			encoding = Utf8.BomlessEncoding;
 
 			OutputFile = outputFileName;
 			TemplateFile = inputFileName;
-			outputContent = Engine.ProcessTemplate (inputContent, this);
+			var outputContent = await Engine.ProcessTemplateAsync (inputContent, this, token);
 			outputFileName = OutputFile;
 			
-			return !Errors.HasErrors;
+			return (outputFileName, outputContent, !Errors.HasErrors);
 		}
 		
 		public bool PreprocessTemplate (string inputFile, string className, string classNamespace, 
@@ -192,7 +220,7 @@ namespace Mono.TextTemplating
 			return err;
 		}
 		
-		#region Virtual members
+#region Virtual members
 		
 		public virtual object GetHostOption (string optionName)
 		{
@@ -278,7 +306,7 @@ namespace Mono.TextTemplating
 			return path;
 		}
 		
-		#endregion
+#endregion
 		
 		readonly Dictionary<ParameterKey,string> parameters = new Dictionary<ParameterKey, string> ();
 		readonly Dictionary<string,KeyValuePair<string,string>> directiveProcessors = new Dictionary<string, KeyValuePair<string,string>> ();
@@ -383,7 +411,7 @@ namespace Mono.TextTemplating
 			return false;
 		}
 		
-		#region Explicit ITextTemplatingEngineHost implementation
+#region Explicit ITextTemplatingEngineHost implementation
 		
 		bool ITextTemplatingEngineHost.LoadIncludeText (string requestFileName, out string content, out string location)
 		{
@@ -438,9 +466,9 @@ namespace Mono.TextTemplating
 			get { return Imports; }
 		}
 
-		#endregion
+#endregion
 
-		#region ITextTemplatingSession
+#region ITextTemplatingSession
 
 		ITextTemplatingSession session;
 
@@ -463,7 +491,7 @@ namespace Mono.TextTemplating
 
 		public void ClearSession () => session = null;
 
-		#endregion ITextTemplatingSession
+#endregion ITextTemplatingSession
 
 		struct ParameterKey : IEquatable<ParameterKey>
 		{
