@@ -10,6 +10,7 @@
   <PropertyGroup>
     <UseLegacyT4Preprocessing Condition="'$(UseLegacyT4Preprocessing)'==''">False</UseLegacyT4Preprocessing>
     <TransformOnBuild Condition="'$(TransformOnBuild)'==''">False</TransformOnBuild>
+    <TransformOutOfDateOnly Condition="$(TransformOutOfDateOnly)==''">true</TransformOutOfDateOnly>
     <!-- legacy compat -->
     <T4DefaultNamespace Condition="'$(T4DefaultNamespace)'==''">$(PreprocessTemplateDefaultNamespace)</T4DefaultNamespace>
     <T4DefaultNamespace Condition="'$(T4DefaultNamespace)'==''">$(RootNamespace)</T4DefaultNamespace>
@@ -89,6 +90,7 @@
       PreprocessOnly="$(_T4PreprocessOnly)"
       UseLegacyPreprocessingMode="$(UseLegacyT4Preprocessing)"
       IntermediateDirectory="$(_T4IntermediateTemplateOutputDir)"
+      TransformOutOfDateOnly="$(TransformOutOfDateOnly)"
     >
         <Output TaskParameter="TransformTemplateOutput" ItemName="GeneratedTemplates" />
         <Output TaskParameter="PreprocessedTemplateOutput" ItemName="PreprocessedTemplates" />

@@ -31,6 +31,7 @@ namespace Mono.TextTemplating.Build
 
 		public bool PreprocessOnly { get; set; }
 		public bool UseLegacyPreprocessingMode { get; set; }
+		public bool TransformOutOfDateOnly { get; set; }
 
 		[Required]
 		public string IntermediateDirectory { get; set; }
@@ -57,7 +58,11 @@ namespace Mono.TextTemplating.Build
 				.WithCompression (MessagePackCompression.Lz4BlockArray)
 				.WithSecurity (MessagePackSecurity.TrustedData);
 
-			var previousBuildState = LoadBuildState (buildStateFilename, msgPackOptions);
+
+			TemplateBuildState previousBuildState = null;
+			if (TransformOutOfDateOnly) {
+				previousBuildState = LoadBuildState (buildStateFilename, msgPackOptions);
+			}
 
 			var buildState = new TemplateBuildState {
 				IntermediateDirectory = IntermediateDirectory,
