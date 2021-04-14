@@ -36,14 +36,15 @@ jobs:
 
     - name: Test (Windows)
       if: startsWith (matrix.os, 'windows')
-      run: dotnet test -c ${{ matrix.config }} --no-build --blame-hang-timeout 5m --diag TestResults-${{ matrix.config }}-${{ matrix.os }}/Log/test_log.txt --logger trx --results-directory TestResults-${{ matrix.config }}-${{ matrix.os }}
+      run: dotnet test -c ${{ matrix.config }} --no-build
+#      run: dotnet test -c ${{ matrix.config }} --no-build --blame-hang-timeout 5m --diag TestResults-${{ matrix.config }}-${{ matrix.os }}/Log/test_log.txt --logger trx --results-directory TestResults-${{ matrix.config }}-${{ matrix.os }}
 
-    - name: Test diagnostics
-      if: failure() && startsWith (matrix.os, 'windows')
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-results-${{ matrix.config }}-${{ matrix.os }}
-        path: TestResults-${{ matrix.config }}-${{ matrix.os }}
+#    - name: Test diagnostics
+#      if: failure() && startsWith (matrix.os, 'windows')
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: test-results-${{ matrix.config }}-${{ matrix.os }}
+#        path: TestResults-${{ matrix.config }}-${{ matrix.os }}
 
     - name: Test (Linux/Mac)
       if: startsWith (matrix.os, 'windows') == false
