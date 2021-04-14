@@ -75,13 +75,13 @@ namespace Mono.TextTemplating
 			return template;
 		}
 
-		public void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser) => Parse (host, tokeniser, true);
+		public void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser) => Parse (host, new HashSet<string>(StringComparer.OrdinalIgnoreCase), tokeniser, true);
 
-		public void ParseWithoutIncludes (Tokeniser tokeniser) => Parse (null, tokeniser, false);
+		public void ParseWithoutIncludes (Tokeniser tokeniser) => Parse (null, null, tokeniser, false);
 
-		void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser, bool parseIncludes) => Parse (host, tokeniser, parseIncludes, false);
+		void Parse (ITextTemplatingEngineHost host, HashSet<string> includedFiles, Tokeniser tokeniser, bool parseIncludes) => Parse (host, includedFiles, tokeniser, parseIncludes, false);
 
-		void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser, bool parseIncludes, bool isImport)
+		void Parse (ITextTemplatingEngineHost host, HashSet<string> includedFiles, Tokeniser tokeniser, bool parseIncludes, bool isImport)
 		{
 			bool skip = false;
 			bool addToImportedHelpers = false;
@@ -138,7 +138,7 @@ namespace Mono.TextTemplating
 						}
 					}
 					if (parseIncludes && directive != null && string.Equals (directive.Name, "include", StringComparison.OrdinalIgnoreCase))
-						Import (host, directive, Path.GetDirectoryName (tokeniser.Location.FileName));
+						Import (host, includedFiles, directive, Path.GetDirectoryName (tokeniser.Location.FileName));
 					break;
 				default:
 					throw new InvalidOperationException ();
@@ -152,29 +152,45 @@ namespace Mono.TextTemplating
 						RawSegments.Add (seg);
 				}
 			}
-			if (!isImport)
+			if (!isImport) {
 				AppendAnyImportedHelperSegments ();
+			}
 		}
 		
-		void Import (ITextTemplatingEngineHost host, Directive includeDirective, string relativeToDirectory)
+		void Import (ITextTemplatingEngineHost host, HashSet<string> includedFiles, Directive includeDirective, string relativeToDirectory)
 		{
 			string fileName;
-			if (includeDirective.Attributes.Count > 1 || !includeDirective.Attributes.TryGetValue ("file", out fileName)) {
-				LogError ("Unexpected attributes in include directive", includeDirective.StartLocation);
+
+			if (!includeDirective.Attributes.TryGetValue ("file", out fileName)) {
+				LogError ("Include directive has no file attribute", includeDirective.StartLocation);
 				return;
 			}
-			
+
+			bool once = false;
+			if (includeDirective.Attributes.TryGetValue ("once", out var onceStr)) {
+				if (!bool.TryParse (onceStr, out once)) {
+					LogError ($"Include once attribute has unknown value '{onceStr}'", includeDirective.StartLocation);
+				}
+			}
+
 			//try to resolve path relative to the file that included it
 			if (relativeToDirectory != null && !Path.IsPathRooted (fileName)) {
 				string possible = Path.Combine (relativeToDirectory, fileName);
-				if (File.Exists (possible))
+				if (File.Exists (possible)) {
 					fileName = Path.GetFullPath (possible);
+				}
 			}
 
-			if (host.LoadIncludeText (fileName, out string content, out string resolvedName))
-				Parse (host, new Tokeniser (resolvedName, content), true, true);
-			else
+			if (host.LoadIncludeText (fileName, out string content, out string resolvedName)) {
+				// unfortunately we can't use the once check to avoid actually reading the file
+				// as the host resolves the filename and reads the file in a single call
+				if (!includedFiles.Add (resolvedName) && once) {
+					return;
+				}
+				Parse (host, includedFiles, new Tokeniser (resolvedName, content), true, true);
+			} else {
 				LogError ("Could not resolve include file '" + fileName + "'.", includeDirective.StartLocation);
+			}
 		}
 		
 		void AppendAnyImportedHelperSegments ()
