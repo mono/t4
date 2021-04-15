@@ -272,8 +272,12 @@ namespace Mono.TextTemplating
 			// this may throw, so do it before writing source files
 			var compiler = GetOrCreateCompiler ();
 
-			var tempFolder = Path.GetTempFileName ();
-			File.Delete (tempFolder);
+			// GetTempFileName guarantees that the returned file name is unique, but
+			// there are no equivalent for directories, so we create a directory
+			// based on the file name, which *should* be unique as long as the file
+			// exists.
+			var tempFile = Path.GetTempFileName ();
+			var tempFolder = tempFile + "dir";
 			Directory.CreateDirectory (tempFolder);
 
 			if (settings.Log != null) {
@@ -310,17 +314,21 @@ namespace Mono.TextTemplating
 			r.Errors.AddRange (result.Errors.Select (e => new CompilerError (e.Origin ?? "", e.Line, e.Column, e.Code, e.Message) { IsWarning = !e.IsError }).ToArray ());
 
 			if (result.Success) {
-				r.TempFiles.AddFile (args.OutputPath, true);
+				r.TempFiles.AddFile (args.OutputPath, args.Debug);
 				if (args.Debug) {
 					r.TempFiles.AddFile (Path.ChangeExtension (args.OutputPath, ".pdb"), true);
 				}
-				r.PathToAssembly = args.OutputPath;
+				// load the assembly in memory so we can fully clean our temporary folder
+				r.CompiledAssembly = Assembly.Load (File.ReadAllBytes (args.OutputPath));
 			} else if (!r.Errors.HasErrors) {
 				r.Errors.Add (new CompilerError (null, 0, 0, null, $"The compiler exited with code {result.ExitCode}"));
 			}
 
 			if (!args.Debug && !r.Errors.HasErrors) {
 				r.TempFiles.Delete ();
+				// we can delete our temporary file after our temporary folder is deleted.
+				Directory.Delete (tempFolder);
+				File.Delete (tempFile);
 			}
 
 			return r;
