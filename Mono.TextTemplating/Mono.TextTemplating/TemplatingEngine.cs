@@ -237,7 +237,7 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			var results = await CompileCode (references, settings, ccu, token);
+			(var results, var assembly) = await CompileCode (references, settings, ccu, token);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
@@ -257,10 +257,10 @@ namespace Mono.TextTemplating
 			}
 #endif
 
-			return (new CompiledTemplate (host, results.PathToAssembly, settings.GetFullName (), settings.Culture, references), references);
+			return (new CompiledTemplate (host, assembly, settings.GetFullName (), settings.Culture, references), references);
 		}
 
-		async Task<CompilerResults> CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu, CancellationToken token)
+		async Task<(CompilerResults, CompiledAssembly)> CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu, CancellationToken token)
 		{
 			string sourceText;
 			var genOptions = new CodeGeneratorOptions ();
@@ -268,6 +268,8 @@ namespace Mono.TextTemplating
 				settings.Provider.GenerateCodeFromCompileUnit (ccu, sw, genOptions);
 				sourceText = sw.ToString ();
 			}
+
+			CompiledAssembly compiledAssembly = null;
 
 			// this may throw, so do it before writing source files
 			var compiler = GetOrCreateCompiler ();
@@ -315,11 +317,23 @@ namespace Mono.TextTemplating
 
 			if (result.Success) {
 				r.TempFiles.AddFile (args.OutputPath, args.Debug);
-				if (args.Debug) {
-					r.TempFiles.AddFile (Path.ChangeExtension (args.OutputPath, ".pdb"), true);
-				}
+
 				// load the assembly in memory so we can fully clean our temporary folder
-				r.CompiledAssembly = Assembly.Load (File.ReadAllBytes (args.OutputPath));
+				// NOTE: we do NOT assembly.load it here, as it will likely need to be loaded
+				// into a different AssemblyLoadContext or AppDomain
+				byte[] assembly = File.ReadAllBytes (args.OutputPath);
+				byte[] debugSymbols = null;
+
+				if (args.Debug) {
+					var symbolsPath = Path.ChangeExtension (args.OutputPath, ".pdb");
+					// if the symbols are embedded the symbols file doesn't exist
+					if (File.Exists(symbolsPath)) {
+						r.TempFiles.AddFile (symbolsPath, true);
+						debugSymbols = File.ReadAllBytes (symbolsPath);
+					}
+				}
+
+				compiledAssembly = new CompiledAssembly (assembly, debugSymbols);
 			} else if (!r.Errors.HasErrors) {
 				r.Errors.Add (new CompilerError (null, 0, 0, null, $"The compiler exited with code {result.ExitCode}"));
 			}
@@ -331,7 +345,7 @@ namespace Mono.TextTemplating
 				File.Delete (tempFile);
 			}
 
-			return r;
+			return (r, compiledAssembly);
 		}
 
 		static string [] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)

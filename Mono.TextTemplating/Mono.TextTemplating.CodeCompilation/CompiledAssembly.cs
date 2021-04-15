@@ -1,5 +1,10 @@
+﻿//
+// CodeCompiler.cs
 //
-// Copyright (c) Microsoft Corp
+// Author:
+//       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
+//
+// Copyright (c) 2018 Microsoft Corp
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,16 +24,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Collections.Generic;
-
 namespace Mono.TextTemplating.CodeCompilation
 {
-	class CodeCompilerResult
+	class CompiledAssembly
 	{
-		public bool Success { get; internal set; }
-		public List<CodeCompilerError> Errors { get; internal set; }
-		public int ExitCode { get; internal set; }
-		public List<string> Output { get; internal set; }
-		public string ResponseFile { get; internal set; }
+		public byte[] Assembly { get; }
+		public byte[] DebugSymbols { get; }
+
+		public CompiledAssembly (byte[] assembly, byte[] debugSymbols)
+		{
+			Assembly = assembly;
+			DebugSymbols = debugSymbols;
+		}
 	}
 }

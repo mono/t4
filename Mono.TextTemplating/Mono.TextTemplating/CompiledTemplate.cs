@@ -32,6 +32,7 @@ using System.Reflection;
 using System.IO;
 
 using Microsoft.VisualStudio.TextTemplating;
+using Mono.TextTemplating.CodeCompilation;
 
 namespace Mono.TextTemplating
 {
@@ -45,32 +46,64 @@ namespace Mono.TextTemplating
 		object textTransformation;
 		readonly CultureInfo culture;
 		readonly string [] assemblyFiles;
+		CompiledAssembly compiledAssembly;
 
 		public CompiledTemplate (ITextTemplatingEngineHost host, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
+			: this (host, null, templateAssemblyFile, fullName, culture, referenceAssemblyFiles)
+		{
+		}
+
+		internal CompiledTemplate (ITextTemplatingEngineHost host, CompiledAssembly compiledAssembly, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
+			: this (host, compiledAssembly, null, fullName, culture, referenceAssemblyFiles)
+		{
+		}
+
+		CompiledTemplate (ITextTemplatingEngineHost host, CompiledAssembly compiledAssembly, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
 		{
 #if NETFRAMEWORK
 			AppDomain.CurrentDomain.AssemblyResolve += ResolveReferencedAssemblies;
 #endif
 
 			this.host = host;
+			this.compiledAssembly = compiledAssembly;
 			this.culture = culture;
 
-			assemblyFiles = new string[referenceAssemblyFiles.Length + 1];
-			assemblyFiles[0] = templateAssemblyFile;
-			Array.Copy (referenceAssemblyFiles, 0, assemblyFiles, 1, referenceAssemblyFiles.Length);
+			if (compiledAssembly == null) {
+				assemblyFiles = new string[referenceAssemblyFiles.Length + 1];
+				assemblyFiles[0] = templateAssemblyFile;
+				Array.Copy (referenceAssemblyFiles, 0, assemblyFiles, 1, referenceAssemblyFiles.Length);
+			} else {
+				assemblyFiles = referenceAssemblyFiles;
+			}
 
 			Load (fullName);
 		}
 
 		void Load (string fullName)
 		{
+			Assembly assembly;
 #if NETFRAMEWORK
-			var assembly = Assembly.LoadFile(assemblyFiles[0]);
+			if (compiledAssembly != null) {
+				if (compiledAssembly.DebugSymbols != null) {
+					assembly = Assembly.Load(compiledAssembly.Assembly, compiledAssembly.DebugSymbols);
+				} else {
+					assembly = Assembly.Load(compiledAssembly.Assembly);
+				}
+			} else {
+				assembly = Assembly.LoadFile(assemblyFiles[0]);
+			}
 #else
 			var templateContext = new TemplateAssemblyLoadContext (assemblyFiles, host);
-			var assembly = templateContext.LoadFromAssemblyPath (assemblyFiles[0]);
+			if (compiledAssembly != null) {
+				if (compiledAssembly.DebugSymbols != null) {
+					assembly = templateContext.LoadFromStream (new MemoryStream(compiledAssembly.Assembly), new MemoryStream(compiledAssembly.DebugSymbols));
+				} else {
+					assembly = templateContext.LoadFromStream (new MemoryStream (compiledAssembly.Assembly));
+				}
+			} else {
+				assembly = templateContext.LoadFromAssemblyPath (assemblyFiles[0]);
+			}
 #endif
-
 			//MS Templating Engine does not care about the type itself
 			//it only requires the expected members to be on the compiled type 
 			Type transformType = assembly.GetType (fullName);
