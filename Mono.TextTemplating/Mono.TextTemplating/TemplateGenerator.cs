@@ -220,7 +220,38 @@ namespace Mono.TextTemplating
 			return err;
 		}
 
-#region Virtual members
+		public string PreprocessTemplate (
+			ParsedTemplate pt,
+			string inputFile,
+			string inputContent,
+			TemplateSettings settings,
+			out string language,
+			out string[] references)
+		{
+			TemplateFile = inputFile;
+			return Engine.PreprocessTemplate (pt, inputContent, settings, this, out language, out references);
+		}
+
+		public async Task<(string fileName, string content)> ProcessTemplateAsync (
+			ParsedTemplate pt,
+			string inputFileName,
+			string inputContent,
+			string outputFileName,
+			TemplateSettings settings,
+			CancellationToken token = default)
+		{
+			Errors.Clear ();
+			encoding = Utf8.BomlessEncoding;
+
+			OutputFile = outputFileName;
+			TemplateFile = inputFileName;
+			var outputContent = await Engine.ProcessTemplateAsync (pt, inputContent, settings, this, token);
+			outputFileName = OutputFile;
+
+			return (outputFileName, outputContent);
+		}
+
+		#region Virtual members
 
 		public virtual object GetHostOption (string optionName)
 		{
