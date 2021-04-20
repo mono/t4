@@ -17,8 +17,9 @@
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" PrivateAssets="all" />
   </ItemGroup>
 
-    <!-- disable parallel test execution on github actions, it hangs the runner there -->
   <ItemGroup>
+    <None Update="TestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- disable parallel test execution on github actions, it hangs the runner there -->
     <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'"/>
   </ItemGroup>
 </Project>
