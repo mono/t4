@@ -84,6 +84,14 @@ namespace Mono.TextTemplating
 			}
 		}
 
+		public async Task<string> ProcessTemplateAsync (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, CancellationToken token = default)
+		{
+			var tpl = await CompileTemplateAsync (pt, content, host, settings, token);
+			using (tpl?.template) {
+				return tpl?.template.Process ();
+			}
+		}
+
 		public string PreprocessTemplate (string content, ITextTemplatingEngineHost host, string className,
 			string classNamespace, out string language, out string [] references)
 		{
@@ -104,6 +112,17 @@ namespace Mono.TextTemplating
 			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references);
 		}
 
+		public string PreprocessTemplate (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string language, out string[] references)
+		{
+			if (pt is null) throw new ArgumentNullException (nameof (pt));
+			if (string.IsNullOrEmpty (content)) throw new ArgumentException ($"'{nameof (content)}' cannot be null or empty.", nameof (content));
+			if (settings is null) throw new ArgumentNullException (nameof (settings));
+			if (host is null) throw new ArgumentNullException (nameof (host));
+
+			return PreprocessTemplateInternal (pt, content, settings, host, out language, out references);
+		}
+
+		[Obsolete("Use TemplateGenerator")]
 		public string PreprocessTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
 			string classNamespace, out string language, out string [] references, TemplateSettings settings = null)
 		{
@@ -120,18 +139,30 @@ namespace Mono.TextTemplating
 		}
 
 		string PreprocessTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
-			string classNamespace, out string language, out string [] references, TemplateSettings settings = null)
+			string classNamespace, out string language, out string[] references, TemplateSettings settings = null)
 		{
-			language = null;
-			references = null;
 
 			settings = settings ?? GetSettings (host, pt);
+
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
+				language = null;
+				references = null;
 				return null;
 			}
-			settings.Name = className;
-			settings.Namespace = classNamespace;
+
+			if (className != null) {
+				settings.Name = className;
+			}
+			if (classNamespace != null) {
+				settings.Namespace = classNamespace;
+			}
+
+			return PreprocessTemplateInternal (pt, content, settings, host, out language, out references);
+		}
+
+		internal string PreprocessTemplateInternal (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string language, out string[] references)
+		{
 			settings.IncludePreprocessingHelpers = string.IsNullOrEmpty (settings.Inherits);
 			settings.IsPreprocessed = true;
 			language = settings.Language;
