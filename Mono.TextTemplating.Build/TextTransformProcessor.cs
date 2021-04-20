@@ -210,14 +210,14 @@ namespace Mono.TextTemplating.Build
 
 		class WriteTimeCache
 		{
-			public DateTime GetWriteTime (string filepath)
+			public DateTime? GetWriteTime (string filepath)
 			{
 				if (!writeTimeCache.TryGetValue (filepath, out var value)) {
-					writeTimeCache.Add (filepath, value = File.GetLastWriteTime (filepath));
+					writeTimeCache.Add (filepath, value = File.Exists(filepath)? File.GetLastWriteTime (filepath) : null);
 				}
 				return value;
 			}
-			readonly Dictionary<string, DateTime> writeTimeCache = new ();
+			readonly Dictionary<string, DateTime?> writeTimeCache = new ();
 		}
 
 		static void AddCoercedSessionParameters (MSBuildTemplateGenerator generator, ParsedTemplate pt, Dictionary<string, string> properties)

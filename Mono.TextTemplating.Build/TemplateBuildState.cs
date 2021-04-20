@@ -37,7 +37,7 @@ namespace Mono.TextTemplating.Build
 		public List<Parameter> Parameters { get; set; }
 
 		internal (List<TransformTemplate> transforms, List<PreprocessedTemplate> preprocessed) GetStaleAndNewTemplates (
-			TemplateBuildState previousBuildState, bool preprocessOnly, Func<string, DateTime> getFileWriteTime
+			TemplateBuildState previousBuildState, bool preprocessOnly, Func<string, DateTime?> getFileWriteTime
 			)
 		{
 			bool regenTransform, regenPreprocessed;
@@ -64,7 +64,6 @@ namespace Mono.TextTemplating.Build
 						if (previousTransforms.TryGetValue (t.InputFile, out var pt) && !pt.IsStale (getFileWriteTime)) {
 							// if it's up to date, use the values from the previous run
 							t.Dependencies = pt.Dependencies;
-							t.References = pt.Dependencies;
 							t.OutputFile = pt.OutputFile;
 						} else {
 							staleOrNewTransforms.Add (t);
@@ -199,25 +198,25 @@ namespace Mono.TextTemplating.Build
 			public string OutputFile { get; set; }
 			[Key (2)]
 			public List<string> Dependencies { get; set; }
-			[Key (3)]
-			public List<string> References { get; set; }
 
-			public bool IsStale (Func<string, DateTime> getFileWriteTime)
+			public bool IsStale (Func<string, DateTime?> getFileWriteTime)
 			{
-				var outputTime = getFileWriteTime (OutputFile);
-				if (getFileWriteTime (InputFile) > outputTime) {
+				if (getFileWriteTime (OutputFile) is not DateTime outputTime) {
 					return true;
 				}
-				foreach (var dep in Dependencies) {
-					if (getFileWriteTime (dep) > outputTime) {
-						return true;
+
+				if (getFileWriteTime (InputFile) is not DateTime inputTime || inputTime > outputTime) {
+					return true;
+				}
+
+				if (Dependencies != null) {
+					foreach (var dep in Dependencies) {
+						if (getFileWriteTime (dep) is not DateTime depTime || depTime > outputTime) {
+							return true;
+						}
 					}
 				}
-				foreach (var reference in References) {
-					if (getFileWriteTime (reference) > outputTime) {
-						return true;
-					}
-				}
+
 				return false;
 			}
 		}
@@ -235,17 +234,24 @@ namespace Mono.TextTemplating.Build
 			[Key (3)]
 			public List<string> References { get; set; }
 
-			public bool IsStale (Func<string, DateTime> getFileWriteTime)
+			public bool IsStale (Func<string, DateTime?> getFileWriteTime)
 			{
-				var outputTime = getFileWriteTime (OutputFile);
-				if (getFileWriteTime (InputFile) > outputTime) {
+				if (getFileWriteTime (OutputFile) is not DateTime outputTime) {
 					return true;
 				}
-				foreach (var dep in Dependencies) {
-					if (getFileWriteTime (dep) > outputTime) {
-						return true;
+
+				if (getFileWriteTime (InputFile) is not DateTime inputTime || inputTime > outputTime) {
+					return true;
+				}
+
+				if (Dependencies != null) {
+					foreach (var dep in Dependencies) {
+						if (getFileWriteTime (dep) is not DateTime depTime || depTime > outputTime) {
+							return true;
+						}
 					}
 				}
+
 				// don't check references, for preprocessed templates they're not used by
 				// the generator, they're just text values to be returned
 				return false;
