@@ -33,6 +33,7 @@
   <ItemGroup>
     <None Update="MSBuildTestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="MSBuildTestCases\**\*.csproj" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="TestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
     <!-- disable parallel test execution on github actions, it hangs the runner there -->
     <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'"/>
   </ItemGroup>
