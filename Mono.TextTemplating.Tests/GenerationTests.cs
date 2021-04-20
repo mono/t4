@@ -67,7 +67,7 @@ namespace Mono.TextTemplating.Tests
 		{
 			var host = new DummyHost ();
 			string template = @"<#= DateTime.Now #>";
-			var pt = ParsedTemplate.FromText (template, host);
+			var pt = ParsedTemplate.FromTextInternal (template, host);
 			Assert.Empty (host.Errors);
 			TemplateSettings settings = TemplatingEngine.GetSettings (host, pt);
 			Assert.Equal ("C#", settings.Language);
@@ -91,7 +91,7 @@ namespace Mono.TextTemplating.Tests
 		
 		string GenerateCode (ITextTemplatingEngineHost host, string content, string name, string generatorNewline)
 		{
-			var pt = ParsedTemplate.FromText (content, host);
+			var pt = ParsedTemplate.FromTextInternal (content, host);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;

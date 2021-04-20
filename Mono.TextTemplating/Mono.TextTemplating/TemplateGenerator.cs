@@ -220,6 +220,12 @@ namespace Mono.TextTemplating
 			return err;
 		}
 
+		public ParsedTemplate ParseTemplate (string inputFile, string inputContent)
+		{
+			TemplateFile = inputFile;
+			return ParsedTemplate.FromTextInternal (inputContent, this);
+		}
+
 		public string PreprocessTemplate (
 			ParsedTemplate pt,
 			string inputFile,
