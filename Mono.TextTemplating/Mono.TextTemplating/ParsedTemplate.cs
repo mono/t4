@@ -64,19 +64,27 @@ namespace Mono.TextTemplating
 
 		public CompilerErrorCollection Errors { get; } = new CompilerErrorCollection ();
 
-		public static ParsedTemplate FromText (string content, ITextTemplatingEngineHost host)
+		// this is deprecated to prevent accidentally passing a host without the TemplateFile property set
+		[Obsolete("Use TemplateGenerator.ParseTemplate")]
+		public static ParsedTemplate FromText (string content, ITextTemplatingEngineHost host) => FromText (content, host);
+
+		internal static ParsedTemplate FromTextInternal (string content, ITextTemplatingEngineHost host)
 		{
-			var template = new ParsedTemplate (host.TemplateFile);
+			var filePath = host.TemplateFile;
+			var template = new ParsedTemplate (filePath);
 			try {
-				template.Parse (host, new Tokeniser (host.TemplateFile, content));
+				template.Parse (host, new HashSet<string> (StringComparer.OrdinalIgnoreCase), new Tokeniser (filePath, content), true);
 			} catch (ParserException ex) {
 				template.LogError (ex.Message, ex.Location);
 			}
 			return template;
 		}
 
+		// this is deprecated to prevent accidentally passing a host without the TemplateFile property set
+		[Obsolete("Use TemplateGenerator.ParseTemplate")]
 		public void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser) => Parse (host, new HashSet<string>(StringComparer.OrdinalIgnoreCase), tokeniser, true);
 
+		[Obsolete]
 		public void ParseWithoutIncludes (Tokeniser tokeniser) => Parse (null, null, tokeniser, false);
 
 		void Parse (ITextTemplatingEngineHost host, HashSet<string> includedFiles, Tokeniser tokeniser, bool parseIncludes) => Parse (host, includedFiles, tokeniser, parseIncludes, false);
@@ -189,7 +197,7 @@ namespace Mono.TextTemplating
 				}
 				Parse (host, includedFiles, new Tokeniser (resolvedName, content), true, true);
 			} else {
-				LogError ("Could not resolve include file '" + fileName + "'.", includeDirective.StartLocation);
+				LogError ($"Could not resolve include file '{fileName}'.", includeDirective.StartLocation);
 			}
 		}
 		
