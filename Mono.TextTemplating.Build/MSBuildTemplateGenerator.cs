@@ -17,42 +17,6 @@ namespace Mono.TextTemplating.Build
 
 		protected override ITextTemplatingSession CreateSession () => new MSBuildTemplateSession (this);
 
-		public string PreprocessTemplate (
-			ParsedTemplate pt,
-			string inputFile,
-			string inputContent,
-			string className,
-			out string[] references,
-			TemplateSettings settings = null)
-		{
-			TemplateFile = inputFile;
-			string classNamespace = null;
-			int s = className.LastIndexOf ('.');
-			if (s > 0) {
-				classNamespace = className.Substring (0, s);
-				className = className.Substring (s + 1);
-			}
-
-			return Engine.PreprocessTemplate (pt, inputContent, this, className, classNamespace, out string language, out references, settings);
-		}
-
-		public string ProcessTemplate (
-			ParsedTemplate pt,
-			string inputFile,
-			string inputContent,
-			ref string outputFile,
-			out string[] references,
-			TemplateSettings settings = null)
-		{
-			TemplateFile = inputFile;
-			OutputFile = outputFile;
-			using (var compiled = Engine.CompileTemplate (pt, inputContent, this, out references, settings)) {
-				var result = compiled?.Process ();
-				outputFile = OutputFile;
-				return result;
-			}
-		}
-
 		protected override bool LoadIncludeText (string requestFileName, out string content, out string location)
 		{
 			bool result = base.LoadIncludeText (requestFileName, out content, out location);
@@ -62,12 +26,22 @@ namespace Mono.TextTemplating.Build
 			return result;
 		}
 
+		protected override string ResolveAssemblyReference (string assemblyReference)
+		{
+			var resolved = base.ResolveAssemblyReference (assemblyReference);
+			CapturedReferences.Add (resolved);
+			return resolved;
+		}
+
 		public List<string> IncludedFiles { get; } = new List<string> ();
+
+		public List<string> CapturedReferences { get; } = new List<string> ();
 
 		public void Reset ()
 		{
 			ClearSession ();
 			IncludedFiles.Clear ();
+			CapturedReferences.Clear ();
 			Errors.Clear ();
 		}
 	}

@@ -49,7 +49,8 @@ namespace Mono.TextTemplating.Build
 							return;
 						}
 
-						var outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile, out var references, settings);
+						string outputContent;
+						(outputFile, outputContent) = generator.ProcessTemplateAsync (pt, inputFile, inputContent, outputFile, settings).Result;
 
 						if (generator.Errors.HasErrors) {
 							return;
@@ -57,7 +58,7 @@ namespace Mono.TextTemplating.Build
 
 						transform.OutputFile = outputFile;
 						transform.Dependencies = new List<string> (generator.IncludedFiles);
-						transform.References = new List<string> (references);
+						transform.Dependencies.AddRange (generator.CapturedReferences);
 
 						WriteOutput (generator, outputFile, outputContent, settings.Encoding);
 					}
@@ -90,8 +91,9 @@ namespace Mono.TextTemplating.Build
 						//FIXME: escaping
 						//FIXME: namespace name based on relative path and link metadata
 						string preprocessClassName = Path.GetFileNameWithoutExtension (inputFile);
+						settings.Name = preprocessClassName;
 
-						var outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, preprocessClassName, out var references, settings);
+						var outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out _, out var references);
 
 						if (generator.Errors.HasErrors) {
 							return;
