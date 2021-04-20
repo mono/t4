@@ -124,7 +124,7 @@ namespace Mono.TextTemplating
 			}
 			
 			if (preprocess == null) {
-				generator.ProcessTemplate (inputFile, outputFile);
+				generator.ProcessTemplateAsync (inputFile, outputFile).Wait ();
 				if (generator.Errors.HasErrors) {
 					Console.WriteLine ("Processing '{0}' failed.", inputFile);
 				}
