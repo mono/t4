@@ -134,10 +134,10 @@ var s = ""baz \\#>"";
 		{
 			string tf = "test.input";
 
-			var pt = new ParsedTemplate ("test.input");
-			var tk = new Tokeniser (tf, ParseSample1.NormalizeNewlines ());
-			var host = new DummyHost ();
-			pt.Parse (host, tk);
+			var pt = ParsedTemplate.FromTextInternal (
+				ParseSample1.NormalizeNewlines (),
+				new DummyHost { TemplateFile = tf }
+			);
 
 			Assert.Empty (pt.Errors);
 			var content = new List<TemplateSegment> (pt.Content);
@@ -206,18 +206,13 @@ Five
 		[Fact]
 		public void IncludeOnceTest ()
 		{
-			string tf = "test.tt";
-
-			var pt = new ParsedTemplate ("test.tt");
-			var tk = new Tokeniser (tf, IncludeSample.NormalizeNewlines ());
-
 			var host = new DummyHost ();
 			host.Locations.Add (FooIncludeName, FooIncludeName);
 			host.Contents.Add (FooIncludeName, FooInclude.NormalizeNewlines ());
 			host.Locations.Add (BarIncludeName, BarIncludeName);
 			host.Contents.Add (BarIncludeName, BarInclude.NormalizeNewlines ());
 
-			pt.Parse (host, tk);
+			var pt = ParsedTemplate.FromTextInternal (IncludeSample.NormalizeNewlines (), host);
 
 			Assert.Empty (pt.Errors);
 			var content = new List<TemplateSegment> (pt.Content);

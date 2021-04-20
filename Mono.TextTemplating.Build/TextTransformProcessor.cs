@@ -169,7 +169,7 @@ namespace Mono.TextTemplating.Build
 				return null;
 			}
 
-			return ParsedTemplate.FromText (inputContent, generator);
+			return generator.ParseTemplate (filename, inputContent);
 		}
 
 		static void WriteOutput (MSBuildTemplateGenerator generator, string outputFile, string outputContent, Encoding encoding)

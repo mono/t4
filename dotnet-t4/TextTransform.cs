@@ -194,7 +194,7 @@ namespace Mono.TextTemplating
 				return 1;
 			}
 
-			var pt = ParsedTemplate.FromText (inputContent, generator);
+			var pt = generator.ParseTemplate(inputFile, inputContent);
 
 			TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
 			if (debug) {

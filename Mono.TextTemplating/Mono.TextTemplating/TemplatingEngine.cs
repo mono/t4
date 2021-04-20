@@ -104,7 +104,7 @@ namespace Mono.TextTemplating
 			language = null;
 			references = null;
 
-			var pt = ParsedTemplate.FromText (content, host);
+			var pt = ParsedTemplate.FromTextInternal (content, host);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
@@ -193,7 +193,7 @@ namespace Mono.TextTemplating
 			if (host == null)
 				throw new ArgumentNullException (nameof (host));
 
-			var pt = ParsedTemplate.FromText (content, host);
+			var pt = ParsedTemplate.FromTextInternal (content, host);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
