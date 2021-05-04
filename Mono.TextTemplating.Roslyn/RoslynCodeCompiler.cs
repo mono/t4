@@ -83,7 +83,6 @@ namespace Mono.TextTemplating
 
 			EmitOptions emitOptions = args?.EmitOptions ?? new EmitOptions();
 			if (arguments.Debug) {
-				var embeddedTexts = syntaxTrees.Select (st => EmbeddedText.FromSource (st.FilePath, st.GetText ())).ToList ();
 				emitOptions = emitOptions.WithDebugInformationFormat (DebugInformationFormat.Embedded);
 			}
 
