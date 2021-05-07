@@ -1,14 +1,14 @@
 using System;
 using System.IO;
 using System.Reflection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Mono.TextTemplating.Roslyn.Tests
 {
-	[TestClass]
+	[TestFixture]
 	public class TemplateGeneratorTests
 	{
-		[TestMethod]
+		[Test]
 		public void TestProcessTemplate()
 		{
 			const string inputFile = "Template.tt";
