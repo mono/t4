@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dotnet-t4-project-tool", "d
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.TextTemplating.Roslyn", "Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj", "{8DB780A9-27C1-44B4-860F-50C4419FD349}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.TextTemplating.Roslyn.Tests", "Mono.TextTemplating.Roslyn.Tests\Mono.TextTemplating.Roslyn.Tests.csproj", "{558FF507-1575-4D17-BF32-CE3A0818E3B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,10 @@ Global
 		{8DB780A9-27C1-44B4-860F-50C4419FD349}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8DB780A9-27C1-44B4-860F-50C4419FD349}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8DB780A9-27C1-44B4-860F-50C4419FD349}.Release|Any CPU.Build.0 = Release|Any CPU
+		{558FF507-1575-4D17-BF32-CE3A0818E3B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{558FF507-1575-4D17-BF32-CE3A0818E3B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{558FF507-1575-4D17-BF32-CE3A0818E3B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{558FF507-1575-4D17-BF32-CE3A0818E3B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
