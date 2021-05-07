@@ -66,8 +66,9 @@ namespace Mono.TextTemplating
 			var syntaxTrees = new List<SyntaxTree> ();
 			foreach (var sourceFile in arguments.SourceFiles) {
 				using var stream = File.OpenRead (sourceFile);
-				var sourceText = SourceText.From (stream, Encoding.UTF8);
-				syntaxTrees.Add (CSharpSyntaxTree.ParseText (sourceText, parseOptions, cancellationToken: token));
+				var sourceText = SourceText.From (stream, Encoding.UTF8, canBeEmbedded: true);
+				SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText (sourceText, parseOptions, cancellationToken: token, path: sourceFile);
+				syntaxTrees.Add (syntaxTree);
 			}
 
 			var compilationOptions = (args?.CompilationOptions ?? new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
