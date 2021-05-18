@@ -53,7 +53,7 @@ namespace Mono.TextTemplating.Tests
 		{
 			content = null;
 			return Locations.TryGetValue (requestFileName, out location)
-				&& Contents.TryGetValue (requestFileName, out content);
+				&& Contents.TryGetValue (location, out content);
 		}
 		
 		public virtual void LogErrors (CompilerErrorCollection errors)
