@@ -4,12 +4,22 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Authors>mhutch</Authors>
     <PackageTags>T4, templating</PackageTags>
-    <RepositoryUrl>https://github.com/mono/t4</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
     <PackageOutputPath>$(MSBuildThisFileDirectory)packages\$(Configuration)</PackageOutputPath>
     <LangVersion>9.0</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.3.37" PrivateAssets="all" />
+  </ItemGroup>
+  <!-- reproducible build -->
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
   </ItemGroup>
 </Project>
