@@ -20,8 +20,6 @@ This package can be installed as a dotnet global or local tool.
     <ToolCommandName>t4</ToolCommandName>
     <RootNamespace>Mono.TextTemplating</RootNamespace>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>

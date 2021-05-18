@@ -17,8 +17,6 @@ This package can be installed into a project using `DotNetCliToolReference`.
     </Description>
     <RootNamespace>Mono.TextTemplating</RootNamespace>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
