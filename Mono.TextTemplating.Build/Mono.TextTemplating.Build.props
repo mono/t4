@@ -3,7 +3,7 @@
     <TransformOnBuild Condition="'$(TransformOnBuild)'==''">false</TransformOnBuild>
     <TransformOutOfDateOnly Condition="'$(TransformOutOfDateOnly)'==''">true</TransformOutOfDateOnly>
   </PropertyGroup>
-  
+
   <ItemDefinitionGroup>
     <!-- hide T4 key/value pairs from the solution tree -->
     <T4ParameterValues>
@@ -17,7 +17,7 @@
       <Generator>MSBuild:TransformAll</Generator>
     </T4Preprocess>
   </ItemDefinitionGroup>
-  
+
   <!-- make these items show up as a build action in VS -->
   <ItemGroup>
     <AvailableItemName Include="T4Transform" />

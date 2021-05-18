@@ -54,7 +54,7 @@ namespace Mono.TextTemplating.Build
 				TransformTemplates = previousBuildState?.TransformTemplates;
 				staleOrNewTransforms = null;
 			} else {
-				if (regenTransform || TransformTemplates == null) {
+				if (regenTransform || TransformTemplates == null || previousBuildState.TransformTemplates == null) {
 					staleOrNewTransforms = TransformTemplates;
 				} else {
 					staleOrNewTransforms = new List<TransformTemplate> ();

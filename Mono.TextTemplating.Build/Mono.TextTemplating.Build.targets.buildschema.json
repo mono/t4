@@ -91,7 +91,7 @@
       "default": "true"
     },
     "TransformFile": {
-      "description": "The T4 tiles to transform when running the Transform target",
+      "description": "The T4 files to transform when running the Transform target",
       "kind": "file-list"
     },
     "BeforeTransform": {
