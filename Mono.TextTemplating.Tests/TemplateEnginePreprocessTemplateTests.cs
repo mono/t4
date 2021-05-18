@@ -101,11 +101,16 @@ namespace Mono.TextTemplating.Tests
 		DummyHost CreateDummyHostForControlBlockAfterIncludedTemplateWithClassFeatureBlockTest()
 		{
 			DummyHost host = new DummyHost ();
-			
-			string includeTemplateFileName = @"d:\test\IncludedFile.tt";
-			host.Locations.Add (includeTemplateFileName, includeTemplateFileName);
-			host.Contents.Add (includeTemplateFileName, IncludedTemplate_ControlBlockAfterIncludedTemplate.NormalizeNewlines ());
-			
+
+			string includeTemplateRequestedFileName = @"Some\Requested\Path\IncludedFile.tt";
+			if (System.IO.Path.DirectorySeparatorChar == '/') {
+				includeTemplateRequestedFileName = includeTemplateRequestedFileName.Replace('\\', '/');
+			}
+
+			string includeTemplateResolvedFileName = @"Some\Resolved\Path\IncludedFile.tt";
+			host.Locations.Add (includeTemplateRequestedFileName, includeTemplateResolvedFileName);
+			host.Contents.Add (includeTemplateResolvedFileName, IncludedTemplate_ControlBlockAfterIncludedTemplate.NormalizeNewlines ());
+
 			return host;
 		}
 		
@@ -122,7 +127,7 @@ Text Block 1
     this.TemplateMethod();
 #>
 Text Block 2
-<#@ include file=""d:\test\IncludedFile.tt"" #>
+<#@ include file=""Some\Requested\Path\IncludedFile.tt"" #>
 Text Block 3
 <#
     this.IncludedMethod();
@@ -353,7 +358,7 @@ namespace Templating {
         #line hidden
         
         
-        #line 7 ""d:\test\IncludedFile.tt""
+        #line 7 ""Some\Resolved\Path\IncludedFile.tt""
         
     void IncludedMethod()
     {
@@ -362,14 +367,14 @@ namespace Templating {
         #line hidden
         
         
-        #line 11 ""d:\test\IncludedFile.tt""
+        #line 11 ""Some\Resolved\Path\IncludedFile.tt""
         this.Write(""Included Method Body Text Block\n"");
 
         #line default
         #line hidden
         
         
-        #line 12 ""d:\test\IncludedFile.tt""
+        #line 12 ""Some\Resolved\Path\IncludedFile.tt""
         
     }
 
@@ -405,25 +410,25 @@ namespace Templating {
             #line default
             #line hidden
             
-            #line 1 ""d:\test\IncludedFile.tt""
+            #line 1 ""Some\Resolved\Path\IncludedFile.tt""
             this.Write(""\n"");
             
             #line default
             #line hidden
             
-            #line 4 ""d:\test\IncludedFile.tt""
+            #line 4 ""Some\Resolved\Path\IncludedFile.tt""
             this.Write(""Included Text Block 1\n"");
             
             #line default
             #line hidden
             
-            #line 5 ""d:\test\IncludedFile.tt""
+            #line 5 ""Some\Resolved\Path\IncludedFile.tt""
  this.WriteLine(""Included statement block""); 
             
             #line default
             #line hidden
             
-            #line 6 ""d:\test\IncludedFile.tt""
+            #line 6 ""Some\Resolved\Path\IncludedFile.tt""
             this.Write(""Included Text Block 2\n"");
             
             #line default

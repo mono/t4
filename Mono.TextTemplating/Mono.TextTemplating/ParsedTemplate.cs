@@ -164,15 +164,17 @@ namespace Mono.TextTemplating
 				AppendAnyImportedHelperSegments ();
 			}
 		}
-		
+
+		static string FixWindowsPath (string path) => Path.DirectorySeparatorChar == '/'? path.Replace('\\', '/') : path;
+
 		void Import (ITextTemplatingEngineHost host, HashSet<string> includedFiles, Directive includeDirective, string relativeToDirectory)
 		{
-			string fileName;
-
-			if (!includeDirective.Attributes.TryGetValue ("file", out fileName)) {
+			if (!includeDirective.Attributes.TryGetValue ("file", out string rawFilename)) {
 				LogError ("Include directive has no file attribute", includeDirective.StartLocation);
 				return;
 			}
+
+			string fileName = FixWindowsPath (rawFilename);
 
 			bool once = false;
 			if (includeDirective.Attributes.TryGetValue ("once", out var onceStr)) {
@@ -197,16 +199,16 @@ namespace Mono.TextTemplating
 				}
 				Parse (host, includedFiles, new Tokeniser (resolvedName, content), true, true);
 			} else {
-				LogError ($"Could not resolve include file '{fileName}'.", includeDirective.StartLocation);
+				LogError ($"Could not resolve include file '{rawFilename}'.", includeDirective.StartLocation);
 			}
 		}
-		
+
 		void AppendAnyImportedHelperSegments ()
 		{
 			RawSegments.AddRange (importedHelperSegments);
 			importedHelperSegments.Clear ();
 		}
-		
+
 		void LogError (string message, Location location, bool isWarning)
 		{
 			var err = new CompilerError ();
