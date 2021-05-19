@@ -25,11 +25,14 @@
 // THE SOFTWARE.
 
 using System;
-using System.Reflection;
-using Microsoft.VisualStudio.TextTemplating;
 using System.CodeDom.Compiler;
-using System.Globalization;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Reflection;
+using System.IO;
+
+using Microsoft.VisualStudio.TextTemplating;
+using Mono.TextTemplating.CodeCompilation;
 
 namespace Mono.TextTemplating
 {
@@ -43,22 +46,67 @@ namespace Mono.TextTemplating
 		object textTransformation;
 		readonly CultureInfo culture;
 		readonly string [] assemblyFiles;
+		CompiledAssembly compiledAssembly;
 
-		public CompiledTemplate (ITextTemplatingEngineHost host, CompilerResults results, string fullName, CultureInfo culture,
-			string [] assemblyFiles)
+		public CompiledTemplate (ITextTemplatingEngineHost host, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
+			: this (host, null, templateAssemblyFile, fullName, culture, referenceAssemblyFiles)
 		{
-			AppDomain.CurrentDomain.AssemblyResolve += ResolveReferencedAssemblies;
-			this.host = host;
-			this.culture = culture;
-			this.assemblyFiles = assemblyFiles;
-			Load (results, fullName);
 		}
 
-		void Load (CompilerResults results, string fullName)
+		internal CompiledTemplate (ITextTemplatingEngineHost host, CompiledAssembly compiledAssembly, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
+			: this (host, compiledAssembly, null, fullName, culture, referenceAssemblyFiles)
 		{
-			Type transformType = results.CompiledAssembly.GetType (fullName);
-			//MS Templating Engine does not look on the type itself, 
-			//it checks only that required methods are exists in the compiled type 
+		}
+
+		CompiledTemplate (ITextTemplatingEngineHost host, CompiledAssembly compiledAssembly, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
+		{
+#if NETFRAMEWORK
+			AppDomain.CurrentDomain.AssemblyResolve += ResolveReferencedAssemblies;
+#endif
+
+			this.host = host;
+			this.compiledAssembly = compiledAssembly;
+			this.culture = culture;
+
+			if (compiledAssembly == null) {
+				assemblyFiles = new string[referenceAssemblyFiles.Length + 1];
+				assemblyFiles[0] = templateAssemblyFile;
+				Array.Copy (referenceAssemblyFiles, 0, assemblyFiles, 1, referenceAssemblyFiles.Length);
+			} else {
+				assemblyFiles = referenceAssemblyFiles;
+			}
+
+			Load (fullName);
+		}
+
+		void Load (string fullName)
+		{
+			Assembly assembly;
+#if NETFRAMEWORK
+			if (compiledAssembly != null) {
+				if (compiledAssembly.DebugSymbols != null) {
+					assembly = Assembly.Load(compiledAssembly.Assembly, compiledAssembly.DebugSymbols);
+				} else {
+					assembly = Assembly.Load(compiledAssembly.Assembly);
+				}
+			} else {
+				assembly = Assembly.LoadFile(assemblyFiles[0]);
+			}
+#else
+			var templateContext = new TemplateAssemblyLoadContext (assemblyFiles, host);
+			if (compiledAssembly != null) {
+				if (compiledAssembly.DebugSymbols != null) {
+					assembly = templateContext.LoadFromStream (new MemoryStream(compiledAssembly.Assembly), new MemoryStream(compiledAssembly.DebugSymbols));
+				} else {
+					assembly = templateContext.LoadFromStream (new MemoryStream (compiledAssembly.Assembly));
+				}
+			} else {
+				assembly = templateContext.LoadFromAssemblyPath (assemblyFiles[0]);
+			}
+#endif
+			//MS Templating Engine does not care about the type itself
+			//it only requires the expected members to be on the compiled type 
+			Type transformType = assembly.GetType (fullName);
 			textTransformation = Activator.CreateInstance (transformType);
 
 			//set the host property if it exists
@@ -123,6 +171,7 @@ namespace Mono.TextTemplating
 		}
 
 
+#if NETFRAMEWORK
 		Assembly ResolveReferencedAssemblies (object sender, ResolveEventArgs args)
 		{
 			AssemblyName asmName = new AssemblyName (args.Name);
@@ -137,12 +186,15 @@ namespace Mono.TextTemplating
 
 			return null;
 		}
+#endif
 
 		public void Dispose ()
 		{
 			if (host != null) {
 				host = null;
+#if NETFRAMEWORK
 				AppDomain.CurrentDomain.AssemblyResolve -= ResolveReferencedAssemblies;
+#endif
 			}
 		}
 	}

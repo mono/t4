@@ -33,6 +33,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.CSharp;
 using Microsoft.VisualStudio.TextTemplating;
@@ -70,10 +71,24 @@ namespace Mono.TextTemplating
 			return cachedCompiler;
 		}
 
+		[Obsolete("Use ProcessTemplateAsync")]
 		public string ProcessTemplate (string content, ITextTemplatingEngineHost host)
 		{
-			using (var tpl = CompileTemplate (content, host)) {
+			return ProcessTemplateAsync (content, host).Result;
+		}
+
+		public async Task<string> ProcessTemplateAsync (string content, ITextTemplatingEngineHost host, CancellationToken token = default)
+		{
+			using (var tpl = await CompileTemplateAsync (content, host, token)) {
 				return tpl?.Process ();
+			}
+		}
+
+		public async Task<string> ProcessTemplateAsync (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, CancellationToken token = default)
+		{
+			var tpl = await CompileTemplateAsync (pt, content, host, settings, token);
+			using (tpl?.template) {
+				return tpl?.template.Process ();
 			}
 		}
 
@@ -89,7 +104,7 @@ namespace Mono.TextTemplating
 			language = null;
 			references = null;
 
-			var pt = ParsedTemplate.FromText (content, host);
+			var pt = ParsedTemplate.FromTextInternal (content, host);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
@@ -97,6 +112,17 @@ namespace Mono.TextTemplating
 			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references);
 		}
 
+		public string PreprocessTemplate (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string language, out string[] references)
+		{
+			if (pt is null) throw new ArgumentNullException (nameof (pt));
+			if (string.IsNullOrEmpty (content)) throw new ArgumentException ($"'{nameof (content)}' cannot be null or empty.", nameof (content));
+			if (settings is null) throw new ArgumentNullException (nameof (settings));
+			if (host is null) throw new ArgumentNullException (nameof (host));
+
+			return PreprocessTemplateInternal (pt, content, settings, host, out language, out references);
+		}
+
+		[Obsolete("Use TemplateGenerator")]
 		public string PreprocessTemplate (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
 			string classNamespace, out string language, out string [] references, TemplateSettings settings = null)
 		{
@@ -113,18 +139,30 @@ namespace Mono.TextTemplating
 		}
 
 		string PreprocessTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
-			string classNamespace, out string language, out string [] references, TemplateSettings settings = null)
+			string classNamespace, out string language, out string[] references, TemplateSettings settings = null)
 		{
-			language = null;
-			references = null;
 
 			settings = settings ?? GetSettings (host, pt);
+
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
+				language = null;
+				references = null;
 				return null;
 			}
-			settings.Name = className;
-			settings.Namespace = classNamespace;
+
+			if (className != null) {
+				settings.Name = className;
+			}
+			if (classNamespace != null) {
+				settings.Namespace = classNamespace;
+			}
+
+			return PreprocessTemplateInternal (pt, content, settings, host, out language, out references);
+		}
+
+		internal string PreprocessTemplateInternal (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string language, out string[] references)
+		{
 			settings.IncludePreprocessingHelpers = string.IsNullOrEmpty (settings.Inherits);
 			settings.IsPreprocessed = true;
 			language = settings.Language;
@@ -144,43 +182,72 @@ namespace Mono.TextTemplating
 			}
 		}
 
+		[Obsolete("Use CompileTemplateAsync")]
 		public CompiledTemplate CompileTemplate (string content, ITextTemplatingEngineHost host)
+			=> CompileTemplateAsync (content, host, CancellationToken.None).Result;
+
+		public async Task<CompiledTemplate> CompileTemplateAsync (string content, ITextTemplatingEngineHost host, CancellationToken token)
 		{
 			if (content == null)
 				throw new ArgumentNullException (nameof (content));
 			if (host == null)
 				throw new ArgumentNullException (nameof (host));
 
-			var pt = ParsedTemplate.FromText (content, host);
+			var pt = ParsedTemplate.FromTextInternal (content, host);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
 			}
 
-			return CompileTemplateInternal (pt, content, host);
+			return (await CompileTemplateInternal (pt, content, host, null, token))?.template;
 		}
 
+		[Obsolete("Use CompileTemplateAsync")]
 		public CompiledTemplate CompileTemplate (
 			ParsedTemplate pt,
 			string content,
 			ITextTemplatingEngineHost host,
 			TemplateSettings settings = null)
+			=> CompileTemplate (pt, content, host, out var _, settings);
+
+		[Obsolete("Use CompileTemplateAsync")]
+		public CompiledTemplate CompileTemplate (
+			ParsedTemplate pt,
+			string content,
+			ITextTemplatingEngineHost host,
+			out string[] references,
+			TemplateSettings settings = null)
+		{
+			var result = CompileTemplateAsync (pt, content, host, settings, CancellationToken.None).Result;
+			references = result?.references;
+			return result?.template;
+		}
+
+		public Task<(CompiledTemplate template, string[] references)?> CompileTemplateAsync (
+			ParsedTemplate pt,
+			string content,
+			ITextTemplatingEngineHost host,
+			TemplateSettings settings = null,
+			CancellationToken token = default)
 		{
 			if (pt == null)
 				throw new ArgumentNullException (nameof (pt));
 			if (host == null)
 				throw new ArgumentNullException (nameof (host));
 
-			return CompileTemplateInternal (pt, content, host, settings);
+			return CompileTemplateInternal (pt, content, host, settings, token);
 		}
 
-		CompiledTemplate CompileTemplateInternal (
+		async Task<(CompiledTemplate template, string[] references)?> CompileTemplateInternal (
 			ParsedTemplate pt,
 			string content,
 			ITextTemplatingEngineHost host,
-			TemplateSettings settings = null)
+			TemplateSettings settings,
+			CancellationToken token
+			)
 		{
-			settings = settings ?? GetSettings (host, pt);
+
+			settings ??= GetSettings (host, pt);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
@@ -201,7 +268,7 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			var results = CompileCode (references, settings, ccu);
+			(var results, var assembly) = await CompileCode (references, settings, ccu, token);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
@@ -217,14 +284,14 @@ namespace Mono.TextTemplating
 					type.FullName,
 					new object[] { host, results, templateClassFullName, settings.Culture, references.ToArray () });
 				
-				return (CompiledTemplate)obj;
+				return ((CompiledTemplate)obj, references);
 			}
 #endif
 
-			return new CompiledTemplate (host, results, settings.GetFullName (), settings.Culture, references.ToArray ());
+			return (new CompiledTemplate (host, assembly, settings.GetFullName (), settings.Culture, references), references);
 		}
 
-		CompilerResults CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu)
+		async Task<(CompilerResults, CompiledAssembly)> CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu, CancellationToken token)
 		{
 			string sourceText;
 			var genOptions = new CodeGeneratorOptions ();
@@ -232,6 +299,8 @@ namespace Mono.TextTemplating
 				settings.Provider.GenerateCodeFromCompileUnit (ccu, sw, genOptions);
 				sourceText = sw.ToString ();
 			}
+
+			CompiledAssembly compiledAssembly = null;
 
 			// this may throw, so do it before writing source files
 			var compiler = GetOrCreateCompiler ();
@@ -264,7 +333,7 @@ namespace Mono.TextTemplating
 			args.TempDirectory = tempFolder;
 			args.LangVersion = settings.LangVersion;
 
-			var result = compiler.CompileFile (args, settings.Log, CancellationToken.None).Result;
+			var result = await compiler.CompileFile (args, settings.Log, token);
 
 			var r = new CompilerResults (new TempFileCollection ());
 			r.TempFiles.AddFile (sourceFilename, false);
@@ -279,11 +348,23 @@ namespace Mono.TextTemplating
 
 			if (result.Success) {
 				r.TempFiles.AddFile (args.OutputPath, args.Debug);
-				if (args.Debug) {
-					r.TempFiles.AddFile (Path.ChangeExtension (args.OutputPath, ".pdb"), true);
-				}
+
 				// load the assembly in memory so we can fully clean our temporary folder
-				r.CompiledAssembly = Assembly.Load (File.ReadAllBytes (args.OutputPath));
+				// NOTE: we do NOT assembly.load it here, as it will likely need to be loaded
+				// into a different AssemblyLoadContext or AppDomain
+				byte[] assembly = File.ReadAllBytes (args.OutputPath);
+				byte[] debugSymbols = null;
+
+				if (args.Debug) {
+					var symbolsPath = Path.ChangeExtension (args.OutputPath, ".pdb");
+					// if the symbols are embedded the symbols file doesn't exist
+					if (File.Exists(symbolsPath)) {
+						r.TempFiles.AddFile (symbolsPath, true);
+						debugSymbols = File.ReadAllBytes (symbolsPath);
+					}
+				}
+
+				compiledAssembly = new CompiledAssembly (assembly, debugSymbols);
 			} else if (!r.Errors.HasErrors) {
 				r.Errors.Add (new CompilerError (null, 0, 0, null, $"The compiler exited with code {result.ExitCode}"));
 			}
@@ -295,7 +376,7 @@ namespace Mono.TextTemplating
 				File.Delete (tempFile);
 			}
 
-			return r;
+			return (r, compiledAssembly);
 		}
 
 		static string [] ProcessReferences (ITextTemplatingEngineHost host, ParsedTemplate pt, TemplateSettings settings)
@@ -641,8 +722,14 @@ namespace Mono.TextTemplating
 				CodeLinePragma location = null;
 				if (!settings.NoLinePragmas) {
 					var f = seg.StartLocation.FileName ?? host.TemplateFile;
-					if (settings.RelativeLinePragmas)
-						f = FileUtil.AbsoluteToRelativePath (baseDirectory, f).Replace ('\\', '/');
+					if (!string.IsNullOrEmpty (f)) {
+						// FIXME: we need to know where the output file will be to make this work properly
+						if (settings.RelativeLinePragmas) {
+							f = FileUtil.AbsoluteToRelativePath (baseDirectory, f);
+						} else {
+							f = Path.GetFullPath (f);
+						}
+					}
 					location = new CodeLinePragma (f, seg.StartLocation.Line);
 				}
 				switch (seg.Type) {

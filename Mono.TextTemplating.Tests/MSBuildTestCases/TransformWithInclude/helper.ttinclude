@@ -1,0 +1,8 @@
+<#+
+void Greet(string greeting, int year)
+{
+#>
+Helper says <#=greeting#> <#=year#>!
+<#+
+}
+#>

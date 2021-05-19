@@ -1,4 +1,4 @@
-﻿// 
+// 
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
 // Copyright (c) Microsoft Corp. (https://www.microsoft.com)
 // 
@@ -194,7 +194,7 @@ namespace Mono.TextTemplating
 				return 1;
 			}
 
-			var pt = ParsedTemplate.FromText (inputContent, generator);
+			var pt = generator.ParseTemplate(inputFile, inputContent);
 
 			TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
 			if (debug) {
@@ -215,9 +215,10 @@ namespace Mono.TextTemplating
 
 			if (!generator.Errors.HasErrors) {
 				if (preprocessClassName == null) {
-					outputContent = generator.ProcessTemplate (pt, inputFile, inputContent, ref outputFile, settings);
+					(outputFile, outputContent) = generator.ProcessTemplateAsync (pt, inputFile, inputContent, outputFile, settings).Result;
 				} else {
-					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, preprocessClassName, settings);
+					SplitClassName (preprocessClassName, settings);
+					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out _, out _);
 				}
 			}
 
@@ -242,6 +243,15 @@ namespace Mono.TextTemplating
 			LogErrors (generator);
 
 			return generator.Errors.HasErrors ? 1 : 0;
+		}
+
+		static void SplitClassName (string className, TemplateSettings settings)
+		{
+			int s = className.LastIndexOf ('.');
+			if (s > 0) {
+				settings.Namespace = className.Substring (0, s);
+				settings.Name = className.Substring (s + 1);
+			}
 		}
 
 		static void AddCoercedSessionParameters (ToolTemplateGenerator generator, ParsedTemplate pt, Dictionary<string, string> properties)

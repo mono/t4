@@ -33,39 +33,5 @@ namespace Mono.TextTemplating
 		}
 
 		protected override ITextTemplatingSession CreateSession () => new ToolTemplateSession (this);
-
-		public string PreprocessTemplate (
-			ParsedTemplate pt,
-			string inputFile,
-			string inputContent,
-			string className,
-			TemplateSettings settings = null)
-		{
-			TemplateFile = inputFile;
-			string classNamespace = null;
-			int s = className.LastIndexOf ('.');
-			if (s > 0) {
-				classNamespace = className.Substring (0, s);
-				className = className.Substring (s + 1);
-			}
-
-			return Engine.PreprocessTemplate (pt, inputContent, this, className, classNamespace, out string language, out string [] references, settings);
-		}
-
-		public string ProcessTemplate (
-			ParsedTemplate pt,
-			string inputFile,
-			string inputContent,
-			ref string outputFile,
-			TemplateSettings settings = null)
-		{
-			TemplateFile = inputFile;
-			OutputFile = outputFile;
-			using (var compiled = Engine.CompileTemplate (pt, inputContent, this, settings)) {
-				var result = compiled?.Process ();
-				outputFile = OutputFile;
-				return result;
-			}
-		}
 	}
 }

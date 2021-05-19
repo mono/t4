@@ -1,4 +1,4 @@
-﻿//
+//
 // EngineTests.cs
 //
 // Author:
@@ -24,16 +24,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
 	public class EngineTests
 	{
 		#pragma warning disable 414
-		static object [] ParameterParsingCases = {
+		public static object [][] ParameterParsingCases = {
 			new object [] { "foo=bar",             true,  "",     "",    "foo", "bar"     },
 			new object [] { "a=b",                 true,  "",     "",    "a",   "b"       },
 			new object [] { "a=b=c",               true,  "",     "",    "a",   "b=c"     },
@@ -52,8 +50,8 @@ namespace Mono.TextTemplating.Tests
 		};
 		#pragma warning restore 414
 
-		[Test]
-		[TestCaseSource(nameof (ParameterParsingCases))]
+		[Theory]
+		[MemberData (nameof (ParameterParsingCases))]
 		public void ParameterParsing (
 			string parameter, bool valid,
 			string expectedProcessor, string expectedDirective,
@@ -62,11 +60,11 @@ namespace Mono.TextTemplating.Tests
 			string processor, directive, name, value;
 			var success = TemplateGenerator.TryParseParameter (parameter, out processor, out directive, out name, out value);
 
-			Assert.AreEqual (valid, success);
-			Assert.AreEqual (expectedProcessor, processor);
-			Assert.AreEqual (expectedDirective, directive);
-			Assert.AreEqual (expectedName, name);
-			Assert.AreEqual (expectedValue, value);
+			Assert.Equal (valid, success);
+			Assert.Equal (expectedProcessor, processor);
+			Assert.Equal (expectedDirective, directive);
+			Assert.Equal (expectedName, name);
+			Assert.Equal (expectedValue, value);
 		}
 	}
 }

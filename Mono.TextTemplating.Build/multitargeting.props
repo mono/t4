@@ -1,0 +1,3 @@
+<Project>
+  <Import Project="..\build\Mono.TextTemplating.Build.props" />
+<Project>

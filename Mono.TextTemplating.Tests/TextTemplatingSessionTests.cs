@@ -26,16 +26,18 @@
 
 using System;
 using System.Reflection;
+using System.Threading.Tasks;
+
 using Microsoft.VisualStudio.TextTemplating;
-using NUnit.Framework;
+
+using Xunit;
 
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
 	public class TextTemplatingSessionTests
 	{
 		#if FEATURE_APPDOMAINS
-		[Test]
+		[Fact]
 		public void AppDomainSerializationTest ()
 		{
 			var guid = Guid.NewGuid ();
@@ -51,7 +53,7 @@ namespace Mono.TextTemplating.Tests
 				null,
 				null);
 
-			Assert.AreEqual (guid, session.Id);
+			Assert.Equal (guid, session.Id);
 		}
 		#endif
 
@@ -59,22 +61,21 @@ namespace Mono.TextTemplating.Tests
 			public int TestProperty {get; set; }
 		}
 
-		[Test]
-		public void TestCustomHost ()
+		[Fact]
+		public async Task TestCustomHost ()
 		{
 			var gen = new CustomHost { TestProperty = 3 };
 			gen.Refs.Add(typeof(CustomHost).Assembly.Location);
 			gen.Imports.Add("Mono.TextTemplating.Tests");
 
 			var outFilename = "test.txt";
-			var success = gen.ProcessTemplate (
+			var result = await gen.ProcessTemplateAsync (
 				"test.tt",
 				"<#@ template hostspecific=\"true\" #><#= ((TextTemplatingSessionTests.CustomHost)Host).TestProperty * 5 #>",
-				ref outFilename,
-				out var outContent
+				outFilename
 				);
-			Assert.True (success);
-			Assert.AreEqual ("15", outContent);
+			Assert.True (result.success);
+			Assert.Equal ("15", result.content);
 		}
 
 		public class CustomHostWithSpecificHostType : TemplateGenerator {
@@ -82,51 +83,49 @@ namespace Mono.TextTemplating.Tests
 			public override Type SpecificHostType => typeof(CustomHostWithSpecificHostType);
 		}
 
-		[Test]
-		public void TestCustomHostWithSpecificHostType ()
+		[Fact]
+		public async Task TestCustomHostWithSpecificHostType ()
 		{
 			var gen = new CustomHostWithSpecificHostType { TestProperty = 3 };
 			gen.Refs.Add(typeof(CustomHostWithSpecificHostType).Assembly.Location);
 			gen.Imports.Add("Mono.TextTemplating.Tests");
 
 			var outFilename = "test.txt";
-			var success = gen.ProcessTemplate (
+			var result = await gen.ProcessTemplateAsync (
 				"test.tt",
 				"<#@ template hostspecific=\"true\" #><#= Host.TestProperty * 5 #>",
-				ref outFilename,
-				out var outContent
+				outFilename
 				);
-			Assert.True (success);
-			Assert.AreEqual ("15", outContent);
+			Assert.True (result.success);
+			Assert.Equal ("15", result.content);
 		}
 
-		public abstract class TestBaseClassWithSpecificHostType : Microsoft.VisualStudio.TextTemplating.TextTransformation
+		public abstract class TestBaseClassWithSpecificHostType : TextTransformation
 		{
-			public TextTemplatingSessionTests.CustomHostWithSpecificHostType Host { get; set; }
+			public CustomHostWithSpecificHostType Host { get; set; }
 			public int TestProperty => Host.TestProperty;
 		}
 
-		[Test]
-		public void TestCustomBaseClassWithSpecificHostType ()
+		[Fact]
+		public async Task TestCustomBaseClassWithSpecificHostType ()
 		{
 			var gen = new CustomHostWithSpecificHostType { TestProperty = 17 };
 			gen.Refs.Add(typeof(CustomHostWithSpecificHostType).Assembly.Location);
 			gen.Imports.Add("Mono.TextTemplating.Tests");
 
 			var outFilename = "test.txt";
-			var success = gen.ProcessTemplate (
+			var result = await gen.ProcessTemplateAsync (
 				"test.tt",
 				"<#@ template hostspecific=\"trueFromBase\" inherits=\"TextTemplatingSessionTests.TestBaseClassWithSpecificHostType\" #><#= TestProperty * 2 #>",
-				ref outFilename,
-				out var outContent
+				outFilename
 				);
-			Assert.True (success);
-			Assert.AreEqual ("34", outContent);
+			Assert.True (result.success);
+			Assert.Equal ("34", result.content);
 		}
 
 
-		[Test]
-		public void HostSpecificNonStringParameter ()
+		[Fact]
+		public async Task HostSpecificNonStringParameter ()
 		{
 			string template =
 @"<#@ template language=""C#"" hostspecific=""true"" #>
@@ -136,13 +135,13 @@ namespace Mono.TextTemplating.Tests
 			var gen = new TemplateGenerator ();
 			gen.AddParameter (null, null, "TestParam", "5");
 			var outFilename = "test.txt";
-			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
-			Assert.True (success);
-			Assert.AreEqual ("8", outContent);
+			var result = await gen.ProcessTemplateAsync ("test.tt", template, outFilename);
+			Assert.True (result.success);
+			Assert.Equal ("8", result.content);
 		}
 
-		[Test]
-		public void HostSpecificStringParameter ()
+		[Fact]
+		public async Task HostSpecificStringParameter ()
 		{
 			string template =
 @"<#@ template language=""C#"" hostspecific=""true"" #>
@@ -152,14 +151,14 @@ Hello <#=TestParam#>!";
 			var gen = new TemplateGenerator ();
 			gen.AddParameter (null, null, "TestParam", "World");
 			var outFilename = "test.txt";
-			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
-			Assert.True (success);
-			Assert.AreEqual ("Hello World!", outContent);
+			var result = await gen.ProcessTemplateAsync ("test.tt", template, outFilename);
+			Assert.True (result.success);
+			Assert.Equal ("Hello World!", result.content);
 		}
 
 		// check the generated parameters can access the host via SpecificHostType
-		[Test]
-		public void HostSpecificStringParameterWithSpecificHostType ()
+		[Fact]
+		public async Task HostSpecificStringParameterWithSpecificHostType ()
 		{
 			string template =
 @"<#@ template language=""C#"" hostspecific=""true"" #>
@@ -169,9 +168,9 @@ Hello <#=TestParam#>!";
 			var gen = new CustomHostWithSpecificHostType ();
 			gen.AddParameter (null, null, "TestParam", "World");
 			var outFilename = "test.txt";
-			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
-			Assert.True (success);
-			Assert.AreEqual ("Hello World!", outContent);
+			var result = await gen.ProcessTemplateAsync ("test.tt", template, outFilename);
+			Assert.True (result.success);
+			Assert.Equal ("Hello World!", result.content);
 		}
 	}
 }

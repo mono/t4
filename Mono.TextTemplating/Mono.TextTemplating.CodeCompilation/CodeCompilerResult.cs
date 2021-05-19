@@ -1,10 +1,5 @@
-﻿//
-// CodeCompiler.cs
 //
-// Author:
-//       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-//
-// Copyright (c) 2018 Microsoft Corp
+// Copyright (c) Microsoft Corp
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal

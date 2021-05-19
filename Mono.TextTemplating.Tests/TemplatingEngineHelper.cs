@@ -65,7 +65,15 @@ namespace Mono.TextTemplating.Tests
 						writer.Write (newLine);
 					}
 				}
-				return writer.ToString ();
+
+				var result = writer.ToString ();
+
+				// \r\n can leak into the strings. we can't just sanitize the engine input, as it can also leak in via includes.
+				if (newLine == "\n") {
+					return result.Replace ("\\r\\n", "\\n");
+				}
+
+				return result;
 			}
 		}
 	}

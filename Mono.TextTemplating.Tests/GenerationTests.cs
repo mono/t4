@@ -25,189 +25,73 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using NUnit.Framework;
-using Microsoft.VisualStudio.TextTemplating;
-using System.Linq;
 using System.CodeDom.Compiler;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+
+using Microsoft.VisualStudio.TextTemplating;
+
+using Xunit;
 
 namespace Mono.TextTemplating.Tests
 {
-	
-	
-	[TestFixture]
 	public class GenerationTests
-	{	
-		[Test]
-		public void TemplateGeneratorTest ()
-		{
-			var gen = new TemplateGenerator ();
-			string tmp = null;
-			gen.ProcessTemplate (null, "<#@ template language=\"C#\" #>", ref tmp, out tmp);
-			Assert.IsNull (gen.Errors.OfType<CompilerError> ().FirstOrDefault (), "ProcessTemplate");
-		}
-
-		[Test]
-		public void CSharp9Records ()
-		{
-			string template = "<#+ public record Foo(string bar); #>";
-			var gen = new TemplateGenerator ();
-			string outputName = null;
-			gen.ProcessTemplate (null, template, ref outputName, out _);
-
-			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
-#if NET5_0
-			Assert.IsNull (firstError);
-#else
-			Assert.NotNull (firstError);
-#endif
-		}
-
-#if !NET472
-		[Test]
-		public void SetLangVersionViaAttribute ()
-		{
-			string template = "<#@ template langversion='5' #><#+ public int Foo { get; } = 5; #>";
-			var gen = new TemplateGenerator ();
-			string outputName = null;
-			gen.ProcessTemplate (null, template, ref outputName, out _);
-
-			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
-
-			Assert.NotNull (firstError);
-			Assert.IsTrue (gen.Errors.OfType<CompilerError> ().All (c => c.ErrorText.Contains ("not available in C# 5")));
-		}
-
-		[Test]
-		public void SetLangVersionViaAttributeInProcess ()
-		{
-			string template = "<#@ template langversion='5' #><#+ public int Foo { get; } = 5; #>";
-			var gen = new TemplateGenerator ();
-			gen.UseInProcessCompiler ();
-			string outputName = null;
-			gen.ProcessTemplate (null, template, ref outputName, out _);
-
-			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
-			Assert.NotNull (firstError);
-			Assert.IsTrue (gen.Errors.OfType<CompilerError> ().All (c => c.ErrorText.Contains ("not available in C# 5")));
-		}
-
-		[Test]
-		public void SetLangVersionViaAdditionalArgs ()
-		{
-			string template = "<#@ template compilerOptions='-langversion:5' #><#+ public int Foo { get; } = 5; #>";
-			var gen = new TemplateGenerator ();
-			string outputName = null;
-			gen.ProcessTemplate (null, template, ref outputName, out _);
-
-			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
-			Assert.NotNull (firstError);
-			Assert.IsTrue (gen.Errors.OfType<CompilerError> ().All (c => c.ErrorText.Contains ("not available in C# 5")));
-		}
-
-		[Test]
-		public void SetLangVersionViaAdditionalArgsInProcess ()
-		{
-			string template = "<#@ template compilerOptions='-langversion:5' #><#+ public int Foo { get; } = 5; #>";
-			var gen = new TemplateGenerator ();
-			gen.UseInProcessCompiler ();
-			string outputName = null;
-			gen.ProcessTemplate (null, template, ref outputName, out _);
-
-			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
-			Assert.NotNull (firstError);
-			Assert.IsTrue (firstError.ErrorText.Contains ("not available in C# 5"));
-		}
-#endif
-
-		[Test]
-		public void ImportReferencesTest ()
-		{
-			var gen = new TemplateGenerator ();
-			string tmp = null;
-			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
-			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (System.Linq.Enumerable).Assembly.Location));
-			gen.ProcessTemplate (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
-			Assert.IsNull (gen.Errors.OfType<CompilerError> ().FirstOrDefault (), "ProcessTemplate");
-		}
-
-		[Test]
-		public void InProcessCompilerTest ()
-		{
-			var gen = new TemplateGenerator ();
-			gen.UseInProcessCompiler ();
-			string tmp = null;
-			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
-			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (System.Linq.Enumerable).Assembly.Location));
-			gen.ProcessTemplate (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", ref tmp, out tmp);
-			Assert.IsNull (gen.Errors.OfType<CompilerError> ().FirstOrDefault (), "ProcessTemplate");
-		}
-
-		[Test]
-		public void IncludeFileThatDoesNotExistTest ()
-		{
-			var gen = new TemplateGenerator ();
-			string tmp = null;
-			gen.ProcessTemplate (null, "<#@ include file=\"none.tt\" #>", ref tmp, out tmp);
-			Assert.IsTrue (gen.Errors.OfType<CompilerError> ().First ().ErrorText
-				.StartsWith ("Could not read included file 'none.tt'"));
-		}
-
-		[Test]
+	{
+		[Fact]
 		public void Generate ()
 		{
 			string Input = ParsingTests.ParseSample1.NormalizeNewlines ();
 			string Output = OutputSample1.NormalizeEscapedNewlines ();
-			Generate (Input, Output, "\n");
+			GenerateOutput (Input, Output, "\n");
 		}
 		
-		[Test]
+		[Fact]
 		public void GenerateMacNewlines ()
 		{
 			string MacInput = ParsingTests.ParseSample1.NormalizeNewlines ("\r");
 			string MacOutput = OutputSample1.NormalizeEscapedNewlines ("\\r");
-			Generate (MacInput, MacOutput, "\r");
+			GenerateOutput (MacInput, MacOutput, "\r");
 		}
 		
-		[Test]
+		[Fact]
 		public void GenerateWindowsNewlines ()
 		{
 			string WinInput = ParsingTests.ParseSample1.NormalizeNewlines ("\r\n");
 			string WinOutput = OutputSample1.NormalizeEscapedNewlines ("\\r\\n");
-			Generate (WinInput, WinOutput, "\r\n");
+			GenerateOutput (WinInput, WinOutput, "\r\n");
 		}
 
-		[Test]
+		[Fact]
 		public void DefaultLanguage ()
 		{
-			DummyHost host = new DummyHost ();
+			var host = new DummyHost ();
 			string template = @"<#= DateTime.Now #>";
-			ParsedTemplate pt = ParsedTemplate.FromText (template, host);
-			Assert.AreEqual (0, host.Errors.Count);
+			var pt = ParsedTemplate.FromTextInternal (template, host);
+			Assert.Empty (host.Errors);
 			TemplateSettings settings = TemplatingEngine.GetSettings (host, pt);
-			Assert.AreEqual (settings.Language, "C#");
+			Assert.Equal ("C#", settings.Language);
 		}
 		
 		//NOTE: we set the newline property on the code generator so that the whole files has matching newlines,
 		// in order to match the newlines in the verbatim code blocks
-		void Generate (string input, string expectedOutput, string newline)
+		void GenerateOutput (string input, string expectedOutput, string newline)
 		{
 			var host = new DummyHost ();
 			string nameSpaceName = "Microsoft.VisualStudio.TextTemplating4f504ca0";
 			string code = GenerateCode (host, input, nameSpaceName, newline);
-			Assert.AreEqual (0, host.Errors.Count);
+			Assert.Empty (host.Errors);
 
 			var generated = TemplatingEngineHelper.CleanCodeDom (code, newline);
 			expectedOutput = TemplatingEngineHelper.CleanCodeDom (expectedOutput, newline);
-			Assert.AreEqual (expectedOutput, generated);
+			Assert.Equal (expectedOutput, generated);
 		}
 		
 		#region Helpers
 		
 		string GenerateCode (ITextTemplatingEngineHost host, string content, string name, string generatorNewline)
 		{
-			var pt = ParsedTemplate.FromText (content, host);
+			var pt = ParsedTemplate.FromTextInternal (content, host);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
