@@ -27,13 +27,20 @@ namespace Mono.TextTemplating.Tests
 
 			var destDir = Path.Combine (asmDir, "test-output", testName ?? name);
 
-			if (Directory.Exists (destDir)) {
-				Directory.Delete (destDir, true);
+			void DeleteIfExists(string p)
+			{
+				if (Directory.Exists (p))
+					Directory.Delete (p, true);
 			}
 
+			DeleteIfExists (destDir);
 			CopyDirectory (srcDir, destDir);
 
-			string configName = Path.GetFileName (asmDir);
+			// these might exist if someone has been editing these projects in situ
+			// but they can break or invalidate our test results, so remove them
+			DeleteIfExists (Path.Combine(destDir, "bin"));
+			DeleteIfExists (Path.Combine(destDir, "obj"));
+
 			string buildTargetsProjectDir = Path.GetFullPath (Path.Combine (asmDir, "..", "..", "..", "..", "Mono.TextTemplating.Build"));
 
 			//reference this so xunit shadow copies it and we don't lock it
