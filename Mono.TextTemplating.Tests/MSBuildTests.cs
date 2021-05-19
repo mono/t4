@@ -160,6 +160,13 @@ namespace Mono.TextTemplating.Tests
 
 			Assert.Empty (instance.GetItems ("GeneratedTemplates"));
 			Assert.Equal (generated, Assert.Single (instance.GetItems ("PreprocessedTemplates")).GetMetadataValue ("FullPath"));
+
+			var dll = Path.Combine (proj.DirectoryPath, "bin", "Debug", "netstandard2.0", "PreprocessTemplate.dll");
+			Assert.True (File.Exists (dll));
+			// make sure we don't lock the file
+			var asm = System.Reflection.Assembly.ReflectionOnlyLoad (File.ReadAllBytes (dll));
+
+			Assert.NotNull (asm.GetType ("PreprocessTemplate.foo"));
 		}
 
 		[Fact]

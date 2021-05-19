@@ -7,6 +7,7 @@
   
   <ItemGroup>
     <T4Preprocess Include="foo.tt" />
+    <PackageReference Include="System.CodeDom" Version="5.0.0" />
   </ItemGroup>
 
   <Import Project="$(TemplatingTargetsPath)\Mono.TextTemplating.Build.targets" />
