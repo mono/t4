@@ -79,9 +79,10 @@ namespace Mono.TextTemplating.Build
 
 						var pt = LoadTemplate (generator, inputFile, out var inputContent);
 						TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
-						if (settings.Namespace == null) {
-							settings.Namespace = buildState.DefaultNamespace;
-						}
+
+						// FIXME: make these configurable, take relative path into account
+						settings.Namespace = buildState.DefaultNamespace;
+						settings.Name = Path.GetFileNameWithoutExtension (preprocess.InputFile);
 
 						generator.Errors.AddRange (pt.Errors);
 						if (generator.Errors.HasErrors) {
