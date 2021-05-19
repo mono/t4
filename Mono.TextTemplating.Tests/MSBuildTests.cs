@@ -163,8 +163,11 @@ namespace Mono.TextTemplating.Tests
 
 			var dll = Path.Combine (proj.DirectoryPath, "bin", "Debug", "netstandard2.0", "PreprocessTemplate.dll");
 			Assert.True (File.Exists (dll));
+
+			var resolver = new System.Reflection.PathAssemblyResolver (new string[] { typeof (object).Assembly.Location });
+			var loader = new System.Reflection.MetadataLoadContext (resolver);
 			// make sure we don't lock the file
-			var asm = System.Reflection.Assembly.ReflectionOnlyLoad (File.ReadAllBytes (dll));
+			var asm = loader.LoadFromByteArray (File.ReadAllBytes (dll));
 
 			Assert.NotNull (asm.GetType ("PreprocessTemplate.foo"));
 		}

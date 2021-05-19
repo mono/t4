@@ -15,6 +15,7 @@
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageReference Include="Microsoft.Build.Locator" Version="1.4.1" />
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version ="5.0.1" />
     <!--
     Microsoft.NET.Test.Sdk brings in a version of NuGet.Frameworks that's older than the one used by MSBuild
     and loads first, thereby breaking loading of MSBuild assemblies. Force-upgrade it.
