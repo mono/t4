@@ -5,6 +5,7 @@
     <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
     <IsPackable>false</IsPackable>
     <DefineConstants Condition="'$(TargetFramework)'=='net472'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
+    <DefaultItemExcludes>$(DefaultItemExcludes);MSBuildTestCases\**;TestCases\**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Mono.TextTemplating.Build\Mono.TextTemplating.Build.csproj" />
@@ -30,11 +31,12 @@
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" PrivateAssets="all" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Update="MSBuildTestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="MSBuildTestCases\**\*.csproj" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="TestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="MSBuildTestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="TestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
     <!-- disable parallel test execution on github actions, it hangs the runner there -->
     <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'"/>
   </ItemGroup>
+
 </Project>
