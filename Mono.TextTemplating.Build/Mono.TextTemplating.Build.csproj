@@ -8,7 +8,9 @@
     <Description>Open-source implementation of the T4 templating engine.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoPackageAnalysis>true</NoPackageAnalysis>
-    <BuildOutputTargetFolder>build</BuildOutputTargetFolder>
+    <!-- if the assemblies are in a subdirectory of the build folder then MSBuild can
+         end up loading Mono.TextTemplating.dll for the wrong runtime -->
+    <BuildOutputTargetFolder>buildTasks</BuildOutputTargetFolder>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 

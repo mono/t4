@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
-    <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)netcoreapp2.1\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
-    <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)net472\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
+    <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\buildTasks\netcoreapp2.1\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
+    <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\buildTasks\net472\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
   </PropertyGroup>
 
   <UsingTask AssemblyFile="$(TextTransformTaskAssembly)" TaskName="TextTransform" />
@@ -31,7 +31,7 @@
 
   <!-- this is invoked in full builds -->
   <Target Name="_TransformTemplatesOnBuild"
-          BeforeTargets="Build"
+          BeforeTargets="BeforeBuild"
           Condition="'$(TransformOnBuild)'=='True' Or '$(UseLegacyT4Preprocessing)' == 'False'"
           DependsOnTargets="_SetTransformOnBuildProperties;_TransformTemplates" />
 
@@ -91,14 +91,19 @@
       UseLegacyPreprocessingMode="$(UseLegacyT4Preprocessing)"
       IntermediateDirectory="$(_T4IntermediateTemplateOutputDir)"
       TransformOutOfDateOnly="$(TransformOutOfDateOnly)"
-    >
+      >
         <Output TaskParameter="TransformTemplateOutput" ItemName="GeneratedTemplates" />
         <Output TaskParameter="PreprocessedTemplateOutput" ItemName="PreprocessedTemplates" />
         <Output TaskParameter="RequiredAssemblies" ItemName="T4RequiredAssemblies" />
       </TextTransform>
 
-      <ItemGroup Condition="'$(UseLegacyTemplatePreprocessing)'=='False'">
+      <ItemGroup Condition="'$(UseLegacyT4Preprocessing)'=='False'">
         <Compile Include="@(PreprocessedTemplates)" />
+        <FileWrites Include="@(PreprocessedTemplates)" />
+      </ItemGroup>
+
+      <ItemGroup>
+        <FileWrites Include="$(_T4IntermediateTemplateOutputDir)t4-build-state.msgpack" />
       </ItemGroup>
   </Target>
 
