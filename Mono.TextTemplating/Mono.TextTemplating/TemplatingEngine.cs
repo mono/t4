@@ -722,8 +722,14 @@ namespace Mono.TextTemplating
 				CodeLinePragma location = null;
 				if (!settings.NoLinePragmas) {
 					var f = seg.StartLocation.FileName ?? host.TemplateFile;
-					if (settings.RelativeLinePragmas)
-						f = FileUtil.AbsoluteToRelativePath (baseDirectory, f).Replace ('\\', '/');
+					if (!string.IsNullOrEmpty (f)) {
+						// FIXME: we need to know where the output file will be to make this work properly
+						if (settings.RelativeLinePragmas) {
+							f = FileUtil.AbsoluteToRelativePath (baseDirectory, f);
+						} else {
+							f = Path.GetFullPath (f);
+						}
+					}
 					location = new CodeLinePragma (f, seg.StartLocation.Line);
 				}
 				switch (seg.Type) {
