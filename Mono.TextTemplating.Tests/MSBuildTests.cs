@@ -164,8 +164,11 @@ namespace Mono.TextTemplating.Tests
 			var dll = Path.Combine (proj.DirectoryPath, "bin", "Debug", "netstandard2.0", "PreprocessTemplate.dll");
 			Assert.True (File.Exists (dll));
 
-			var resolver = new System.Reflection.PathAssemblyResolver (new string[] { typeof (object).Assembly.Location });
-			var loader = new System.Reflection.MetadataLoadContext (resolver);
+			// context: "Should MetadataLoadContext consider System.Private.CoreLib as a core assembly name?"
+			// https://github.com/dotnet/runtime/issues/41921
+			var coreAssembly = typeof (object).Assembly;
+			var resolver = new System.Reflection.PathAssemblyResolver (new string[] { coreAssembly.Location });
+			var loader = new System.Reflection.MetadataLoadContext (resolver, coreAssemblyName: coreAssembly.GetName ().Name);
 			// make sure we don't lock the file
 			var asm = loader.LoadFromByteArray (File.ReadAllBytes (dll));
 
