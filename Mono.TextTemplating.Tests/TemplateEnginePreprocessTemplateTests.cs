@@ -50,7 +50,8 @@ namespace Mono.TextTemplating.Tests
 		{
 			string input = InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock.NormalizeNewlines ();
 			DummyHost host = CreateDummyHostForControlBlockAfterIncludedTemplateWithClassFeatureBlockTest ();
-			
+			host.HostOptions.Add ("UseRelativeLinePragmas", true);
+
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock.NormalizeNewlines (), "\n");
 			string output = Preprocess (input, host);
 			
