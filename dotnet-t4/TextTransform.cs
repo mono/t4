@@ -153,6 +153,9 @@ namespace Mono.TextTemplating
 					Console.Error.WriteLine ("Input file '{0}' does not exist.", inputFile);
 					return 1;
 				}
+
+				var filePath = Path.GetDirectoryName (inputFile);
+				if (!generator.IncludePaths.Contains (filePath)) { generator.IncludePaths.Add (filePath); }
 			}
 
 			bool writeToStdout = outputFile == "-" || (inputIsFromStdin && string.IsNullOrEmpty (outputFile));
