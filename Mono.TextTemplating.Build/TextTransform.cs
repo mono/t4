@@ -62,6 +62,9 @@ namespace Mono.TextTemplating.Build
 			TemplateBuildState previousBuildState = null;
 			if (TransformOutOfDateOnly) {
 				previousBuildState = LoadBuildState (buildStateFilename, msgPackOptions);
+				if (previousBuildState != null) {
+					Log.LogMessageFromResources (MessageImportance.Low, nameof(Messages.LoadedStateFile), buildStateFilename);
+				}
 			}
 
 			var buildState = new TemplateBuildState {
@@ -171,7 +174,7 @@ namespace Mono.TextTemplating.Build
 					directiveName = par.GetMetadata ("Directive");
 				}
 				else if (!TemplateGenerator.TryParseParameter (paramName, out processorName, out directiveName, out paramName, out paramVal)) {
-					Log.LogError ("Parameter does not have Value metadata or encoded value: {0}", par);
+					Log.LogErrorFromResources (nameof(Messages.ParameterNoValue), par);
 					success = false;
 					continue;
 				}
@@ -205,7 +208,7 @@ namespace Mono.TextTemplating.Build
 				if (className != null) {
 					var assembly = dirItem.GetMetadata ("Assembly") ?? dirItem.GetMetadata ("Codebase");
 					if (string.IsNullOrEmpty (assembly)) {
-						Log.LogError ("Directive '{0}' is missing 'Assembly' metadata", name);
+						Log.LogErrorFromResources (nameof(Messages.DirectiveProcessorNoAssembly), name);
 						hasErrors = true;
 					}
 
@@ -219,7 +222,7 @@ namespace Mono.TextTemplating.Build
 
 				var split = name.Split ('!');
 				if (split.Length != 3) {
-					Log.LogError ("Directive must have 3 values: {0}", name);
+					Log.LogErrorFromResources (nameof(Messages.DirectiveProcessorDoesNotHaveThreeValues), name);
 					hasErrors = true;
 					continue;
 				}
@@ -228,7 +231,7 @@ namespace Mono.TextTemplating.Build
 					string s = split[i];
 					if (string.IsNullOrEmpty (s)) {
 						string kind = i == 0 ? "name" : (i == 1 ? "class" : "assembly");
-						Log.LogError ("Directive has missing {0} value: {1}", kind, name);
+						Log.LogErrorFromResources (nameof(Messages.DirectiveProcessorMissingComponent), kind, name);
 						hasErrors = true;
 						continue;
 					}
@@ -256,18 +259,16 @@ namespace Mono.TextTemplating.Build
 				var state =  MessagePackSerializer.Deserialize<TemplateBuildState> (stream, options);
 
 				if (state.FormatVersion != TemplateBuildState.CURRENT_FORMAT_VERSION) {
-					Log.LogMessage (MessageImportance.Low, "T4 build state format has changed. All T4 files will be reprocessed.");
+					Log.LogMessageFromResources (MessageImportance.Low, nameof(Messages.BuildStateFormatChanged));
 				}
 
 				return state;
 			}
-			catch (MessagePackSerializationException) {
-				Log.LogMessage (MessageImportance.Low, "T4 build state could not be deserialized. The format may have changed. All T4 files will be reprocessed.");
-			}
 			catch (Exception ex) {
-				//FIXME: better handling here
-				Log.LogWarning ("Failed to load T4 build state. All T4 files will be reprocessed.");
-				Log.LogMessage (MessageImportance.Low, ex.ToString());
+				// show a meaningful error message without internal details
+				Log.LogWarningFromResources (nameof (Messages.BuildStateLoadFailed));
+				// log a stack trace so it can be reported
+				Log.LogMessageFromResources (MessageImportance.Normal, nameof(Messages.InternalException), ex);
 			}
 
 			return null;
@@ -280,11 +281,14 @@ namespace Mono.TextTemplating.Build
 				MessagePackSerializer.Serialize (stream, buildState, options);
 			}
 			catch (Exception ex) {
-				//FIXME: better handling here
-				Log.LogWarning ("Failed to save T4 build state. The next build will not be incremental.");
-				Log.LogMessage (MessageImportance.Low, ex.ToString ());
+				// show a meaningful error message without internal details
+				Log.LogWarningFromResources (nameof (Messages.BuildStateSaveFailed));
+				// log a stack trace so it can be reported
+				Log.LogMessageFromResources (MessageImportance.Normal, nameof(Messages.InternalException), ex);
 				try {
-					File.Delete (filePath);
+					if (File.Exists(filePath)) {
+						File.Delete (filePath);
+					}
 				}
 				catch {
 				}

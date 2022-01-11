@@ -14,7 +14,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
-  <Target Name="AddTargetsFilesToPack" BeforeTargets="GenerateNuspec" >
+  <Target Name="AddTargetsFilesToPack" BeforeTargets="GenerateNuspec">
     <ItemGroup>
       <_PackageFiles Include="Mono.TextTemplating.Build.props" PackagePath="build" Pack="true" />
       <_PackageFiles Include="Mono.TextTemplating.Build.targets" PackagePath="build" Pack="true" />
@@ -24,7 +24,7 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="AddCopyLocalToPack" BeforeTargets="_GetBuildOutputFilesWithTfm" DependsOnTargets="ReferenceCopyLocalPathsOutputGroup" >
+  <Target Name="AddCopyLocalToPack" BeforeTargets="_GetBuildOutputFilesWithTfm" DependsOnTargets="ReferenceCopyLocalPathsOutputGroup">
     <ItemGroup>
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPathsOutputGroupOutput)" TargetFramework="$(TargetFramework)" />
     </ItemGroup>
@@ -36,5 +36,10 @@
     <PackageReference Include="Microsoft.Build.Framework" Version="15.1.548" PrivateAssets="all" IncludeAssets="compile" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.548" PrivateAssets="all" IncludeAssets="compile" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Messages.Designer.cs" DesignTime="True" AutoGen="True" DependentUpon="Messages.resx" />
+    <EmbeddedResource Update="Messages.resx" Generator="ResXFileCodeGenerator" LastGenOutput="Messages.Designer.cs" />
   </ItemGroup>
 </Project>
