@@ -23,9 +23,12 @@ This package allows embedding the T4 engine in an application.
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="System.CodeDom" Version="5.0.0" Condition="'$(TargetFramework)'!='net472'" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.CodeDom" Version="5.0.0" Condition="'$(TargetFramework)'!='net472'" />
+    <InternalsVisibleTo Include="Mono.TextTemplating.Tests" />
+    <InternalsVisibleTo Include="Mono.TextTemplating.Build" />
+    <InternalsVisibleTo Include="Mono.TextTemplating.Roslyn" />
   </ItemGroup>
 </Project>
