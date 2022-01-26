@@ -27,15 +27,14 @@
 using System;
 using System.Reflection;
 using Microsoft.VisualStudio.TextTemplating;
-using NUnit.Framework;
+using Xunit;
 
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
 	public class TextTemplatingSessionTests
 	{
 		#if FEATURE_APPDOMAINS
-		[Test]
+		[Fact]
 		public void AppDomainSerializationTest ()
 		{
 			var guid = Guid.NewGuid ();
@@ -51,7 +50,7 @@ namespace Mono.TextTemplating.Tests
 				null,
 				null);
 
-			Assert.AreEqual (guid, session.Id);
+			Assert.Equal (guid, session.Id);
 		}
 		#endif
 
@@ -59,7 +58,7 @@ namespace Mono.TextTemplating.Tests
 			public int TestProperty {get; set; }
 		}
 
-		[Test]
+		[Fact]
 		public void TestCustomHost ()
 		{
 			var gen = new CustomHost { TestProperty = 3 };
@@ -74,7 +73,7 @@ namespace Mono.TextTemplating.Tests
 				out var outContent
 				);
 			Assert.True (success);
-			Assert.AreEqual ("15", outContent);
+			Assert.Equal ("15", outContent);
 		}
 
 		public class CustomHostWithSpecificHostType : TemplateGenerator {
@@ -82,7 +81,7 @@ namespace Mono.TextTemplating.Tests
 			public override Type SpecificHostType => typeof(CustomHostWithSpecificHostType);
 		}
 
-		[Test]
+		[Fact]
 		public void TestCustomHostWithSpecificHostType ()
 		{
 			var gen = new CustomHostWithSpecificHostType { TestProperty = 3 };
@@ -97,7 +96,7 @@ namespace Mono.TextTemplating.Tests
 				out var outContent
 				);
 			Assert.True (success);
-			Assert.AreEqual ("15", outContent);
+			Assert.Equal ("15", outContent);
 		}
 
 		public abstract class TestBaseClassWithSpecificHostType : Microsoft.VisualStudio.TextTemplating.TextTransformation
@@ -106,7 +105,7 @@ namespace Mono.TextTemplating.Tests
 			public int TestProperty => Host.TestProperty;
 		}
 
-		[Test]
+		[Fact]
 		public void TestCustomBaseClassWithSpecificHostType ()
 		{
 			var gen = new CustomHostWithSpecificHostType { TestProperty = 17 };
@@ -121,11 +120,11 @@ namespace Mono.TextTemplating.Tests
 				out var outContent
 				);
 			Assert.True (success);
-			Assert.AreEqual ("34", outContent);
+			Assert.Equal ("34", outContent);
 		}
 
 
-		[Test]
+		[Fact]
 		public void HostSpecificNonStringParameter ()
 		{
 			string template =
@@ -138,10 +137,10 @@ namespace Mono.TextTemplating.Tests
 			var outFilename = "test.txt";
 			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
 			Assert.True (success);
-			Assert.AreEqual ("8", outContent);
+			Assert.Equal ("8", outContent);
 		}
 
-		[Test]
+		[Fact]
 		public void HostSpecificStringParameter ()
 		{
 			string template =
@@ -154,11 +153,11 @@ Hello <#=TestParam#>!";
 			var outFilename = "test.txt";
 			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
 			Assert.True (success);
-			Assert.AreEqual ("Hello World!", outContent);
+			Assert.Equal ("Hello World!", outContent);
 		}
 
 		// check the generated parameters can access the host via SpecificHostType
-		[Test]
+		[Fact]
 		public void HostSpecificStringParameterWithSpecificHostType ()
 		{
 			string template =
@@ -171,7 +170,7 @@ Hello <#=TestParam#>!";
 			var outFilename = "test.txt";
 			var success = gen.ProcessTemplate ("test.tt", template, ref outFilename, out var outContent);
 			Assert.True (success);
-			Assert.AreEqual ("Hello World!", outContent);
+			Assert.Equal ("Hello World!", outContent);
 		}
 	}
 }

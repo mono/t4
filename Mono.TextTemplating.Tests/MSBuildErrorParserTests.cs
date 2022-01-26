@@ -1,4 +1,4 @@
-﻿//
+//
 // (C) 2013 Xamarin Inc.
 // Copyright (c) Microsoft Corp
 //
@@ -21,357 +21,370 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-
-using NUnit.Framework;
+using Xunit;
 
 // this class is adapted from MonoTests.Microsoft.Build.Utilities.ToolTaskTest
 // from mono/mcs/class/Microsoft.Build.Utilities/Test/Microsoft.Build.Utilities/ToolTaskTest.cs
 namespace Mono.TextTemplating.Tests
 {
-	[TestFixture]
 	public class MSBuildErrorParserTests
 	{
-		[Test, TestCaseSource (nameof (GetErrorParsingTestData))]
-		public void TestErrorParsing (string lineText, LogEvent expected)
+		void TestErrorParsing (string lineText, LogEvent expected)
 		{
 			var result = CodeCompilation.MSBuildErrorParser.TryParseLine (lineText);
 			if (expected == null) {
-				Assert.IsNull (result, "#nomatch");
+				Assert.Null (result);
 				return;
 			}
 
-			Assert.IsNotNull (result, "#match");
-			Assert.AreEqual (expected.Origin, result.Origin, "#origin");
-			Assert.AreEqual (expected.Line, result.Line, "#line");
-			Assert.AreEqual (expected.Column, result.Column, "#column");
-			Assert.AreEqual (expected.EndLine, result.EndLine, "#endline");
-			Assert.AreEqual (expected.EndColumn, result.EndColumn, "#endcolumn");
-			Assert.AreEqual (expected.IsError, result.IsError, "#iserror");
-			Assert.AreEqual (expected.Subcategory ?? "", result.Subcategory, "#subcategory");
-			Assert.AreEqual (expected.Code, result.Code, "number");
-			Assert.AreEqual (expected.Message ?? "", result.Message, "#message");
+			Assert.NotNull (result);
+			Assert.Equal (expected.Origin, result.Origin);
+			Assert.Equal (expected.Line, result.Line);
+			Assert.Equal (expected.Column, result.Column);
+			Assert.Equal (expected.EndLine, result.EndLine);
+			Assert.Equal (expected.EndColumn, result.EndColumn);
+			Assert.Equal (expected.IsError, result.IsError);
+			Assert.Equal (expected.Subcategory ?? "", result.Subcategory);
+			Assert.Equal (expected.Code, result.Code);
+			Assert.Equal (expected.Message ?? "", result.Message);
 		}
 
-		static IEnumerable<TestCaseData> GetErrorParsingTestData ()
-		{
-			yield return new TestCaseData (
-				"error   CS66",
-				null
-			).SetName ("NoColon");
+		[Fact]
+		public void NoColon () => TestErrorParsing ("error   CS66", null);
 
-			yield return new TestCaseData (
-				"error   CS66 : ",
-				new LogEvent {
-					IsError = true,
-					Code = "CS66"
-				}
-			).SetName ("Minimal");
+		[Fact]
+		public void Minimal () => TestErrorParsing ("error   CS66 : ", new LogEvent {
+			IsError = true,
+			Code = "CS66"
+		});
 
-			yield return new TestCaseData (
-				"pineapple   CS66 : ",
-				null
-			).SetName ("InvalidCategory");
+		[Fact]
+		public void InvalidCategory () => TestErrorParsing (
+			"pineapple   CS66 : ",
+			null
+		);
 
-			yield return new TestCaseData (
-				"ERROR  CS66 : ",
-				new LogEvent {
-					IsError = true,
-					Code = "CS66"
-				}
-			).SetName ("CaseInsensitivity");
+		[Fact]
+		public void CaseInsensitivity () => TestErrorParsing (
+			"ERROR  CS66 : ",
+			new LogEvent {
+				IsError = true,
+				Code = "CS66"
+			}
+		);
 
-			yield return new TestCaseData (
-				": error  CS66 : ",
-				new LogEvent {
-					IsError = true,
-					Code = "CS66"
-				}
-			).SetName ("EmptyOrigin");
+		[Fact]
+		public void EmptyOrigin () => TestErrorParsing (
+			": error  CS66 : ",
+			new LogEvent {
+				IsError = true,
+				Code = "CS66"
+			}
+		);
 
-			yield return new TestCaseData (
-				"     : error  CS66 : ",
-				new LogEvent {
-					IsError = true,
-					Code = "CS66"
-				}
-			).SetName ("BlankOrigin");
+		[Fact]
+		public void BlankOrigin () => TestErrorParsing (
+			"     : error  CS66 : ",
+			new LogEvent {
+				IsError = true,
+				Code = "CS66"
+			}
+		);
 
-			yield return new TestCaseData (
-				"error   CS66 : error in 'hello:thing'",
-				new LogEvent {
-					IsError = true,
-					Code = "CS66",
-					Message = "error in 'hello:thing'",
-				}
-			).SetName ("NoOriginButErrorLikeMessage");
+		[Fact]
+		public void NoOriginButErrorLikeMessage () => TestErrorParsing (
+			"error   CS66 : error in 'hello:thing'",
+			new LogEvent {
+				IsError = true,
+				Code = "CS66",
+				Message = "error in 'hello:thing'",
+			}
+		);
 
-			yield return new TestCaseData (
-				"   C:\\class.cs   (23,344)  :    error   CS66   : blah    ",
-				new LogEvent {
-					Origin = "C:\\class.cs",
-					Line = 23,
-					Column = 344,
-					IsError = true,
-					Code = "CS66",
-					Message = "blah",
-				}
-			).SetName ("Whitespace");
+		[Fact]
+		public void Whitespace () => TestErrorParsing (
+			"   C:\\class.cs   (23,344)  :    error   CS66   : blah    ",
+			new LogEvent {
+				Origin = "C:\\class.cs",
+				Line = 23,
+				Column = 344,
+				IsError = true,
+				Code = "CS66",
+				Message = "blah",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(16,4): error CS0152: The label `case 1:' already occurs in this switch statement",
-				new LogEvent {
-					Origin = "class1.cs",
-					Line = 16,
-					Column = 4,
-					IsError = true,
-					Code = "CS0152",
-					Message = "The label `case 1:' already occurs in this switch statement",
-				}
-			).SetName ("RangeLineCol");
+		[Fact]
+		public void RangeLineCol () => TestErrorParsing (
+			"class1.cs(16,4): error CS0152: The label `case 1:' already occurs in this switch statement",
+			new LogEvent {
+				Origin = "class1.cs",
+				Line = 16,
+				Column = 4,
+				IsError = true,
+				Code = "CS0152",
+				Message = "The label `case 1:' already occurs in this switch statement",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(16,4-56): error X: blah",
-				new LogEvent {
-					Origin = "class1.cs",
-					Line = 16,
-					Column = 4,
-					EndColumn = 56,
-					IsError = true,
-					Code = "X",
-					Message = "blah",
-				}
-			).SetName ("RangeLineColCol");
+		[Fact]
+		public void RangeLineColCol () => TestErrorParsing (
+			"class1.cs(16,4-56): error X: blah",
+			new LogEvent {
+				Origin = "class1.cs",
+				Line = 16,
+				Column = 4,
+				EndColumn = 56,
+				IsError = true,
+				Code = "X",
+				Message = "blah",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(16,4,56,7): error X: blah",
-				new LogEvent {
-					Origin = "class1.cs",
-					Line = 16,
-					Column = 4,
-					EndLine = 56,
-					EndColumn = 7,
-					IsError = true,
-					Code = "X",
-					Message = "blah",
-				}
-			).SetName ("RangeLineColLineCol");
+		[Fact]
+		public void RangeLineColLineCol () => TestErrorParsing (
+			"class1.cs(16,4,56,7): error X: blah",
+			new LogEvent {
+				Origin = "class1.cs",
+				Line = 16,
+				Column = 4,
+				EndLine = 56,
+				EndColumn = 7,
+				IsError = true,
+				Code = "X",
+				Message = "blah",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(1-77): error X: blah",
-				new LogEvent {
-					Origin = "class1.cs",
-					Line = 1,
-					EndLine = 77,
-					IsError = true,
-					Code = "X",
-					Message = "blah",
-				}
-			).SetName ("RangeLineLine");
+		[Fact]
+		public void RangeLineLine () => TestErrorParsing (
+			"class1.cs(1-77): error X: blah",
+			new LogEvent {
+				Origin = "class1.cs",
+				Line = 1,
+				EndLine = 77,
+				IsError = true,
+				Code = "X",
+				Message = "blah",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(1-77-89): error X: blah",
-				new LogEvent {
-					Origin = "class1.cs",
-					IsError = true,
-					Code = "X",
-					Message = "blah",
-				}
-			).SetName ("BadRangeTooManyDashes");
+		[Fact]
+		public void BadRangeTooManyDashes () => TestErrorParsing (
+			"class1.cs(1-77-89): error X: blah",
+			new LogEvent {
+				Origin = "class1.cs",
+				IsError = true,
+				Code = "X",
+				Message = "blah",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(1&77-89): error X: blah",
-				new LogEvent {
-					Origin = "class1.cs(1&77-89)",
-					IsError = true,
-					Code = "X",
-					Message = "blah",
-				}
-			).SetName ("BadRangePunctuation");
+		[Fact]
+		public void BadRangePunctuation () => TestErrorParsing (
+			"class1.cs(1&77-89): error X: blah",
+			new LogEvent {
+				Origin = "class1.cs(1&77-89)",
+				IsError = true,
+				Code = "X",
+				Message = "blah",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(ASDF): error X: blah",
-				new LogEvent {
-					Origin = "class1.cs(ASDF)",
-					IsError = true,
-					Code = "X",
-					Message = "blah",
-				}
-			).SetName ("BadRangeAlpha");
+		[Fact]
+		public void BadRangeAlpha () => TestErrorParsing (
+			"class1.cs(ASDF): error X: blah",
+			new LogEvent {
+				Origin = "class1.cs(ASDF)",
+				IsError = true,
+				Code = "X",
+				Message = "blah",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(12AA45): error X: blah",
-				new LogEvent {
-					Origin = "class1.cs(12AA45)",
-					IsError = true,
-					Code = "X",
-					Message = "blah",
-				}
-			).SetName ("BadRangeAlphaNumeric");
+		[Fact]
+		public void BadRangeAlphaNumeric () => TestErrorParsing (
+			"class1.cs(12AA45): error X: blah",
+			new LogEvent {
+				Origin = "class1.cs(12AA45)",
+				IsError = true,
+				Code = "X",
+				Message = "blah",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(1-77,89-56): error X: blah",
-				new LogEvent {
-					Origin = "class1.cs",
-					IsError = true,
-					Code = "X",
-					Message = "blah",
-				}
-			).SetName ("BadRangeLineLineColCol");
+		[Fact]
+		public void BadRangeLineLineColCol () => TestErrorParsing (
+			"class1.cs(1-77,89-56): error X: blah",
+			new LogEvent {
+				Origin = "class1.cs",
+				IsError = true,
+				Code = "X",
+				Message = "blah",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(1,77,89): error X: blah",
-				new LogEvent {
-					Origin = "class1.cs",
-					IsError = true,
-					Code = "X",
-					Message = "blah",
-				}
-			).SetName ("BadRangeThreeCommas");
+		[Fact]
+		public void BadRangeThreeCommas () => TestErrorParsing (
+			"class1.cs(1,77,89): error X: blah",
+			new LogEvent {
+				Origin = "class1.cs",
+				IsError = true,
+				Code = "X",
+				Message = "blah",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(0): error X:",
-				new LogEvent {
-					Origin = "class1.cs",
-					IsError = true,
-					Code = "X",
-				}
-			).SetName ("RangeZero");
+		[Fact]
+		public void RangeZero () => TestErrorParsing (
+			"class1.cs(0): error X:",
+			new LogEvent {
+				Origin = "class1.cs",
+				IsError = true,
+				Code = "X",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(2,1234567890192929293833838380): error X:",
-				new LogEvent {
-					Origin = "class1.cs",
-					Line = 2,
-					IsError = true,
-					Code = "X",
-				}
-			).SetName ("BadRangeOverflowCol");
+		[Fact]
+		public void BadRangeOverflowCol () => TestErrorParsing (
+			"class1.cs(2,1234567890192929293833838380): error X:",
+			new LogEvent {
+				Origin = "class1.cs",
+				Line = 2,
+				IsError = true,
+				Code = "X",
+			}
+		);
 
-			yield return new TestCaseData (
-				"class1.cs(2,1234567890192929293833838380,5,7): error X:",
-				new LogEvent {
-					Line = 2,
-					EndLine = 5,
-					EndColumn = 7,
-					Origin = "class1.cs",
-					IsError = true,
-					Code = "X",
-				}
-			).SetName ("BadRangeOverflowBeforeValues");
+		[Fact]
+		public void BadRangeOverflowBeforeValues () => TestErrorParsing (
+			"class1.cs(2,1234567890192929293833838380,5,7): error X:",
+			new LogEvent {
+				Line = 2,
+				EndLine = 5,
+				EndColumn = 7,
+				Origin = "class1.cs",
+				IsError = true,
+				Code = "X",
+			}
+		);
 
-			yield return new TestCaseData (
-				"c:\\foo error XXX: fatal error YYY : error blah : thing",
-				new LogEvent {
-					Origin = "c:\\foo error XXX",
-					IsError = true,
-					Subcategory = "fatal",
-					Code = "YYY",
-					Message = "error blah : thing",
-				}
-			).SetName ("LotsOfColons");
+		[Fact]
+		public void LotsOfColons () => TestErrorParsing (
+			"c:\\foo error XXX: fatal error YYY : error blah : thing",
+			new LogEvent {
+				Origin = "c:\\foo error XXX",
+				IsError = true,
+				Subcategory = "fatal",
+				Code = "YYY",
+				Message = "error blah : thing",
+			}
+		);
 
-			yield return new TestCaseData (
-				"Main.cs(17,20): warning CS0168: The variable 'foo' is declared but never used",
-				new LogEvent {
-					Origin = "Main.cs",
-					Line = 17,
-					Column = 20,
-					Code = "CS0168",
-					Message = "The variable 'foo' is declared but never used",
-				}
-			).SetName ("MSExample1");
+		[Fact]
+		public void MSExample1 () => TestErrorParsing (
+			"Main.cs(17,20): warning CS0168: The variable 'foo' is declared but never used",
+			new LogEvent {
+				Origin = "Main.cs",
+				Line = 17,
+				Column = 20,
+				Code = "CS0168",
+				Message = "The variable 'foo' is declared but never used",
+			}
+		);
 
-			yield return new TestCaseData (
-				"C:\\dir1\\foo.resx(2) : error BC30188: Declaration expected.",
-				new LogEvent {
-					Origin = "C:\\dir1\\foo.resx",
-					Line = 2,
-					IsError = true,
-					Code = "BC30188",
-					Message = "Declaration expected.",
-				}
-			).SetName ("MSExample2");
+		[Fact]
+		public void MSExample2 () => TestErrorParsing (
+			"C:\\dir1\\foo.resx(2) : error BC30188: Declaration expected.",
+			new LogEvent {
+				Origin = "C:\\dir1\\foo.resx",
+				Line = 2,
+				IsError = true,
+				Code = "BC30188",
+				Message = "Declaration expected.",
+			}
+		);
 
-			yield return new TestCaseData (
-				"cl : Command line warning D4024 : unrecognized source file type 'foo.cs', object file assumed",
-				new LogEvent {
-					Origin = "cl",
-					Subcategory = "Command line",
-					Code = "D4024",
-					Message = "unrecognized source file type 'foo.cs', object file assumed",
-				}
-			).SetName ("MSExample3");
+		[Fact]
+		public void MSExample3 () => TestErrorParsing (
+			"cl : Command line warning D4024 : unrecognized source file type 'foo.cs', object file assumed",
+			new LogEvent {
+				Origin = "cl",
+				Subcategory = "Command line",
+				Code = "D4024",
+				Message = "unrecognized source file type 'foo.cs', object file assumed",
+			}
+		);
 
-			yield return new TestCaseData (
-				"error CS0006: Metadata file 'System.dll' could not be found.",
-				new LogEvent {
-					IsError = true,
-					Code = "CS0006",
-					Message = "Metadata file 'System.dll' could not be found.",
-				}
-			).SetName ("MSExample4");
+		[Fact]
+		public void MSExample4 () => TestErrorParsing (
+			"error CS0006: Metadata file 'System.dll' could not be found.",
+			new LogEvent {
+				IsError = true,
+				Code = "CS0006",
+				Message = "Metadata file 'System.dll' could not be found.",
+			}
+		);
 
-			yield return new TestCaseData (
-				"C:\\sourcefile.cpp(134) : error C2143: syntax error : missing ';' before '}'",
-				new LogEvent {
-					Origin = "C:\\sourcefile.cpp",
-					Line = 134,
-					IsError = true,
-					Code = "C2143",
-					Message = "syntax error : missing ';' before '}'",
-				}
-			).SetName ("MSExample5");
+		[Fact]
+		public void MSExample5 () => TestErrorParsing (
+			"C:\\sourcefile.cpp(134) : error C2143: syntax error : missing ';' before '}'",
+			new LogEvent {
+				Origin = "C:\\sourcefile.cpp",
+				Line = 134,
+				IsError = true,
+				Code = "C2143",
+				Message = "syntax error : missing ';' before '}'",
+			}
+		);
 
-			yield return new TestCaseData (
-				"LINK : fatal error LNK1104: cannot open file 'somelib.lib'",
-				new LogEvent {
-					Origin = "LINK",
-					Subcategory = "fatal",
-					IsError = true,
-					Code = "LNK1104",
-					Message = "cannot open file 'somelib.lib'",
-				}
-			).SetName ("MSExample6");
+		[Fact]
+		public void MSExample6 () => TestErrorParsing (
+			"LINK : fatal error LNK1104: cannot open file 'somelib.lib'",
+			new LogEvent {
+				Origin = "LINK",
+				Subcategory = "fatal",
+				IsError = true,
+				Code = "LNK1104",
+				Message = "cannot open file 'somelib.lib'",
+			}
+		);
 
-			yield return new TestCaseData (
-				"/foo (bar)/baz/Component1.fs(3,5): error FS0201: Namespaces cannot contain values.",
-				new LogEvent {
-					Origin = "/foo (bar)/baz/Component1.fs",
-					Line = 3,
-					Column = 5,
-					IsError = true,
-					Code = "FS0201",
-					Message = "Namespaces cannot contain values.",
-				}
-			).SetName ("ParensInFilename");
+		[Fact]
+		public void ParensInFilename () => TestErrorParsing (
+			"/foo (bar)/baz/Component1.fs(3,5): error FS0201: Namespaces cannot contain values.",
+			new LogEvent {
+				Origin = "/foo (bar)/baz/Component1.fs",
+				Line = 3,
+				Column = 5,
+				IsError = true,
+				Code = "FS0201",
+				Message = "Namespaces cannot contain values.",
+			}
+		);
 
-			yield return new TestCaseData (
-				"fatal error XXX: stuff.",
-				new LogEvent {
-					IsError = true,
-					Subcategory = "fatal",
-					Code = "XXX",
-					Message = "stuff.",
-				}
-			).SetName ("SubcategoryNoOrigin");
+		[Fact]
+		public void SubcategoryNoOrigin () => TestErrorParsing (
+			"fatal error XXX: stuff.",
+			new LogEvent {
+				IsError = true,
+				Subcategory = "fatal",
+				Code = "XXX",
+				Message = "stuff.",
+			}
+		);
 
-			yield return new TestCaseData (
-				"(10,14): error CS1009: Unrecognized escape sequence",
-				new LogEvent {
-					IsError = true,
-					Code = "CS1009",
-					Message = "Unrecognized escape sequence",
-					Line = 10,
-					Column = 14
-				}
-			).SetName ("LocationNoOrigin");
-		}
+		[Fact]
+		public void LocationNoOrigin () => TestErrorParsing (
+			"(10,14): error CS1009: Unrecognized escape sequence",
+			new LogEvent {
+				IsError = true,
+				Code = "CS1009",
+				Message = "Unrecognized escape sequence",
+				Line = 10,
+				Column = 14
+			}
+		);
 
 		public class LogEvent
 		{
