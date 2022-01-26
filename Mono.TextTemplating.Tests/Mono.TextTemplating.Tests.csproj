@@ -7,10 +7,13 @@
     <DefineConstants Condition="'$(TargetFramework)'=='net472'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
+    <ProjectReference Include="..\Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.3" />
-    <PackageReference Include="NUnit" Version="3.12.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+    <!-- fix conflicts in indirect references -->
+    <PackageReference Include="System.Collections.Immutable" Version="5.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" PrivateAssets="all" />
   </ItemGroup>
 </Project>
