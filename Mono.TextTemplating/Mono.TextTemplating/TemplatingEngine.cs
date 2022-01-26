@@ -291,7 +291,7 @@ namespace Mono.TextTemplating
 			return (new CompiledTemplate (host, assembly, settings.GetFullName (), settings.Culture, references), references);
 		}
 
-		async Task<(CompilerResults, CompiledAssembly)> CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu, CancellationToken token)
+		async Task<(CompilerResults, CompiledAssemblyData)> CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu, CancellationToken token)
 		{
 			string sourceText;
 			var genOptions = new CodeGeneratorOptions ();
@@ -300,7 +300,7 @@ namespace Mono.TextTemplating
 				sourceText = sw.ToString ();
 			}
 
-			CompiledAssembly compiledAssembly = null;
+			CompiledAssemblyData compiledAssembly = null;
 
 			// this may throw, so do it before writing source files
 			var compiler = GetOrCreateCompiler ();
@@ -364,7 +364,7 @@ namespace Mono.TextTemplating
 					}
 				}
 
-				compiledAssembly = new CompiledAssembly (assembly, debugSymbols);
+				compiledAssembly = new CompiledAssemblyData (assembly, debugSymbols);
 			} else if (!r.Errors.HasErrors) {
 				r.Errors.Add (new CompilerError (null, 0, 0, null, $"The compiler exited with code {result.ExitCode}"));
 			}

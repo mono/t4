@@ -53,10 +53,13 @@ namespace Microsoft.VisualStudio.TextTemplating
 		object GetHostOption (string optionName);
 		bool LoadIncludeText (string requestFileName, out string content, out string location);
 		void LogErrors (CompilerErrorCollection errors);
-//FIXME: this break binary compat
-#if FEATURE_APPDOMAINS
-		AppDomain ProvideTemplatingAppDomain (string content);
+
+#if !FEATURE_APPDOMAINS
+		[Obsolete ("AppDomains are only supported on .NET Framework. This method will not be called on newer versions of .NET.")]
 #endif
+
+		AppDomain ProvideTemplatingAppDomain (string content);
+
 		string ResolveAssemblyReference (string assemblyReference);
 		Type ResolveDirectiveProcessor (string processorName);
 		string ResolveParameterValue (string directiveId, string processorName, string parameterName);

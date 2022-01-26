@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#if NETCOREAPP
+#if FEATURE_ASSEMBLY_LOAD_CONTEXT
 
 using System.CodeDom.Compiler;
 using System.IO;
