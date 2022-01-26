@@ -45,65 +45,66 @@ namespace Mono.TextTemplating
 		ITextTemplatingEngineHost host;
 		object textTransformation;
 		readonly CultureInfo culture;
-		readonly string [] assemblyFiles;
-		CompiledAssembly compiledAssembly;
+
+#if FEATURE_ASSEMBLY_LOAD_CONTEXT
+		TemplateAssemblyLoadContext templateContext;
+#else
+		CurrentDomainAssemblyResolver assemblyResolver;
+#endif
+
+		[Obsolete]
+		public CompiledTemplate (ITextTemplatingEngineHost host, CompilerResults results, string fullName, CultureInfo culture, string[] assemblyFiles)
+			: this (host, culture, assemblyFiles)
+		{
+			Assembly assembly = results.PathToAssembly != null
+				? LoadAssemblyFile (results.PathToAssembly)
+				: results.CompiledAssembly;
+			InitializeTemplate (assembly, fullName);
+		}
+
 
 		public CompiledTemplate (ITextTemplatingEngineHost host, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
-			: this (host, null, templateAssemblyFile, fullName, culture, referenceAssemblyFiles)
+			: this (host, culture, referenceAssemblyFiles)
 		{
+			var assembly = LoadAssemblyFile (templateAssemblyFile);
+			InitializeTemplate (assembly, fullName);
 		}
 
-		internal CompiledTemplate (ITextTemplatingEngineHost host, CompiledAssembly compiledAssembly, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
-			: this (host, compiledAssembly, null, fullName, culture, referenceAssemblyFiles)
+		internal CompiledTemplate (ITextTemplatingEngineHost host, CompiledAssemblyData compiledAssembly, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
+			: this (host, culture, referenceAssemblyFiles)
 		{
+			var assembly = LoadInMemoryAssembly (compiledAssembly);
+			InitializeTemplate (assembly, fullName);
 		}
 
-		CompiledTemplate (ITextTemplatingEngineHost host, CompiledAssembly compiledAssembly, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
+		CompiledTemplate (ITextTemplatingEngineHost host, CultureInfo culture, string[] referenceAssemblyFiles)
 		{
-#if NETFRAMEWORK
-			AppDomain.CurrentDomain.AssemblyResolve += ResolveReferencedAssemblies;
-#endif
-
 			this.host = host;
-			this.compiledAssembly = compiledAssembly;
 			this.culture = culture;
 
-			if (compiledAssembly == null) {
-				assemblyFiles = new string[referenceAssemblyFiles.Length + 1];
-				assemblyFiles[0] = templateAssemblyFile;
-				Array.Copy (referenceAssemblyFiles, 0, assemblyFiles, 1, referenceAssemblyFiles.Length);
-			} else {
-				assemblyFiles = referenceAssemblyFiles;
-			}
-
-			Load (fullName);
+#if FEATURE_ASSEMBLY_LOAD_CONTEXT
+			templateContext = new TemplateAssemblyLoadContext (referenceAssemblyFiles, host);
+#else
+			assemblyResolver = new (host, referenceAssemblyFiles);
+#endif
 		}
 
-		void Load (string fullName)
-		{
-			Assembly assembly;
-#if NETFRAMEWORK
-			if (compiledAssembly != null) {
-				if (compiledAssembly.DebugSymbols != null) {
-					assembly = Assembly.Load(compiledAssembly.Assembly, compiledAssembly.DebugSymbols);
-				} else {
-					assembly = Assembly.Load(compiledAssembly.Assembly);
-				}
-			} else {
-				assembly = Assembly.LoadFile(assemblyFiles[0]);
-			}
+		Assembly LoadAssemblyFile (string assemblyPath)
+#if FEATURE_ASSEMBLY_LOAD_CONTEXT
+			=> templateContext.LoadFromAssemblyPath (assemblyPath);
 #else
-			var templateContext = new TemplateAssemblyLoadContext (assemblyFiles, host);
-			if (compiledAssembly != null) {
-				if (compiledAssembly.DebugSymbols != null) {
-					assembly = templateContext.LoadFromStream (new MemoryStream(compiledAssembly.Assembly), new MemoryStream(compiledAssembly.DebugSymbols));
-				} else {
-					assembly = templateContext.LoadFromStream (new MemoryStream (compiledAssembly.Assembly));
-				}
-			} else {
-				assembly = templateContext.LoadFromAssemblyPath (assemblyFiles[0]);
-			}
+			=> Assembly.LoadFile(assemblyPath);
 #endif
+
+		Assembly LoadInMemoryAssembly (CompiledAssemblyData assemblyData)
+#if FEATURE_ASSEMBLY_LOAD_CONTEXT
+			=> assemblyData.LoadInAssemblyLoadContext (templateContext);
+#else
+			=> assemblyData.LoadInCurrentAppDomain ();
+#endif
+
+		void InitializeTemplate (Assembly assembly, string fullName)
+		{
 			//MS Templating Engine does not care about the type itself
 			//it only requires the expected members to be on the compiled type 
 			Type transformType = assembly.GetType (fullName);
@@ -170,32 +171,12 @@ namespace Mono.TextTemplating
 			return output;
 		}
 
-
-#if NETFRAMEWORK
-		Assembly ResolveReferencedAssemblies (object sender, ResolveEventArgs args)
-		{
-			AssemblyName asmName = new AssemblyName (args.Name);
-			foreach (var asmFile in assemblyFiles) {
-				if (asmName.Name == System.IO.Path.GetFileNameWithoutExtension (asmFile))
-					return Assembly.LoadFrom (asmFile);
-			}
-
-			var path = host.ResolveAssemblyReference (asmName.Name + ".dll");
-			if (System.IO.File.Exists (path))
-				return Assembly.LoadFrom (path);
-
-			return null;
-		}
-#endif
-
 		public void Dispose ()
 		{
-			if (host != null) {
-				host = null;
-#if NETFRAMEWORK
-				AppDomain.CurrentDomain.AssemblyResolve -= ResolveReferencedAssemblies;
+			host = null;
+#if !FEATURE_ASSEMBLY_LOAD_CONTEXT
+			assemblyResolver.Dispose ();
 #endif
-			}
 		}
 	}
 }
