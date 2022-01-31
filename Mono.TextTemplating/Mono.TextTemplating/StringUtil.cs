@@ -2,17 +2,11 @@ using System;
 
 namespace Mono.TextTemplating
 {
-	internal static class StringUtil
+	static class StringUtil
 	{
-		public static Boolean IsNullOrWhiteSpace (String value)
-		{
-			if (value == null) return true;
+		public static bool IsNullOrWhiteSpace (this string value) => string.IsNullOrWhiteSpace (value);
+		public static bool IsNullOrEmpty (this string value) => string.IsNullOrEmpty (value);
 
-			for (int i = 0; i < value.Length; i++) {
-				if (!Char.IsWhiteSpace (value[i])) return false;
-			}
-
-			return true;
-		}
+		public static string NullIfEmpty (this string value) => (value is null || value.Length == 0)? null : value;
 	}
 }

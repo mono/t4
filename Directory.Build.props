@@ -5,7 +5,7 @@
     <Authors>mhutch</Authors>
     <PackageTags>T4, templating</PackageTags>
     <PackageOutputPath>$(MSBuildThisFileDirectory)packages\$(Configuration)</PackageOutputPath>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>10.0</LangVersion>
     <PackageValidationBaselineVersion>2.2.1</PackageValidationBaselineVersion>
     <CheckEolTargetFramework>False</CheckEolTargetFramework>
   </PropertyGroup>
