@@ -29,6 +29,8 @@ using System.CodeDom.Compiler;
 using System.IO;
 using Xunit;
 
+using Mono.TextTemplating.CodeDomBuilder;
+
 namespace Mono.TextTemplating.Tests
 {
 	public class GenerateIndentedClassCodeTests
@@ -40,7 +42,7 @@ namespace Mono.TextTemplating.Tests
 			var field = CreateBoolField ();
 			var property = CreateBoolProperty ();
 
-			string output = TemplatingEngine.GenerateIndentedClassCode (provider, field, property);
+			string output = IndentHelpers.GenerateIndentedClassCode (provider, field, property);
 			output = FixOutput (output);
 			string expectedOutput = FixOutput (MethodAndFieldGeneratedOutput);
 

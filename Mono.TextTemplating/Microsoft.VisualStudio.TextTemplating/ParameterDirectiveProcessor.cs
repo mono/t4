@@ -29,7 +29,8 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using Mono.TextTemplating;
+
+using Mono.TextTemplating.CodeDomBuilder;
 
 namespace Microsoft.VisualStudio.TextTemplating
 {
@@ -38,8 +39,8 @@ namespace Microsoft.VisualStudio.TextTemplating
 		CodeDomProvider provider;
 		
 		bool hostSpecific;
-		readonly List<CodeStatement> postStatements = new List<CodeStatement> ();
-		readonly List<CodeTypeMember> members = new List<CodeTypeMember> ();
+		readonly List<CodeStatement> postStatements = new ();
+		readonly List<CodeTypeMember> members = new ();
 		
 		public override void StartProcessingRun (CodeDomProvider languageProvider, string templateContents, CompilerErrorCollection errors)
 		{
@@ -51,13 +52,10 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		public override void FinishProcessingRun ()
 		{
-			var statement = new CodeConditionStatement (
-				new CodeBinaryOperatorExpression (
-					new CodePropertyReferenceExpression (
-						new CodePropertyReferenceExpression (new CodeThisReferenceExpression (), "Errors"), "HasErrors"),
-					CodeBinaryOperatorType.ValueEquality,
-					new CodePrimitiveExpression (false)),
-				postStatements.ToArray ());
+			var statement = Statement.If (
+				Expression.This.Property ("Errors").Property ("HasErrors").IsEqualValue (Expression.False),
+				Then: postStatements.ToArray ()
+			);
 			
 			postStatements.Clear ();
 			postStatements.Add (statement);
@@ -65,7 +63,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		public override string GetClassCodeForProcessingRun ()
 		{
-			return TemplatingEngine.GenerateIndentedClassCode (provider, members);
+			return IndentHelpers.GenerateIndentedClassCode (provider, members);
 		}
 		
 		public override string[] GetImportsForProcessingRun ()
@@ -75,7 +73,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		public override string GetPostInitializationCodeForProcessingRun ()
 		{
-			return TemplatingEngine.IndentSnippetText (provider, StatementsToCode (postStatements), "            ");
+			return IndentHelpers.IndentSnippetText (provider, StatementsToCode (postStatements), "            ");
 		}
 		
 		public override string GetPreInitializationCodeForProcessingRun ()
@@ -138,146 +136,94 @@ namespace Microsoft.VisualStudio.TextTemplating
 				throw new DirectiveProcessorException ("Parameter directive has no name argument");
 			}
 
-			arguments.TryGetValue ("type", out string type);
-			type = MapTypeName (type);
-			
-			string fieldName = "_" + name + "Field";
-			var typeRef = new CodeTypeReference (type);
-			var thisRef = new CodeThisReferenceExpression ();
-			var fieldRef = new CodeFieldReferenceExpression (thisRef, fieldName);
-			
-			var property = new CodeMemberProperty () {
-				Name = name,
-				Attributes = MemberAttributes.Public | MemberAttributes.Final,
-				HasGet = true,
-				HasSet = false,
-				Type = typeRef
-			};
-			property.GetStatements.Add (new CodeMethodReturnStatement (fieldRef));
-			members.Add (new CodeMemberField (typeRef, fieldName));
-			members.Add (property);
-			
-			var valRef = new CodeVariableReferenceExpression ("data");
-			var namePrimitive = new CodePrimitiveExpression (name);
-			var sessionRef = new CodePropertyReferenceExpression (thisRef, "Session");
-			var callContextTypeRefExpr = new CodeTypeReferenceExpression ("System.Runtime.Remoting.Messaging.CallContext");
-			var nullPrim = new CodePrimitiveExpression (null);
+			arguments.TryGetValue ("type", out string typeName);
+			typeName = MapTypeName (typeName);
+			var type = TypeReference.Default (typeName);
 
-			bool hasAcquiredCheck = hostSpecific
+			members.Add (Declare.Field ($"_{name}Field", type).WithReference (out var fieldRef));
+			members.Add (Declare.Property (name, type).WithGet (fieldRef));
+
+			var data = Expression.Variable ("data");
+			var namePrimitive = Expression.Primitive (name);
+			var session = Expression.This.Property ("Session");
+
 #if FEATURE_APPDOMAINS
-				|| true;
+			bool hasAcquiredCheck = true;
+			var callContextType = TypeReference.Default ("System.Runtime.Remoting.Messaging.CallContext");
+#else
+			bool hasAcquiredCheck = hostSpecific;
 #endif
-				;
-
-			string acquiredName = "_" + name + "Acquired";
-			var acquiredVariable = new CodeVariableDeclarationStatement (typeof (bool), acquiredName, new CodePrimitiveExpression (false));
-			var acquiredVariableRef = new CodeVariableReferenceExpression (acquiredVariable.Name);
+			var acquiredVariable = Declare.Variable<bool> ($"_{name}Acquired", Expression.False, out var acquiredVariableRef);
 			if (hasAcquiredCheck) {
 				postStatements.Add (acquiredVariable);
 			}
 
 			//checks the local called "data" can be cast and assigned to the field, and if successful, sets acquiredVariable to true
-			var checkCastThenAssignVal = new CodeConditionStatement (
-				new CodeMethodInvokeExpression (
-					new CodeTypeOfExpression (typeRef), "IsAssignableFrom", new CodeMethodInvokeExpression (valRef, "GetType")),
-				hasAcquiredCheck
-					? new CodeStatement[] {
-						new CodeAssignStatement (fieldRef, new CodeCastExpression (typeRef, valRef)),
-						new CodeAssignStatement (acquiredVariableRef, new CodePrimitiveExpression (true)),
-					}
-					: new CodeStatement [] {
-						new CodeAssignStatement (fieldRef, new CodeCastExpression (typeRef, valRef)),
-					}
-					,
-				new CodeStatement[] {
-					new CodeExpressionStatement (new CodeMethodInvokeExpression (thisRef, "Error",
-					new CodePrimitiveExpression ("The type '" + type + "' of the parameter '" + name + 
-						"' did not match the type passed to the template"))),
+			var checkCastThenAssignVal = Statement.If (
+				Expression.TypeOf (type).InvokeMethod ("IsAssignableFrom", data.InvokeMethod ("GetType")),
+				Then: hasAcquiredCheck ?
+					new CodeStatement[] {
+						Statement.Assign (fieldRef, Expression.Cast (type, data)),
+						Statement.Assign (acquiredVariableRef, Expression.True)
+					} :
+					new CodeStatement[] {
+						Statement.Assign (fieldRef, Expression.Cast (type, data)),
+					},
+				Else: new[] {
+					Statement.Expression (Expression.This.InvokeMethod ("Error",
+						Expression.Primitive ($"The type '{typeName}' of the parameter '{name}' did not match the type passed to the template")))
 				});
-			
-			//tries to gets the value from the session
-			var checkSession = new CodeConditionStatement (
-				new CodeBinaryOperatorExpression (NotNull (sessionRef), CodeBinaryOperatorType.BooleanAnd,
-					new CodeMethodInvokeExpression (sessionRef, "ContainsKey", namePrimitive)),
-				new CodeVariableDeclarationStatement (typeof (object), valRef.VariableName, new CodeIndexerExpression (sessionRef, namePrimitive)),
-				checkCastThenAssignVal);
-			
-			this.postStatements.Add (checkSession);
-			
-			//if acquiredVariable is false, tries to gets the value from the host
-			if (hostSpecific) {
-				var typeDescriptorRef = new CodeTypeReferenceExpression ("System.ComponentModel.TypeDescriptor");
-				var valTypeRef = new CodeVariableReferenceExpression ("dataType");
-				var converterRef = new CodeVariableReferenceExpression ("dataTypeConverter");
 
-				var convertIfNotStringAndAssign = type == "System.String"
-					? new CodeStatement[] {
-						new CodeAssignStatement (fieldRef, valRef)
-					}
-					: new CodeStatement[] {
-						new CodeVariableDeclarationStatement (typeof (TypeConverter), "dataTypeConverter", new CodeMethodInvokeExpression(typeDescriptorRef, "GetConverter", new CodeTypeOfExpression(type))),
-						new CodeConditionStatement (
-							BooleanAnd(NotNull(converterRef), new CodeMethodInvokeExpression(converterRef, "CanConvertFrom", new CodeTypeOfExpression (typeof (string)))),
-							new CodeStatement[] {
-								new CodeAssignStatement (
-									fieldRef,
-									new CodeCastExpression (
-										typeRef,
-										new CodeMethodInvokeExpression(converterRef, "ConvertFromString", valRef)
-									)
-								)
+			//tries to gets the value from the session
+			postStatements.Add (Statement.If (session.IsNotNull ().And (session.InvokeMethod ("ContainsKey", namePrimitive)),
+				Then: new CodeStatement[] {
+					Statement.DeclareVariable<object> (data.VariableName, session.Index (namePrimitive), out _),
+					checkCastThenAssignVal
+				}));
+
+			if (hostSpecific) {
+				var convertAndAssign = typeName == "System.String"?
+					new CodeStatement[] {
+						Statement.Assign (fieldRef, data)
+					} :
+					new CodeStatement[] {
+						Declare.Variable<TypeConverter> ("dataTypeConverter",
+							TypeReference.Default<TypeDescriptor> ().InvokeMethod ("GetConverter", Expression.TypeOf (type)), out var converter),
+						Statement.If (
+							converter.IsNotNull ().And (converter.InvokeMethod ("CanConvertFrom", Expression.TypeOf<string> ())),
+							Then: new[] {
+								Statement.Assign (fieldRef, Expression.Cast (type, converter.InvokeMethod ("ConvertFromString", data))),
 							},
-							new CodeStatement[] {
-								new CodeExpressionStatement (
-									new CodeMethodInvokeExpression (
-										thisRef,
-										"Error",
-										new CodePrimitiveExpression ("The host parameter '" + name + "' could not be converted to the type '" + type + "' specified in the template")
-									)
-								),
+							Else: new[] {
+								Statement.Expression (Expression.This.InvokeMethod ("Error",
+									Expression.Primitive ($"The host parameter '{name}' could not be converted to the type '{type}' specified in the template")))
 							}
 						)
 					};
 
-				var hostRef = new CodePropertyReferenceExpression (thisRef, "Host");
-				var checkHost = new CodeConditionStatement (
-					BooleanAnd (IsFalse (acquiredVariableRef), NotNull (hostRef)),
-					new CodeVariableDeclarationStatement (typeof (string), valRef.VariableName,
-						new CodeMethodInvokeExpression (
-							// if the host uses SpecificHostType, this only be accessible via the interface
-							new CodeCastExpression(typeof(ITextTemplatingEngineHost), hostRef),
-							"ResolveParameterValue", nullPrim, nullPrim,  namePrimitive)),
-					new CodeConditionStatement (NotNull (valRef), convertIfNotStringAndAssign)
-				);
-				
-				this.postStatements.Add (checkHost);
+				// try to acquire parameter value from host
+				var host = Expression.This.Property ("Host");
+				postStatements.Add (
+					Statement.If (acquiredVariableRef.IsFalse ().And (host.IsNotNull ()),
+					Then: new CodeStatement[] {
+						// if the host uses SpecificHostType, this may only be accessible via the interface
+						Statement.DeclareVariable<string> (data.VariableName,
+							host.Cast<ITextTemplatingEngineHost> ().InvokeMethod ("ResolveParameterValue", Expression.Null, Expression.Null,  namePrimitive), out _),
+						Statement.If (data.IsNotNull (),
+							Then: convertAndAssign)
+					}));
 			}
 
 #if FEATURE_APPDOMAINS
-			//if acquiredVariable is false, tries to gets the value from the call context
-			var checkCallContext = new CodeConditionStatement (
-				IsFalse (acquiredVariableRef),
-				new CodeVariableDeclarationStatement (typeof (object), "data",
-					new CodeMethodInvokeExpression (callContextTypeRefExpr, "LogicalGetData", namePrimitive)),
-				new CodeConditionStatement (NotNull (valRef), checkCastThenAssignVal));
-			
-			this.postStatements.Add (checkCallContext);
+			// try to acquire parameter value from call context
+			postStatements.Add (
+				Statement.If (acquiredVariableRef.IsFalse (),
+				Then: new CodeStatement[] {
+					Declare.Variable<object> (data.VariableName, callContextType.InvokeMethod ("LogicalGetData", namePrimitive), out _),
+					Statement.If (data.IsNotNull (),
+						Then: checkCastThenAssignVal)
+				}));
 #endif
-		}
-		
-		static CodeBinaryOperatorExpression NotNull (CodeExpression reference)
-		{
-			return new CodeBinaryOperatorExpression (reference, CodeBinaryOperatorType.IdentityInequality, new CodePrimitiveExpression (null));
-		}
-		
-		static CodeBinaryOperatorExpression IsFalse (CodeExpression expr)
-		{
-			return new CodeBinaryOperatorExpression (expr, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression (false));
-		}
-		
-		static CodeBinaryOperatorExpression BooleanAnd (CodeExpression expr1, CodeExpression expr2)
-		{
-			return new CodeBinaryOperatorExpression (expr1, CodeBinaryOperatorType.BooleanAnd, expr2);
 		}
 		
 		void IRecognizeHostSpecific.SetProcessingRunIsHostSpecific (bool hostSpecific)
