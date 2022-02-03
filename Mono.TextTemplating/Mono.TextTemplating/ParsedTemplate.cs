@@ -34,7 +34,7 @@ namespace Mono.TextTemplating
 {
 	public class ParsedTemplate
 	{
-		readonly List<ISegment> importedHelperSegments = new List<ISegment> ();
+		readonly List<ISegment> importedHelperSegments = new ();
 		readonly string rootFileName;
 		
 		public ParsedTemplate (string rootFileName)
@@ -84,7 +84,7 @@ namespace Mono.TextTemplating
 		[Obsolete("Use TemplateGenerator.ParseTemplate")]
 		public void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser) => Parse (host, new HashSet<string>(StringComparer.OrdinalIgnoreCase), tokeniser, true);
 
-		[Obsolete]
+		[Obsolete("Should not have been public")]
 		public void ParseWithoutIncludes (Tokeniser tokeniser) => Parse (null, null, tokeniser, false);
 
 		void Parse (ITextTemplatingEngineHost host, HashSet<string> includedFiles, Tokeniser tokeniser, bool parseIncludes) => Parse (host, includedFiles, tokeniser, parseIncludes, false);
@@ -211,8 +211,9 @@ namespace Mono.TextTemplating
 
 		void LogError (string message, Location location, bool isWarning)
 		{
-			var err = new CompilerError ();
-			err.ErrorText = message;
+			var err = new CompilerError {
+				ErrorText = message
+			};
 			if (location.FileName != null) {
 				err.Line = location.Line;
 				err.Column = location.Column;
@@ -244,9 +245,9 @@ namespace Mono.TextTemplating
 	{
 		public TemplateSegment (SegmentType type, string text, Location start)
 		{
-			this.Type = type;
-			this.StartLocation = start;
-			this.Text = text;
+			Type = type;
+			StartLocation = start;
+			Text = text;
 		}
 		
 		public SegmentType Type { get; private set; }
@@ -301,19 +302,25 @@ namespace Mono.TextTemplating
 		public int Column { get; private set; }
 		public string FileName { get; private set; }
 
-		public static Location Empty => new Location (null, -1, -1);
+		public static Location Empty => new (null, -1, -1);
 
-		public Location AddLine () => new Location (FileName, Line + 1, 1);
+		public Location AddLine () => new (FileName, Line + 1, 1);
 
 		public Location AddCol () => AddCols (1);
 
-		public Location AddCols (int number) => new Location (FileName, Line, Column + number);
+		public Location AddCols (int number) => new (FileName, Line, Column + number);
 
 		public override string ToString () => $"[{FileName} ({Line},{Column})]";
 
 		public bool Equals (Location other)
-		{
-			return other.Line == Line && other.Column == Column && other.FileName == FileName;
-		}
+			=> other.Line == Line && other.Column == Column && other.FileName == FileName;
+
+		public override bool Equals (object obj) => obj is Location loc && Equals (loc);
+
+		public override int GetHashCode () => (FileName, Line, Column).GetHashCode ();
+
+		public static bool operator == (Location left, Location right) => left.Equals (right);
+
+		public static bool operator != (Location left, Location right) => !(left == right);
 	}
 }

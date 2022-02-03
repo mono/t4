@@ -36,45 +36,43 @@ namespace Mono.TextTemplating.Tests
 		/// </summary>
 		public static string CleanCodeDom (string input, string newLine)
 		{
-			using (var writer = new StringWriter ()) {
-				using (var reader = new StringReader (input)) {
+			using var writer = new StringWriter ();
+			using var reader = new StringReader (input);
 
-					bool afterLineDirective = true;
-					bool stripHeader = true;
+			bool afterLineDirective = true;
+			bool stripHeader = true;
 
-					string line;
-					while ((line = reader.ReadLine ()) != null) {
+			string line;
+			while ((line = reader.ReadLine ()) != null) {
 
-						if (stripHeader) {
-							if (line.StartsWith ("//", StringComparison.Ordinal) || StringUtil.IsNullOrWhiteSpace (line))
-								continue;
-							stripHeader = false;
-						}
-
-						if (afterLineDirective) {
-							if (StringUtil.IsNullOrWhiteSpace (line))
-								continue;
-							afterLineDirective = false;
-						}
-
-						if (line.Contains ("#line")) {
-							afterLineDirective = true;
-						}
-
-						writer.Write (line);
-						writer.Write (newLine);
-					}
+				if (stripHeader) {
+					if (line.StartsWith ("//", StringComparison.Ordinal) || string.IsNullOrWhiteSpace (line))
+						continue;
+					stripHeader = false;
 				}
 
-				var result = writer.ToString ();
-
-				// \r\n can leak into the strings. we can't just sanitize the engine input, as it can also leak in via includes.
-				if (newLine == "\n") {
-					return result.Replace ("\\r\\n", "\\n");
+				if (afterLineDirective) {
+					if (string.IsNullOrWhiteSpace (line))
+						continue;
+					afterLineDirective = false;
 				}
 
-				return result;
+				if (line.Contains ("#line")) {
+					afterLineDirective = true;
+				}
+
+				writer.Write (line);
+				writer.Write (newLine);
 			}
+
+			var result = writer.ToString ();
+
+			// \r\n can leak into the strings. we can't just sanitize the engine input, as it can also leak in via includes.
+			if (newLine == "\n") {
+				return result.Replace ("\\r\\n", "\\n");
+			}
+
+			return result;
 		}
 	}
 }

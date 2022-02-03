@@ -64,7 +64,7 @@ namespace Mono.TextTemplating
 			if (cachedCompiler == null) {
 				var runtime = RuntimeInfo.GetRuntime ();
 				if (runtime.Error != null) {
-					throw new Exception (runtime.Error);
+					throw new TemplatingEngineException (runtime.Error);
 				}
 				cachedCompiler = createCompilerFunc?.Invoke (runtime) ?? new CscCodeCompiler (runtime);
 			}
@@ -79,9 +79,8 @@ namespace Mono.TextTemplating
 
 		public async Task<string> ProcessTemplateAsync (string content, ITextTemplatingEngineHost host, CancellationToken token = default)
 		{
-			using (var tpl = await CompileTemplateAsync (content, host, token)) {
-				return tpl?.Process ();
-			}
+			using var tpl = await CompileTemplateAsync (content, host, token);
+			return tpl?.Process ();
 		}
 
 		public async Task<string> ProcessTemplateAsync (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, CancellationToken token = default)
@@ -112,6 +111,7 @@ namespace Mono.TextTemplating
 			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references);
 		}
 
+		[System.Diagnostics.CodeAnalysis.SuppressMessage ("Performance", "CA1822:Mark members as static", Justification = "API compat")]
 		public string PreprocessTemplate (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string language, out string[] references)
 		{
 			if (pt is null) throw new ArgumentNullException (nameof (pt));
@@ -138,11 +138,11 @@ namespace Mono.TextTemplating
 			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references, settings);
 		}
 
-		string PreprocessTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
+		static string PreprocessTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
 			string classNamespace, out string language, out string[] references, TemplateSettings settings = null)
 		{
 
-			settings = settings ?? GetSettings (host, pt);
+			settings ??= GetSettings (host, pt);
 
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
@@ -161,7 +161,7 @@ namespace Mono.TextTemplating
 			return PreprocessTemplateInternal (pt, content, settings, host, out language, out references);
 		}
 
-		internal string PreprocessTemplateInternal (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string language, out string[] references)
+		internal static string PreprocessTemplateInternal (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string language, out string[] references)
 		{
 			settings.IncludePreprocessingHelpers = string.IsNullOrEmpty (settings.Inherits);
 			settings.IsPreprocessed = true;
@@ -176,10 +176,9 @@ namespace Mono.TextTemplating
 			}
 
 			var options = new CodeGeneratorOptions ();
-			using (var sw = new StringWriter ()) {
-				settings.Provider.GenerateCodeFromCompileUnit (ccu, sw, options);
-				return sw.ToString ();
-			}
+			using var sw = new StringWriter ();
+			settings.Provider.GenerateCodeFromCompileUnit (ccu, sw, options);
+			return sw.ToString ();
 		}
 
 		[Obsolete("Use CompileTemplateAsync")]
@@ -384,7 +383,7 @@ namespace Mono.TextTemplating
 			var resolved = new Dictionary<string, string> ();
 
 			foreach (string assem in settings.Assemblies.Union (host.StandardAssemblyReferences)) {
-				if (resolved.Values.Contains (assem))
+				if (resolved.ContainsValue (assem))
 					continue;
 
 				string resolvedAssem = host.ResolveAssemblyReference (assem);
@@ -417,7 +416,7 @@ namespace Mono.TextTemplating
 						settings.LangVersion = langVersion;
 					val = dt.Extract ("debug");
 					if (val != null)
-						settings.Debug = string.Compare (val, "true", StringComparison.OrdinalIgnoreCase) == 0;
+						settings.Debug = string.Equals (val, "true", StringComparison.OrdinalIgnoreCase);
 					val = dt.Extract ("inherits");
 					if (val != null)
 						settings.Inherits = val;
@@ -431,11 +430,11 @@ namespace Mono.TextTemplating
 					}
 					val = dt.Extract ("hostspecific");
 					if (val != null) {
-						if (string.Compare (val, "trueFromBase", StringComparison.OrdinalIgnoreCase) == 0) {
+						if (string.Equals (val, "trueFromBase", StringComparison.OrdinalIgnoreCase)) {
 							settings.HostPropertyOnBase = true;
 							settings.HostSpecific = true;
 						} else {
-							settings.HostSpecific = string.Compare (val, "true", StringComparison.OrdinalIgnoreCase) == 0;
+							settings.HostSpecific = string.Equals (val, "true", StringComparison.OrdinalIgnoreCase);
 						}
 					}
 					val = dt.Extract ("CompilerOptions");
@@ -444,15 +443,15 @@ namespace Mono.TextTemplating
 					}
 					val = dt.Extract ("relativeLinePragmas");
 					if (val != null) {
-						relativeLinePragmas = string.Compare (val, "true", StringComparison.OrdinalIgnoreCase) == 0;
+						relativeLinePragmas = string.Equals (val, "true", StringComparison.OrdinalIgnoreCase);
 					}
 					val = dt.Extract ("linePragmas");
 					if (val != null) {
-						settings.NoLinePragmas = string.Compare (val, "false", StringComparison.OrdinalIgnoreCase) == 0;
+						settings.NoLinePragmas = string.Equals (val, "false", StringComparison.OrdinalIgnoreCase);
 					}
 					val = dt.Extract ("visibility");
 					if (val != null) {
-						settings.InternalVisibility = string.Compare (val, "internal", StringComparison.OrdinalIgnoreCase) == 0;
+						settings.InternalVisibility = string.Equals (val, "internal", StringComparison.OrdinalIgnoreCase);
 					}
 					break;
 
@@ -523,16 +522,15 @@ namespace Mono.TextTemplating
 			}
 
 			foreach (var kv in settings.DirectiveProcessors) {
-				((IDirectiveProcessor)kv.Value).SetProcessingRunIsHostSpecific (settings.HostSpecific);
-				var hs = kv.Value as IRecognizeHostSpecific;
-				if (hs != null)
+				kv.Value.SetProcessingRunIsHostSpecific (settings.HostSpecific);
+				if (kv.Value is IRecognizeHostSpecific hs)
 					hs.SetProcessingRunIsHostSpecific (settings.HostSpecific);
 			}
 
 			if (settings.Name == null)
 				settings.Name = "GeneratedTextTransformation";
 			if (settings.Namespace == null)
-				settings.Namespace = string.Format (typeof (TextTransformation).Namespace + "{0:x}", new Random ().Next ());
+				settings.Namespace = $"{typeof (TextTransformation).Namespace}{new Random ().Next ():x}";
 
 			//resolve the CodeDOM provider
 			if (string.IsNullOrEmpty (settings.Language)) {
@@ -541,9 +539,9 @@ namespace Mono.TextTemplating
 
 			if (settings.Language == "C#v3.5") {
 				pt.LogWarning ("The \"C#3.5\" Language attribute in template directives is deprecated, use the langversion attribute instead");
-				var providerOptions = new Dictionary<string, string> ();
-				providerOptions.Add ("CompilerVersion", "v3.5");
-				settings.Provider = new CSharpCodeProvider (providerOptions);
+				settings.Provider = new CSharpCodeProvider (new Dictionary<string, string> {
+					{ "CompilerVersion", "v3.5" }
+				});
 			} else {
 				settings.Provider = CodeDomProvider.CreateProvider (settings.Language);
 			}
@@ -608,11 +606,12 @@ namespace Mono.TextTemplating
 					processor = (IDirectiveProcessor)Activator.CreateInstance (processorType);
 					break;
 				}
-				if (!processor.IsDirectiveSupported (directive.Name))
-					throw new InvalidOperationException ("Directive processor '" + processorName + "' does not support directive '" + directive.Name + "'");
-
-				settings.DirectiveProcessors [processorName] = processor;
+				settings.DirectiveProcessors[processorName] = processor;
 			}
+
+			if (!processor.IsDirectiveSupported (directive.Name))
+				throw new InvalidOperationException ("Directive processor '" + processorName + "' does not support directive '" + directive.Name + "'");
+
 			settings.CustomDirectives.Add (new CustomDirective (processorName, directive));
 		}
 
@@ -693,7 +692,7 @@ namespace Mono.TextTemplating
 			//prep the transform method
 			var transformMeth = new CodeMemberMethod {
 				Name = "TransformText",
-				ReturnType = new CodeTypeReference (typeof (String)),
+				ReturnType = new CodeTypeReference (typeof (string)),
 				Attributes = MemberAttributes.Public,
 			};
 			if (!settings.IncludePreprocessingHelpers)
@@ -759,12 +758,11 @@ namespace Mono.TextTemplating
 					if (helperMode) {
 						//convert the statement into a snippet member and attach it to the top level type
 						//TODO: is there a way to do this for languages that use indentation for blocks, e.g. python?
-						using (var writer = new StringWriter ()) {
-							settings.Provider.GenerateCodeFromStatement (st, writer, null);
-							var text = writer.ToString ();
-							if (!string.IsNullOrEmpty (text))
-								type.Members.Add (CreateSnippetMember (text, location));
-						}
+						using var writer = new StringWriter ();
+						settings.Provider.GenerateCodeFromStatement (st, writer, null);
+						var text = writer.ToString ();
+						if (!string.IsNullOrEmpty (text))
+							type.Members.Add (CreateSnippetMember (text, location));
 					} else {
 						st.LinePragma = location;
 						transformMeth.Statements.Add (st);
@@ -804,7 +802,7 @@ namespace Mono.TextTemplating
 
 			if (settings.IncludePreprocessingHelpers) {
 				var baseClass = new CodeTypeDeclaration (settings.Name + "Base");
-				GenerateProcessingHelpers (baseClass, settings);
+				GenerateProcessingHelpers (baseClass);
 				AddToStringHelper (baseClass, settings);
 				namespac.Types.Add (baseClass);
 			}
@@ -825,7 +823,7 @@ namespace Mono.TextTemplating
 
 		static void GenerateHostProperty (CodeTypeDeclaration type, Type hostType)
 		{
-			hostType = hostType ?? typeof (ITextTemplatingEngineHost);
+			hostType ??= typeof (ITextTemplatingEngineHost);
 
 			var hostTypeRef = new CodeTypeReference (hostType, CodeTypeReferenceOptions.GlobalReference);
 			var hostField = new CodeMemberField (hostTypeRef, "hostValue");
@@ -912,7 +910,7 @@ namespace Mono.TextTemplating
 			type.Members.Add (initializeMeth);
 		}
 
-		static void GenerateProcessingHelpers (CodeTypeDeclaration type, TemplateSettings settings)
+		static void GenerateProcessingHelpers (CodeTypeDeclaration type)
 		{
 			var thisRef = new CodeThisReferenceExpression ();
 			var sbTypeRef = TypeRef<StringBuilder> ();
@@ -1384,10 +1382,10 @@ namespace Mono.TextTemplating
 		public static string GenerateIndentedClassCode (CodeDomProvider provider, IEnumerable<CodeTypeMember> members)
 		{
 			var options = new CodeGeneratorOptions ();
-			using (var sw = new StringWriter ()) {
-				TemplatingEngine.GenerateCodeFromMembers (provider, options, sw, members);
-				return TemplatingEngine.IndentSnippetText (provider, sw.ToString (), "        ");
-			}
+			using var sw = new StringWriter ();
+
+			GenerateCodeFromMembers (provider, options, sw, members);
+			return IndentSnippetText (provider, sw.ToString (), "        ");
 		}
 	}
 }

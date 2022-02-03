@@ -71,10 +71,11 @@ namespace Microsoft.VisualStudio.TextTemplating
 		string TemplateFile { get; }
 	}
 
+	[System.Diagnostics.CodeAnalysis.SuppressMessage ("Naming", "CA1710:Identifiers should have correct suffix", Justification = "API compat with Microsoft.VisualStudio.TextTemplating.dll")]
 	public interface ITextTemplatingSession :
-		IEquatable<ITextTemplatingSession>, IEquatable<Guid>, IDictionary<string, Object>,
-		ICollection<KeyValuePair<string, Object>>,
-		IEnumerable<KeyValuePair<string, Object>>,
+		IEquatable<ITextTemplatingSession>, IEquatable<Guid>, IDictionary<string, object>,
+		ICollection<KeyValuePair<string, object>>,
+		IEnumerable<KeyValuePair<string, object>>,
 		IEnumerable, ISerializable
 	{
 		Guid Id { get; }

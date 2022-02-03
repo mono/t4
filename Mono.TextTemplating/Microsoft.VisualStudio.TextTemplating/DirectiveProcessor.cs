@@ -42,13 +42,13 @@ namespace Microsoft.VisualStudio.TextTemplating
 		public virtual void Initialize (ITextTemplatingEngineHost host)
 		{
 			if (host == null)
-				throw new ArgumentNullException ("host");
+				throw new ArgumentNullException (nameof (host));
 		}
 		
 		public virtual void StartProcessingRun (CodeDomProvider languageProvider, string templateContents, CompilerErrorCollection errors)
 		{
 			if (languageProvider == null)
-				throw new ArgumentNullException ("languageProvider");
+				throw new ArgumentNullException (nameof (languageProvider));
 			this.errors = errors;
 		}
 		

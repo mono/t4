@@ -31,7 +31,7 @@ namespace Mono.TextTemplating.Tests
 	public class EngineTests
 	{
 		#pragma warning disable 414
-		public static object [][] ParameterParsingCases = {
+		public static readonly object [][] ParameterParsingCases = {
 			new object [] { "foo=bar",             true,  "",     "",    "foo", "bar"     },
 			new object [] { "a=b",                 true,  "",     "",    "a",   "b"       },
 			new object [] { "a=b=c",               true,  "",     "",    "a",   "b=c"     },
@@ -57,8 +57,7 @@ namespace Mono.TextTemplating.Tests
 			string expectedProcessor, string expectedDirective,
 			string expectedName, string expectedValue)
 		{
-			string processor, directive, name, value;
-			var success = TemplateGenerator.TryParseParameter (parameter, out processor, out directive, out name, out value);
+			var success = TemplateGenerator.TryParseParameter (parameter, out var processor, out var directive, out var name, out var value);
 
 			Assert.Equal (valid, success);
 			Assert.Equal (expectedProcessor, processor);

@@ -47,12 +47,12 @@ namespace Mono.TextTemplating
 		readonly CultureInfo culture;
 
 #if FEATURE_ASSEMBLY_LOAD_CONTEXT
-		TemplateAssemblyLoadContext templateContext;
+		readonly TemplateAssemblyLoadContext templateContext;
 #else
-		CurrentDomainAssemblyResolver assemblyResolver;
+		readonly CurrentDomainAssemblyResolver assemblyResolver;
 #endif
 
-		[Obsolete]
+		[Obsolete ("Should not have been public")]
 		public CompiledTemplate (ITextTemplatingEngineHost host, CompilerResults results, string fullName, CultureInfo culture, string[] assemblyFiles)
 			: this (host, culture, assemblyFiles)
 		{
@@ -89,18 +89,12 @@ namespace Mono.TextTemplating
 #endif
 		}
 
-		Assembly LoadAssemblyFile (string assemblyPath)
 #if FEATURE_ASSEMBLY_LOAD_CONTEXT
-			=> templateContext.LoadFromAssemblyPath (assemblyPath);
+		Assembly LoadAssemblyFile (string assemblyPath) => templateContext.LoadFromAssemblyPath (assemblyPath);
+		Assembly LoadInMemoryAssembly (CompiledAssemblyData assemblyData) => assemblyData.LoadInAssemblyLoadContext (templateContext);
 #else
-			=> Assembly.LoadFile(assemblyPath);
-#endif
-
-		Assembly LoadInMemoryAssembly (CompiledAssemblyData assemblyData)
-#if FEATURE_ASSEMBLY_LOAD_CONTEXT
-			=> assemblyData.LoadInAssemblyLoadContext (templateContext);
-#else
-			=> assemblyData.LoadInCurrentAppDomain ();
+		static Assembly LoadAssemblyFile (string assemblyPath)  => Assembly.LoadFile (assemblyPath);
+		static Assembly LoadInMemoryAssembly (CompiledAssemblyData assemblyData) => assemblyData.LoadInCurrentAppDomain ();
 #endif
 
 		void InitializeTemplate (Assembly assembly, string fullName)
@@ -112,16 +106,14 @@ namespace Mono.TextTemplating
 
 			//set the host property if it exists
 			Type hostType = null;
-			var gen = host as TemplateGenerator;
-			if (gen != null) {
+			if (host is TemplateGenerator gen) {
 				hostType = gen.SpecificHostType;
 			}
 			var hostProp = transformType.GetProperty ("Host", hostType ?? typeof (ITextTemplatingEngineHost));
 			if (hostProp != null && hostProp.CanWrite)
 				hostProp.SetValue (textTransformation, host, null);
 
-			var sessionHost = host as ITextTemplatingSessionHost;
-			if (sessionHost != null) {
+			if (host is ITextTemplatingSessionHost sessionHost) {
 				//FIXME: should we create a session if it's null?
 				var sessionProp = transformType.GetProperty ("Session", typeof (IDictionary<string, object>));
 				sessionProp.SetValue (textTransformation, sessionHost.Session, null);

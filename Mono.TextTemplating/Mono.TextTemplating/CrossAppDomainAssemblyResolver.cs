@@ -36,7 +36,7 @@ namespace Mono.TextTemplating
 	[Serializable]
 	public class CrossAppDomainAssemblyResolver
 	{
-		readonly ParentDomainLookup parent = new ParentDomainLookup ();
+		readonly ParentDomainLookup parent = new ();
 		
 		public System.Reflection.Assembly Resolve (object sender, ResolveEventArgs args)
 		{
@@ -48,6 +48,7 @@ namespace Mono.TextTemplating
 		
 		class ParentDomainLookup : MarshalByRefObject
 		{
+			[System.Diagnostics.CodeAnalysis.SuppressMessage ("Performance", "CA1822:Mark members as static", Justification = "Calls must RPC to AppDomain that contains original instance")]
 			public string GetAssemblyPath (string name)
 			{
 				var assem = System.Reflection.Assembly.Load (name);

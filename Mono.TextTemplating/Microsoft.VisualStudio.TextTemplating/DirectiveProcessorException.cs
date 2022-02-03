@@ -43,7 +43,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		{
 		}
 		
-		public DirectiveProcessorException (SerializationInfo info, StreamingContext context)
+		protected DirectiveProcessorException (SerializationInfo info, StreamingContext context)
 			: base (info, context)
 		{
 		}

@@ -31,15 +31,13 @@ using System.Text;
 
 namespace Microsoft.VisualStudio.TextTemplating
 {
-	
-	
 	public abstract class RequiresProvidesDirectiveProcessor : DirectiveProcessor
 	{
 		bool isInProcessingRun;
 		ITextTemplatingEngineHost host;
-		StringBuilder preInitBuffer = new StringBuilder ();
-		StringBuilder postInitBuffer = new StringBuilder ();
-		StringBuilder codeBuffer = new StringBuilder ();
+		readonly StringBuilder preInitBuffer = new ();
+		readonly StringBuilder postInitBuffer = new ();
+		readonly StringBuilder codeBuffer = new ();
 		CodeDomProvider languageProvider;
 		
 		protected RequiresProvidesDirectiveProcessor ()
@@ -122,7 +120,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		}
 		
 		//FIXME: handle escaping
-		IEnumerable<KeyValuePair<string,string>> ParseArgs (string args)
+		static IEnumerable<KeyValuePair<string,string>> ParseArgs (string args)
 		{
 			var pairs = args.Split (';');
 			foreach (var p in pairs) {
@@ -136,27 +134,25 @@ namespace Microsoft.VisualStudio.TextTemplating
 		public override void ProcessDirective (string directiveName, IDictionary<string, string> arguments)
 		{
 			if (directiveName == null)
-				throw new ArgumentNullException ("directiveName");
+				throw new ArgumentNullException (nameof (directiveName));
 			if (arguments == null)
-				throw new ArgumentNullException ("arguments");
+				throw new ArgumentNullException (nameof (arguments));
 			
 			var providesDictionary = new Dictionary<string,string> ();
 			var requiresDictionary = new Dictionary<string,string> ();
-			
-			string provides;
-			if (arguments.TryGetValue ("provides", out provides)) {
+
+			if (arguments.TryGetValue ("provides", out var provides)) {
 				foreach (var arg in ParseArgs (provides)) {
 					providesDictionary.Add (arg.Key, arg.Value);
 				}
 			}
-			
-			string requires;
-			if (arguments.TryGetValue ("requires", out requires)) {
+
+			if (arguments.TryGetValue ("requires", out var requires)) {
 				foreach (var arg in ParseArgs (requires)) {
 					requiresDictionary.Add (arg.Key, arg.Value);
 				}
 			}
-			
+
 			InitializeRequiresDictionary (directiveName, requiresDictionary);
 			InitializeProvidesDictionary (directiveName, providesDictionary);
 			

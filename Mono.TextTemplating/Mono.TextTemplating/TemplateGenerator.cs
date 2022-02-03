@@ -42,7 +42,7 @@ namespace Mono.TextTemplating
 #endif
 		ITextTemplatingEngineHost, ITextTemplatingSessionHost
 	{
-		static readonly Dictionary<string, string> KnownAssemblies = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase)
+		static readonly Dictionary<string, string> KnownAssemblies = new (StringComparer.OrdinalIgnoreCase)
 		{
 			{ "System.Core.dll", typeof(System.Linq.Enumerable).Assembly.Location },
 			{ "System.Data.dll", typeof(System.Data.DataTable).Assembly.Location },
@@ -149,10 +149,8 @@ namespace Mono.TextTemplating
 		[Obsolete("Use ProcessTemplateAsync")]
 		public bool ProcessTemplate (string inputFileName, string inputContent, ref string outputFileName, out string outputContent)
 		{
-			var result = ProcessTemplateAsync (inputFileName, inputContent, outputFileName, CancellationToken.None).Result;
-			outputFileName = result.fileName;
-			outputContent = result.content;
-			return result.success;
+			(outputFileName, outputContent, var success) = ProcessTemplateAsync (inputFileName, inputContent, outputFileName, CancellationToken.None).Result;
+			return success;
 		}
 
 		public async Task<(string fileName, string content, bool success)> ProcessTemplateAsync (string inputFileName, string inputContent, string outputFileName, CancellationToken token = default)
@@ -188,8 +186,7 @@ namespace Mono.TextTemplating
 				return false;
 			}
 
-			string output;
-			PreprocessTemplate (inputFile, className, classNamespace, content, out language, out references, out output);
+			PreprocessTemplate (inputFile, className, classNamespace, content, out language, out references, out var output);
 
 			try {
 				if (!Errors.HasErrors)
@@ -260,13 +257,10 @@ namespace Mono.TextTemplating
 		#region Virtual members
 
 		public virtual object GetHostOption (string optionName)
-		{
-			switch (optionName) {
-			case "UseRelativeLinePragmas":
-				return UseRelativeLinePragmas;
-			}
-			return null;
-		}
+			=> optionName switch {
+				"UseRelativeLinePragmas" => UseRelativeLinePragmas,
+				_ => null,
+			};
 
 		public virtual AppDomain ProvideTemplatingAppDomain (string content)
 		{
@@ -309,10 +303,10 @@ namespace Mono.TextTemplating
 		protected virtual Type ResolveDirectiveProcessor (string processorName)
 		{
 			if (!directiveProcessors.TryGetValue (processorName, out KeyValuePair<string, string> value))
-				throw new Exception (string.Format ("No directive processor registered as '{0}'", processorName));
+				throw new TemplatingEngineException ($"No directive processor registered as '{processorName}'");
 			var asmPath = ResolveAssemblyReference (value.Value);
 			if (asmPath == null)
-				throw new Exception (string.Format ("Could not resolve assembly '{0}' for directive processor '{1}'", value.Value, processorName));
+				throw new TemplatingEngineException ($"Could not resolve assembly '{value.Value}' for directive processor '{processorName}'");
 			var asm = Assembly.LoadFrom (asmPath);
 			return asm.GetType (value.Key, true);
 		}
@@ -345,8 +339,8 @@ namespace Mono.TextTemplating
 
 #endregion
 
-		readonly Dictionary<ParameterKey,string> parameters = new Dictionary<ParameterKey, string> ();
-		readonly Dictionary<string,KeyValuePair<string,string>> directiveProcessors = new Dictionary<string, KeyValuePair<string,string>> ();
+		readonly Dictionary<ParameterKey,string> parameters = new ();
+		readonly Dictionary<string,KeyValuePair<string,string>> directiveProcessors = new ();
 
 		public void AddDirectiveProcessor (string name, string klass, string assembly)
 		{
@@ -457,7 +451,7 @@ namespace Mono.TextTemplating
 
 		void ITextTemplatingEngineHost.LogErrors (CompilerErrorCollection errors)
 		{
-			this.Errors.AddRange (errors);
+			Errors.AddRange (errors);
 		}
 
 		string ITextTemplatingEngineHost.ResolveAssemblyReference (string assemblyReference)
@@ -512,7 +506,7 @@ namespace Mono.TextTemplating
 		/// <summary>
 		/// Returns the current session instance, creating it if necessary.
 		/// </summary>
-		public ITextTemplatingSession GetOrCreateSession () => session ?? (session = CreateSession ());
+		public ITextTemplatingSession GetOrCreateSession () => session ??= CreateSession ();
 
 		/// <summary>
 		/// Called to create a session instance.
@@ -544,23 +538,15 @@ namespace Mono.TextTemplating
 				}
 			}
 
-			string processorName, directiveName, parameterName;
+			readonly string processorName, directiveName, parameterName;
 			readonly int hashCode;
 
-			public override bool Equals (object obj)
-			{
-				return obj is ParameterKey && Equals ((ParameterKey)obj);
-			}
+			public override bool Equals (object obj) => obj is ParameterKey other && Equals (other);
 
 			public bool Equals (ParameterKey other)
-			{
-				return processorName == other.processorName && directiveName == other.directiveName && parameterName == other.parameterName;
-			}
+				=> processorName == other.processorName && directiveName == other.directiveName && parameterName == other.parameterName;
 
-			public override int GetHashCode ()
-			{
-				return hashCode;
-			}
+			public override int GetHashCode () => hashCode;
 		}
 
 		/// <summary>

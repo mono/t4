@@ -27,6 +27,7 @@
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace Microsoft.VisualStudio.TextTemplating
@@ -96,7 +97,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		public void PushIndent (string indent)
 		{
 			if (indent == null)
-				throw new ArgumentNullException ("indent");
+				throw new ArgumentNullException (nameof (indent));
 			Indents.Push (indent.Length);
 			currentIndent += indent;
 		}
@@ -176,7 +177,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		public void Write (string format, params object[] args)
 		{
-			Write (string.Format (format, args));
+			Write (string.Format (CultureInfo.CurrentCulture, format, args));
 		}
 		
 		public void WriteLine (string textToAppend)
@@ -188,7 +189,7 @@ namespace Microsoft.VisualStudio.TextTemplating
 		
 		public void WriteLine (string format, params object[] args)
 		{
-			WriteLine (string.Format (format, args));
+			WriteLine (string.Format (CultureInfo.CurrentCulture, format, args));
 		}
 
 		#endregion
