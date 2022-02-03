@@ -24,9 +24,9 @@ namespace Mono.TextTemplating.CodeCompilation
 	{
 		public static CSharpLangVersion GetBestSupportedLangVersion (RuntimeInfo runtime, CSharpLangVersion? compilerLangVersion = null)
 			=> (CSharpLangVersion)Math.Min ((int)(compilerLangVersion ?? runtime.MaxSupportedLangVersion), (int) (runtime switch {
-				{ Kind: RuntimeKind.NetCore, Version: { Major: > 5 } } => CSharpLangVersion.Latest,
-				{ Kind: RuntimeKind.NetCore, Version: { Major: 5 } } => CSharpLangVersion.v9_0,
-				{ Kind: RuntimeKind.NetCore, Version: { Major: 3 } } => CSharpLangVersion.v8_0,
+				{ Kind: RuntimeKind.NetCore, Version.Major: > 5 } => CSharpLangVersion.Latest,
+				{ Kind: RuntimeKind.NetCore, Version.Major: 5 } => CSharpLangVersion.v9_0,
+				{ Kind: RuntimeKind.NetCore, Version.Major: 3 } => CSharpLangVersion.v8_0,
 				_ => CSharpLangVersion.v7_3,
 			}));
 
@@ -34,9 +34,9 @@ namespace Mono.TextTemplating.CodeCompilation
 			!string.IsNullOrEmpty(args)
 				&& (args.IndexOf ("langversion", StringComparison.OrdinalIgnoreCase) > -1)
 				&& ProcessArgumentBuilder.TryParse (args, out var parsedArgs)
-				&& parsedArgs.Any (a => a.IndexOf("langversion") == 1);
+				&& parsedArgs.Any (a => a.IndexOf ("langversion", StringComparison.OrdinalIgnoreCase) == 1);
 
-		static string ToString (CSharpLangVersion v) => v switch {
+		static string ToString (CSharpLangVersion version) => version switch {
 			CSharpLangVersion.v5_0 => "5",
 			CSharpLangVersion.v6_0 => "6",
 			CSharpLangVersion.v7_0 => "7",
@@ -46,7 +46,7 @@ namespace Mono.TextTemplating.CodeCompilation
 			CSharpLangVersion.v8_0 => "8.0",
 			CSharpLangVersion.v9_0 => "9.0",
 			CSharpLangVersion.Latest => "latest",
-			_ => throw new ArgumentException(nameof(v), $"Not a valid value: '{v}'")
+			_ => throw new ArgumentException ($"Not a valid value: '{version}'", nameof (version))
 		};
 
 		public static string GetLangVersionArg (CodeCompilerArguments arguments, RuntimeInfo runtime)

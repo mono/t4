@@ -59,7 +59,7 @@ namespace Mono.TextTemplating.CodeCompilation
  			} catch (Exception e) {
 				ex = e;
 			}
-			throw new Exception ("Failed to create temp file", ex);
+			throw new TemplatingEngineException ("Failed to create temp file", ex);
 		}
 
 		/// <summary>
@@ -150,14 +150,13 @@ namespace Mono.TextTemplating.CodeCompilation
 
 			void ConsumeOutput (string s)
 			{
-				using (var sw = new StringReader (s)) {
-					string line;
-					while ((line = sw.ReadLine ()) != null) {
-						outputList.Add (line);
-						var err = MSBuildErrorParser.TryParseLine (line);
-						if (err != null) {
-							errors.Add (err);
-						}
+				using var sw = new StringReader (s);
+				string line;
+				while ((line = sw.ReadLine ()) != null) {
+					outputList.Add (line);
+					var err = MSBuildErrorParser.TryParseLine (line);
+					if (err != null) {
+						errors.Add (err);
 					}
 				}
 			}

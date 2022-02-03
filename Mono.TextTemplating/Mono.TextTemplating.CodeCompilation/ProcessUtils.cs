@@ -41,7 +41,7 @@ namespace Mono.TextTemplating.CodeCompilation
 		{
 			var tcs = new TaskCompletionSource<int> ();
 			if (cancellationToken.CanBeCanceled && cancellationToken.IsCancellationRequested) {
-				tcs.TrySetCanceled ();
+				tcs.TrySetCanceled (cancellationToken);
 				return tcs.Task;
 			}
 

@@ -29,7 +29,7 @@ namespace Mono.TextTemplating.Tests
 {
 	public class MSBuildErrorParserTests
 	{
-		void TestErrorParsing (string lineText, LogEvent expected)
+		static void TestErrorParsing (string lineText, LogEvent expected)
 		{
 			var result = CodeCompilation.MSBuildErrorParser.TryParseLine (lineText);
 			if (expected == null) {

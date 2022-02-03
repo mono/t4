@@ -47,13 +47,6 @@ namespace Mono.TextTemplating.Tests
 			Assert.Equal (expectedOutput, output);
 		}
 
-		static CodeTypeMember CreateVoidMethod ()
-		{
-			var meth = new CodeMemberMethod { Name = "MyMethod" };
-			meth.ReturnType = new CodeTypeReference (typeof(void));
-			return meth;
-		}
-
 		static CodeTypeMember CreateBoolField ()
 		{
 			var type = new CodeTypeReference (typeof(bool));
@@ -77,22 +70,21 @@ namespace Mono.TextTemplating.Tests
 		/// </summary>
 		static string FixOutput (string output, string newLine = "\n")
 		{
-			using (var writer = new StringWriter ()) {
-				using (var reader = new StringReader (output)) {
+			using var writer = new StringWriter ();
+			using var reader = new StringReader (output);
 
-					string line;
-					while ((line = reader.ReadLine ()) != null) {
-						if (!StringUtil.IsNullOrWhiteSpace (line)) {
-							writer.Write (line);
-							writer.Write (newLine);
-						}
-					}
+			string line;
+			while ((line = reader.ReadLine ()) != null) {
+				if (!string.IsNullOrWhiteSpace (line)) {
+					writer.Write (line);
+					writer.Write (newLine);
 				}
-				return writer.ToString ();
 			}
+
+			return writer.ToString ();
 		}
 
-		public static string MethodAndFieldGeneratedOutput = 
+		public const string MethodAndFieldGeneratedOutput =
 @"        
         private bool myField;
         

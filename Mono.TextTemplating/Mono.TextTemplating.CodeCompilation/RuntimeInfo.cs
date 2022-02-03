@@ -43,7 +43,7 @@ namespace Mono.TextTemplating.CodeCompilation
 	{
 		RuntimeInfo (RuntimeKind kind) => Kind = kind;
 
-		static RuntimeInfo FromError (RuntimeKind kind, string error) => new RuntimeInfo (kind) { Error = error };
+		static RuntimeInfo FromError (RuntimeKind kind, string error) => new (kind) { Error = error };
 
 		public RuntimeKind Kind { get; private set; }
 		public string Error { get; private set; }
@@ -62,7 +62,7 @@ namespace Mono.TextTemplating.CodeCompilation
 			{
 				return GetMonoRuntime ();
 			}
-			else if (RuntimeInformation.FrameworkDescription.StartsWith (".NET Framework"))
+			else if (RuntimeInformation.FrameworkDescription.StartsWith (".NET Framework", StringComparison.OrdinalIgnoreCase))
 			{
 				return GetNetFrameworkRuntime ();
 			}
@@ -133,7 +133,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				}
 			}
 
-			string MakeCscPath (string d) => Path.Combine (d, "Roslyn", "bincore", "csc.dll");
+			static string MakeCscPath (string d) => Path.Combine (d, "Roslyn", "bincore", "csc.dll");
 			var sdkDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "sdk"), d => File.Exists (MakeCscPath (d)), out var sdkVersion);
 			if (sdkDir == null) {
 				return FromError (RuntimeKind.NetCore, "Could not find csc.dll in any .NET Core SDK");

@@ -32,13 +32,14 @@ using System.Collections.Generic;
 
 namespace Mono.TextTemplating
 {
+	[Obsolete ("This was never fully implemented and is outside the scope of this library")]
 	public class TemplatingAppDomainRecycler
 	{
-		const int DEFAULT_TIMEOUT_MS = 2 * 60 * 1000;
+		//const int DEFAULT_TIMEOUT_MS = 2 * 60 * 1000;
 		const int DEFAULT_MAX_USES = 20;
 		
 		readonly string name;
-		readonly object lockObj = new object ();
+		readonly object lockObj = new ();
 		
 		RecyclableAppDomain domain;
 		
@@ -47,7 +48,7 @@ namespace Mono.TextTemplating
 			this.name = name;
 		}
 		
-		public TemplatingAppDomainRecycler.Handle GetHandle ()
+		public Handle GetHandle ()
 		{
 			lock (lockObj) {
 				if (domain == null || domain.Domain == null || domain.UnusedHandles == 0) {
@@ -129,7 +130,9 @@ namespace Mono.TextTemplating
 					UnloadDomain ();
 				}
 			}
-			
+
+			[System.Diagnostics.CodeAnalysis.SuppressMessage ("Usage", "CA1816:Dispose methods should call SuppressFinalize",
+				Justification = "This isn't a dispose pattern, it's a diagnostic for handle leaks")]
 			void UnloadDomain ()
 			{
 				AppDomain.Unload (domain);
@@ -145,7 +148,7 @@ namespace Mono.TextTemplating
 			}
 		}
 		
-		public class Handle : IDisposable
+		public sealed class Handle : IDisposable
 		{
 			RecyclableAppDomain parent;
 			
@@ -180,7 +183,7 @@ namespace Mono.TextTemplating
 		[Serializable]
         class DomainAssemblyLoader : MarshalByRefObject
 		{
-            readonly Dictionary<string, string> map = new Dictionary<string, string>();
+            readonly Dictionary<string, string> map = new ();
 			
 			public DomainAssemblyLoader ()
 			{
@@ -194,15 +197,14 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-            public string ResolveAssembly(string name)
+            public string ResolveAssembly (string name)
             {
-                string result;
-                if (map.TryGetValue(name, out result))
+                if (map.TryGetValue (name, out string result))
                     return result;
                 return null;
             }
 
-            public void Add(string name, string location)
+            public void Add (string name, string location)
             {
                 map[name] = location;
             }

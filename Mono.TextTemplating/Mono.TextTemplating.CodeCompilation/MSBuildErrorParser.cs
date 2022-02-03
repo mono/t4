@@ -162,7 +162,7 @@ namespace Mono.TextTemplating.CodeCompilation
 		static bool ParseLineColVal (string str, out int val)
 		{
 			try {
-				val = int.Parse (str);
+				val = int.Parse (str, System.Globalization.CultureInfo.InvariantCulture);
 				return true;
 			}
 			catch (OverflowException) {
@@ -189,7 +189,7 @@ namespace Mono.TextTemplating.CodeCompilation
 		//
 		static bool ParsePosition (string str, int start, int end, CodeCompilerError result)
 		{
-			int line = 0, col = 0, endLine = 0, endCol = 0;
+			int line, col = 0, endLine = 0, endCol = 0;
 
 			var a = str.Substring (start, end - start).Split (',');
 

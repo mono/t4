@@ -41,7 +41,7 @@ namespace Mono.TextTemplating.Tests
 			return Path.Combine (asmDir, "TestCases", testDir, filename);
 		}
 
-		public static string ParseSample1 =
+		public const string ParseSample1 =
 @"<#@ template language=""C#v3.5"" #>
 Line One
 Line Two
@@ -203,10 +203,6 @@ Four
 <#@ include file=""bar.ttinclude"" #>
 Five
 ";
-
-		const string ImportDedupSample =
-@"<#@ import file=""foo.ttinclude"" #>
-<#@ import file=""foo.ttinclude"" #>";
 
 		const string FooIncludeName = "foo.ttinclude";
 		const string FooInclude = "Foo\n";

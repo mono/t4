@@ -75,7 +75,7 @@ namespace Mono.TextTemplating.Tests
 		
 		//NOTE: we set the newline property on the code generator so that the whole files has matching newlines,
 		// in order to match the newlines in the verbatim code blocks
-		void GenerateOutput (string input, string expectedOutput, string newline)
+		static void GenerateOutput (string input, string expectedOutput, string newline)
 		{
 			var host = new DummyHost ();
 			string nameSpaceName = "Microsoft.VisualStudio.TextTemplating4f504ca0";
@@ -89,7 +89,7 @@ namespace Mono.TextTemplating.Tests
 		
 		#region Helpers
 		
-		string GenerateCode (ITextTemplatingEngineHost host, string content, string name, string generatorNewline)
+		static string GenerateCode (ITextTemplatingEngineHost host, string content, string name, string generatorNewline)
 		{
 			var pt = ParsedTemplate.FromTextInternal (content, host);
 			if (pt.Errors.HasErrors) {
@@ -112,18 +112,16 @@ namespace Mono.TextTemplating.Tests
 			}
 			
 			var opts = new CodeGeneratorOptions ();
-			using (var writer = new System.IO.StringWriter ()) {
-				writer.NewLine = generatorNewline;
-				settings.Provider.GenerateCodeFromCompileUnit (ccu, writer, opts);
-				return writer.ToString ();
-			}
+			using var writer = new StringWriter () { NewLine = generatorNewline };
+			settings.Provider.GenerateCodeFromCompileUnit (ccu, writer, opts);
+			return writer.ToString ();
 		}
 
 		#endregion
 
 		#region Expected output strings
 
-		public static string OutputSample1 =
+		public const string OutputSample1 =
 @"
 namespace Microsoft.VisualStudio.TextTemplating4f504ca0 {
     

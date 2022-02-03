@@ -1,4 +1,4 @@
-﻿//
+//
 // FileUtil.cs
 //
 // Author:
@@ -115,8 +115,8 @@ namespace Mono.TextTemplating
 		static string GetFullPath (string path)
 		{
 			if (path == null)
-				throw new ArgumentNullException ("path");
-			if (!isWindows || path.IndexOf ('*') == -1)
+				throw new ArgumentNullException (nameof (path));
+			if (!isWindows || path.Contains ('*'))
 				return Path.GetFullPath (path);
 			else {
 				// On Windows, GetFullPath doesn't work if the path contains wildcards.

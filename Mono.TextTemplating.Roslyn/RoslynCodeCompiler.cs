@@ -30,11 +30,10 @@ namespace Mono.TextTemplating
 			CodeCompilerArguments arguments,
 			TextWriter log,
 			CancellationToken token)
-			=> Task.FromResult (CompileFileInternal (arguments, log, token));
+			=> Task.FromResult (CompileFileInternal (arguments, token));
 
 		CodeCompilerResult CompileFileInternal (
 			CodeCompilerArguments arguments,
-			TextWriter log,
 			CancellationToken token)
 		{
 			CSharpCommandLineArguments args = null;
@@ -56,7 +55,7 @@ namespace Mono.TextTemplating
 				if (LanguageVersionFacts.TryParse(arguments.LangVersion, out var langVersion)) {
 					parseOptions = parseOptions.WithLanguageVersion (langVersion);
 				} else {
-					throw new System.Exception($"Unknown value '{arguments.LangVersion}' for langversion");
+					throw new RoslynCodeCompilerException ($"Unknown value '{arguments.LangVersion}' for langversion");
 				}
 			} else {
 				// need to update this when updating referenced roslyn binaries
@@ -79,7 +78,6 @@ namespace Mono.TextTemplating
 				references,
 				compilationOptions
 			);
-
 
 			EmitOptions emitOptions = args?.EmitOptions ?? new EmitOptions();
 			if (arguments.Debug) {
