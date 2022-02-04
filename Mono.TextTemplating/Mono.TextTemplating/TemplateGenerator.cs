@@ -118,7 +118,7 @@ namespace Mono.TextTemplating
 			string content;
 			try {
 #if NETCOREAPP2_1_OR_GREATER
-				content = await File.ReadAllTextAsync (inputFile, token);
+				content = await File.ReadAllTextAsync (inputFile, token).ConfigureAwait (false);
 #else
 				content = File.ReadAllText (inputFile);
 #endif
@@ -129,12 +129,12 @@ namespace Mono.TextTemplating
 				return false;
 			}
 
-			var result = await ProcessTemplateAsync (inputFile, content, outputFile, token);
+			var result = await ProcessTemplateAsync (inputFile, content, outputFile, token).ConfigureAwait (false);
 
 			try {
 				if (!Errors.HasErrors) {
 #if NETCOREAPP2_1_OR_GREATER
-					await File.WriteAllTextAsync (result.fileName, result.content, encoding, token);
+					await File.WriteAllTextAsync (result.fileName, result.content, encoding, token).ConfigureAwait (false);
 #else
 					File.WriteAllText (result.fileName, result.content, encoding);
 #endif
@@ -160,7 +160,7 @@ namespace Mono.TextTemplating
 
 			OutputFile = outputFileName;
 			TemplateFile = inputFileName;
-			var outputContent = await Engine.ProcessTemplateAsync (inputContent, this, token);
+			var outputContent = await Engine.ProcessTemplateAsync (inputContent, this, token).ConfigureAwait (false);
 			outputFileName = OutputFile;
 
 			return (outputFileName, outputContent, !Errors.HasErrors);
@@ -248,7 +248,7 @@ namespace Mono.TextTemplating
 
 			OutputFile = outputFileName;
 			TemplateFile = inputFileName;
-			var outputContent = await Engine.ProcessTemplateAsync (pt, inputContent, settings, this, token);
+			var outputContent = await Engine.ProcessTemplateAsync (pt, inputContent, settings, this, token).ConfigureAwait (false);
 			outputFileName = OutputFile;
 
 			return (outputFileName, outputContent);
