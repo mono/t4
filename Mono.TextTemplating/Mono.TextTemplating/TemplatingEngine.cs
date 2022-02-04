@@ -79,13 +79,13 @@ namespace Mono.TextTemplating
 
 		public async Task<string> ProcessTemplateAsync (string content, ITextTemplatingEngineHost host, CancellationToken token = default)
 		{
-			using var tpl = await CompileTemplateAsync (content, host, token);
+			using var tpl = await CompileTemplateAsync (content, host, token).ConfigureAwait (false);
 			return tpl?.Process ();
 		}
 
 		public async Task<string> ProcessTemplateAsync (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, CancellationToken token = default)
 		{
-			var tpl = await CompileTemplateAsync (pt, content, host, settings, token);
+			var tpl = await CompileTemplateAsync (pt, content, host, settings, token).ConfigureAwait (false);
 			using (tpl?.template) {
 				return tpl?.template.Process ();
 			}
@@ -198,7 +198,8 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			return (await CompileTemplateInternal (pt, content, host, null, token))?.template;
+			var tpl = await CompileTemplateInternal (pt, content, host, null, token).ConfigureAwait (false);
+			return tpl?.template;
 		}
 
 		[Obsolete("Use CompileTemplateAsync")]
@@ -267,7 +268,7 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			(var results, var assembly) = await CompileCode (references, settings, ccu, token);
+			(var results, var assembly) = await CompileCode (references, settings, ccu, token).ConfigureAwait (false);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
@@ -332,7 +333,7 @@ namespace Mono.TextTemplating
 			args.TempDirectory = tempFolder;
 			args.LangVersion = settings.LangVersion;
 
-			var result = await compiler.CompileFile (args, settings.Log, token);
+			var result = await compiler.CompileFile (args, settings.Log, token).ConfigureAwait (false);
 
 			var r = new CompilerResults (new TempFileCollection ());
 			r.TempFiles.AddFile (sourceFilename, false);

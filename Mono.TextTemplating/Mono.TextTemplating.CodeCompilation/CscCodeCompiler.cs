@@ -143,7 +143,7 @@ namespace Mono.TextTemplating.CodeCompilation
 
 			var process = ProcessUtils.StartProcess (psi, outWriter, errWriter, token);
 
-			var result = await process;
+			var result = await process.ConfigureAwait (false);
 
 			var outputList = new List<string> ();
 			var errors = new List<CodeCompilerError> ();
