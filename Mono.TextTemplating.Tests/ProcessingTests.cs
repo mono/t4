@@ -1,4 +1,4 @@
-﻿// 
+//
 // GenerationTests.cs
 //  
 // Author:
@@ -39,9 +39,13 @@ namespace Mono.TextTemplating.Tests
 		[Fact]
 		public async Task TemplateGeneratorTest ()
 		{
+			using var ctx = new TrackingSynchronizationContext ();
+
 			var gen = new TemplateGenerator ();
 			await gen.ProcessTemplateAsync (null, "<#@ template language=\"C#\" #>", null);
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
+
+			ctx.AssertMaxCallCount (1);
 		}
 
 		[Fact]
@@ -126,12 +130,16 @@ namespace Mono.TextTemplating.Tests
 		[Fact]
 		public async Task InProcessCompilerTest ()
 		{
+			using var ctx = new TrackingSynchronizationContext ();
+
 			var gen = new TemplateGenerator ();
 			gen.UseInProcessCompiler ();
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Enumerable).Assembly.Location));
 			await gen.ProcessTemplateAsync (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", null);
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
+
+			ctx.AssertMaxCallCount (1);
 		}
 
 		[Fact]
