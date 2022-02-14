@@ -90,9 +90,7 @@ namespace Mono.TextTemplating
 			if (string.IsNullOrEmpty (content))
 				throw new ArgumentNullException (nameof (content));
 
-			Errors.Clear ();
-			encoding = Utf8.BomlessEncoding;
-
+			InitializeForRun ();
 			return Engine.CompileTemplateAsync (content, this, token);
 		}
 
@@ -102,6 +100,19 @@ namespace Mono.TextTemplating
 					engine = new TemplatingEngine ();
 				return engine;
 			}
+		}
+
+		void InitializeForRun (string inputFileName = null, string outputFileName = null, Encoding encoding = null)
+		{
+			Errors.Clear ();
+			this.encoding = encoding ?? Utf8.BomlessEncoding;
+
+			if (outputFileName is null && inputFileName is not null) {
+				outputFileName = Path.ChangeExtension (inputFileName, ".txt");
+			}
+
+			TemplateFile = inputFileName;
+			OutputFile = outputFileName;
 		}
 
 		[Obsolete("Use ProcessTemplateAsync")]
@@ -115,6 +126,8 @@ namespace Mono.TextTemplating
 			if (string.IsNullOrEmpty (outputFile))
 				throw new ArgumentNullException (nameof (outputFile));
 
+			InitializeForRun (inputFile, outputFile);
+
 			string content;
 			try {
 #if NETCOREAPP2_1_OR_GREATER
@@ -124,7 +137,6 @@ namespace Mono.TextTemplating
 #endif
 			}
 			catch (IOException ex) {
-				Errors.Clear ();
 				AddError ("Could not read input file '" + inputFile + "':\n" + ex);
 				return false;
 			}
@@ -155,15 +167,11 @@ namespace Mono.TextTemplating
 
 		public async Task<(string fileName, string content, bool success)> ProcessTemplateAsync (string inputFileName, string inputContent, string outputFileName, CancellationToken token = default)
 		{
-			Errors.Clear ();
-			encoding = Utf8.BomlessEncoding;
+			InitializeForRun (inputFileName, outputFileName);
 
-			OutputFile = outputFileName;
-			TemplateFile = inputFileName;
 			var outputContent = await Engine.ProcessTemplateAsync (inputContent, this, token).ConfigureAwait (false);
-			outputFileName = OutputFile;
 
-			return (outputFileName, outputContent, !Errors.HasErrors);
+			return (OutputFile, outputContent, !Errors.HasErrors);
 		}
 
 		public bool PreprocessTemplate (string inputFile, string className, string classNamespace,
@@ -177,11 +185,12 @@ namespace Mono.TextTemplating
 			if (string.IsNullOrEmpty (outputFile))
 				throw new ArgumentNullException (nameof (outputFile));
 
+			InitializeForRun (inputFile, outputFile, encoding);
+
 			string content;
 			try {
 				content = File.ReadAllText (inputFile);
 			} catch (IOException ex) {
-				Errors.Clear ();
 				AddError ("Could not read input file '" + inputFile + "':\n" + ex);
 				return false;
 			}
@@ -201,10 +210,8 @@ namespace Mono.TextTemplating
 		public bool PreprocessTemplate (string inputFileName, string className, string classNamespace, string inputContent,
 			out string language, out string[] references, out string outputContent)
 		{
-			Errors.Clear ();
-			encoding = Utf8.BomlessEncoding;
+			InitializeForRun (null, inputFileName);
 
-			TemplateFile = inputFileName;
 			outputContent = Engine.PreprocessTemplate (inputContent, this, className, classNamespace, out language, out references);
 
 			return !Errors.HasErrors;
@@ -231,7 +238,7 @@ namespace Mono.TextTemplating
 			out string language,
 			out string[] references)
 		{
-			TemplateFile = inputFile;
+			InitializeForRun (inputFileName: inputFile);
 			return Engine.PreprocessTemplate (pt, inputContent, settings, this, out language, out references);
 		}
 
@@ -243,13 +250,9 @@ namespace Mono.TextTemplating
 			TemplateSettings settings,
 			CancellationToken token = default)
 		{
-			Errors.Clear ();
-			encoding = Utf8.BomlessEncoding;
+			InitializeForRun (inputFileName, outputFileName);
 
-			OutputFile = outputFileName;
-			TemplateFile = inputFileName;
 			var outputContent = await Engine.ProcessTemplateAsync (pt, inputContent, settings, this, token).ConfigureAwait (false);
-			outputFileName = OutputFile;
 
 			return (outputFileName, outputContent);
 		}
@@ -269,13 +272,13 @@ namespace Mono.TextTemplating
 
 		protected virtual string ResolveAssemblyReference (string assemblyReference)
 		{
-			if (System.IO.Path.IsPathRooted (assemblyReference))
- 				return assemblyReference;
- 			foreach (string referencePath in ReferencePaths) {
- 				var path = System.IO.Path.Combine (referencePath, assemblyReference);
- 				if (System.IO.File.Exists (path))
- 					return path;
- 			}
+			if (Path.IsPathRooted (assemblyReference))
+				return assemblyReference;
+			foreach (string referencePath in ReferencePaths) {
+				var path = Path.Combine (referencePath, assemblyReference);
+				if (File.Exists (path))
+					return path;
+			}
 
 			var assemblyName = new AssemblyName(assemblyReference);
 			if (assemblyName.Version != null)//Load via GAC and return full path
@@ -476,11 +479,13 @@ namespace Mono.TextTemplating
 
 		void ITextTemplatingEngineHost.SetFileExtension (string extension)
 		{
-			extension = extension.TrimStart ('.');
-			if (Path.HasExtension (OutputFile)) {
-				OutputFile = Path.ChangeExtension (OutputFile, extension);
-			} else {
-				OutputFile = OutputFile + "." + extension;
+			if (OutputFile is not null) {
+				extension = extension.TrimStart ('.');
+				if (Path.HasExtension (OutputFile)) {
+					OutputFile = Path.ChangeExtension (OutputFile, extension);
+				} else {
+					OutputFile = OutputFile + "." + extension;
+				}
 			}
 		}
 

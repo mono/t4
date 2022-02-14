@@ -35,12 +35,6 @@ namespace Mono.TextTemplating.Tests
 {
 	public class ParsingTests
 	{
-		public static string GetTestFile (string filename, [CallerMemberName] string testDir = null)
-		{
-			var asmDir = Environment.CurrentDirectory;
-			return Path.Combine (asmDir, "TestCases", testDir, filename);
-		}
-
 		public const string ParseSample1 =
 @"<#@ template language=""C#v3.5"" #>
 Line One
@@ -240,7 +234,7 @@ Five
 		[Fact]
 		public void RelativeInclude ()
 		{
-			var testFile = GetTestFile ("RelativeInclude.tt");
+			var testFile = TestDataPath.Get ().Combine ("RelativeInclude.tt");
 			var host = new TemplateGenerator ();
 			var pt = host.ParseTemplate (testFile, File.ReadAllText (testFile));
 			Assert.Collection (pt.Content, c => Assert.Equal("Hello", c.Text));

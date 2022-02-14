@@ -6,40 +6,38 @@
 using System;
 using System.IO;
 using System.Reflection;
-using Microsoft.VisualStudio.TextTemplating;
-
 namespace Mono.TextTemplating
 {
 	class CurrentDomainAssemblyResolver : IDisposable
 	{
-		readonly ITextTemplatingEngineHost host;
+		readonly Func<string, string> resolveAssemblyReference;
 		readonly string[] assemblyFiles;
 		bool disposed;
 
-		public CurrentDomainAssemblyResolver (ITextTemplatingEngineHost host, string[] assemblyFiles)
+		public CurrentDomainAssemblyResolver (string[] assemblyFiles, Func<string,string> resolveAssemblyReference)
 		{
-			this.host = host;
+			this.resolveAssemblyReference = resolveAssemblyReference;
 			this.assemblyFiles = assemblyFiles;
+
+			AppDomain.CurrentDomain.AssemblyResolve += ResolveReferencedAssemblies;
 		}
 
 		Assembly ResolveReferencedAssemblies (object sender, ResolveEventArgs args)
 		{
-			AssemblyName asmName = new AssemblyName (args.Name);
+			var asmName = new AssemblyName (args.Name);
+
 			foreach (var asmFile in assemblyFiles) {
-				if (asmName.Name == Path.GetFileNameWithoutExtension (asmFile))
+				if (asmName.Name == Path.GetFileNameWithoutExtension (asmFile)) {
 					return Assembly.LoadFrom (asmFile);
+				}
 			}
 
-			var path = host.ResolveAssemblyReference (asmName.Name + ".dll");
-			if (File.Exists (path))
+			var path = resolveAssemblyReference (asmName.Name + ".dll");
+			if (File.Exists (path)) {
 				return Assembly.LoadFrom (path);
+			}
 
 			return null;
-		}
-
-		public void RegisterForCurrentDomain ()
-		{
-			AppDomain.CurrentDomain.AssemblyResolve += ResolveReferencedAssemblies;
 		}
 
 		public void Dispose ()

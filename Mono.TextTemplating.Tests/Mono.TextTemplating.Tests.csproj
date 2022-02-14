@@ -21,7 +21,38 @@
   <ItemGroup>
     <None Include="TestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
     <!-- disable parallel test execution on github actions, it hangs the runner there -->
-    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'"/>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'" />
   </ItemGroup>
+
+  <!-- download packages that contains dlls referenced by test tt files -->
+  <ItemGroup>
+    <PackageDownload Include="Microsoft.OpenApi" Version="[1.2.3]" />
+    <PackageDownload Include="Microsoft.OpenApi.Readers" Version="[1.2.3]" />
+    <PackageDownload Include="SharpYaml" Version="[1.6.5]" />
+  </ItemGroup>
+
+  <!-- write paths to downloaded packages into consts that tests can use -->
+  <Target Name="GeneratePackageDownloadPaths" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_PackageDownloadConstsPathFile>$(IntermediateOutputPath)PackageDownloadPathConstants.cs</_PackageDownloadConstsPathFile>
+      <_EscapedNuGetPackageRoot>$(NuGetPackageRoot.Replace('\','\\'))</_EscapedNuGetPackageRoot>
+    </PropertyGroup>
+    <ItemGroup>
+      <_PackageDownloadPathConsts Include="@(PackageDownload)" Version="$([System.String]::Copy('%(Version)').Replace('[','').Replace(']',''))" VarName="$([System.String]::Copy('%(Identity)_%(Version)').Replace('.','_'))" />
+      <_PackageDownloadPathConstLines Include="namespace $(ProjectName) {" />
+      <_PackageDownloadPathConstLines Include="partial class PackagePath {" />
+      <_PackageDownloadPathConstLines Include="@(_PackageDownloadPathConsts->'public static TestDataPath %(VarName) =&gt; new(&quot;$(_EscapedNuGetPackageRoot)%(Identity)\\%(Version)&quot;);')" />
+      <_PackageDownloadPathConstLines Include="}}" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(_PackageDownloadConstsPathFile)" Lines="@(_PackageDownloadPathConstLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+
+    <ItemGroup>
+      <_PackageDownloadPathConsts Remove="@(_PackageDownloadPathConsts)" />
+      <_PackageDownloadPathConstLines Remove="@(_PackageDownloadPathConstLines)" />
+      <Compile Include="$(_PackageDownloadConstsPathFile)" />
+      <FileWrites Include="$(_PackageDownloadConstsPathFile)" />
+    </ItemGroup>
+  </Target>
 
 </Project>
