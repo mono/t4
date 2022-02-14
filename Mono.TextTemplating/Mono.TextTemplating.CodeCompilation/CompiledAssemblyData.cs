@@ -11,6 +11,9 @@ using System.Reflection;
 
 namespace Mono.TextTemplating.CodeCompilation
 {
+#if FEATURE_APPDOMAINS
+	[Serializable]
+#endif
 	class CompiledAssemblyData
 	{
 		public byte[] Assembly { get; }
@@ -18,9 +21,13 @@ namespace Mono.TextTemplating.CodeCompilation
 
 		public CompiledAssemblyData (byte[] assembly, byte[] debugSymbols)
 		{
-			Assembly = assembly ?? throw new System.ArgumentNullException (nameof (assembly));
+			Assembly = assembly ?? throw new ArgumentNullException (nameof (assembly));
 			DebugSymbols = debugSymbols;
 		}
+
+#if FEATURE_APPDOMAINS
+		CompiledAssemblyData () { }
+#endif
 
 #if FEATURE_ASSEMBLY_LOAD_CONTEXT
 		public Assembly LoadInAssemblyLoadContext (AssemblyLoadContext loadContext)

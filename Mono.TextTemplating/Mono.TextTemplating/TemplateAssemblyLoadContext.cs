@@ -23,6 +23,9 @@ namespace Mono.TextTemplating
 		readonly AssemblyName hostAsmName;
 
 		public TemplateAssemblyLoadContext (string[] templateAssemblyFiles, ITextTemplatingEngineHost host)
+#if NETCOREAPP3_0_OR_GREATER
+			: base (isCollectible: true)
+#endif
 		{
 			this.templateAssemblyFiles = templateAssemblyFiles;
 			this.host = host;

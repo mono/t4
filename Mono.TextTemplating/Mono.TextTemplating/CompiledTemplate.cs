@@ -29,7 +29,6 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
-using System.IO;
 
 using Microsoft.VisualStudio.TextTemplating;
 using Mono.TextTemplating.CodeCompilation;
@@ -44,7 +43,7 @@ namespace Mono.TextTemplating
 	{
 		ITextTemplatingEngineHost host;
 		object textTransformation;
-		readonly CultureInfo culture;
+		CultureInfo culture;
 
 #if FEATURE_ASSEMBLY_LOAD_CONTEXT
 		readonly TemplateAssemblyLoadContext templateContext;
@@ -61,7 +60,6 @@ namespace Mono.TextTemplating
 				: results.CompiledAssembly;
 			InitializeTemplate (assembly, fullName);
 		}
-
 
 		public CompiledTemplate (ITextTemplatingEngineHost host, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
 			: this (host, culture, referenceAssemblyFiles)
@@ -85,7 +83,7 @@ namespace Mono.TextTemplating
 #if FEATURE_ASSEMBLY_LOAD_CONTEXT
 			templateContext = new TemplateAssemblyLoadContext (referenceAssemblyFiles, host);
 #else
-			assemblyResolver = new (host, referenceAssemblyFiles);
+			assemblyResolver = new (referenceAssemblyFiles, host.ResolveAssemblyReference);
 #endif
 		}
 
@@ -93,7 +91,7 @@ namespace Mono.TextTemplating
 		Assembly LoadAssemblyFile (string assemblyPath) => templateContext.LoadFromAssemblyPath (assemblyPath);
 		Assembly LoadInMemoryAssembly (CompiledAssemblyData assemblyData) => assemblyData.LoadInAssemblyLoadContext (templateContext);
 #else
-		static Assembly LoadAssemblyFile (string assemblyPath)  => Assembly.LoadFile (assemblyPath);
+		static Assembly LoadAssemblyFile (string assemblyPath) => Assembly.LoadFile (assemblyPath);
 		static Assembly LoadInMemoryAssembly (CompiledAssemblyData assemblyData) => assemblyData.LoadInCurrentAppDomain ();
 #endif
 
@@ -127,7 +125,7 @@ namespace Mono.TextTemplating
 			var errorProp = ttType.GetProperty ("Errors", BindingFlags.Instance | BindingFlags.NonPublic);
 			if (errorProp == null)
 				throw new ArgumentException ("Template must have 'Errors' property");
-			var errorMethod = ttType.GetMethod ("Error", new Type [] { typeof (string) });
+			var errorMethod = ttType.GetMethod ("Error", new Type[] { typeof (string) });
 			if (errorMethod == null) {
 				throw new ArgumentException ("Template must have 'Error(string message)' method");
 			}
@@ -147,14 +145,14 @@ namespace Mono.TextTemplating
 			var transformMethod = ttType.GetMethod ("TransformText");
 
 			if (initMethod == null) {
-				errorMethod.Invoke (textTransformation, new object [] { "Error running transform: no method Initialize()" });
+				errorMethod.Invoke (textTransformation, new object[] { "Error running transform: no method Initialize()" });
 			} else if (transformMethod == null) {
-				errorMethod.Invoke (textTransformation, new object [] { "Error running transform: no method TransformText()" });
+				errorMethod.Invoke (textTransformation, new object[] { "Error running transform: no method TransformText()" });
 			} else try {
 					initMethod.Invoke (textTransformation, null);
 					output = (string)transformMethod.Invoke (textTransformation, null);
 				} catch (Exception ex) {
-					errorMethod.Invoke (textTransformation, new object [] { "Error running transform: " + ex });
+					errorMethod.Invoke (textTransformation, new object[] { "Error running transform: " + ex });
 				}
 
 			host.LogErrors (errors);
@@ -170,5 +168,25 @@ namespace Mono.TextTemplating
 			assemblyResolver.Dispose ();
 #endif
 		}
+
+#if FEATURE_APPDOMAINS
+		internal static CompiledTemplate LoadInAppDomain (AppDomain domain, ITextTemplatingEngineHost host, CompiledAssemblyData assembly, string fullName, CultureInfo culture, string[] referenceAssemblyFiles)
+		{
+			var flags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.CreateInstance;
+			var args = new object[] { host, assembly, fullName, culture, referenceAssemblyFiles };
+			var ct = typeof (CompiledTemplate);
+
+
+			try {
+				var obj = domain.CreateInstanceAndUnwrap (ct.Assembly.FullName, ct.FullName, false, flags, null, args, null, null);
+				return (CompiledTemplate)obj;
+			}
+			catch (Exception ex) when (ex is MissingMethodException || ex is System.IO.FileNotFoundException || ex is System.Runtime.Serialization.SerializationException) {
+				throw new TemplatingEngineException (
+					$"Could not instantiate CompiledTemplate in templating AppDomain. The AppDomain's base directory may be incorrect. " +
+					$"The assembly '{typeof (CompiledTemplate).Assembly.FullName}' must be resolvable in the domain.", ex);
+			}
+		}
+#endif
 	}
 }

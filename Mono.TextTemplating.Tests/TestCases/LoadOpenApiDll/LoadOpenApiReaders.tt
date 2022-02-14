@@ -1,0 +1,17 @@
+<#@ template hostspecific="true" #>
+<#@ output extension=".txt" #>
+<#@ assembly name="Microsoft.OpenApi.dll" #>
+<#@ assembly name="Microsoft.OpenApi.Readers.dll" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="Microsoft.OpenApi.Models" #>
+<#@ import namespace="Microsoft.OpenApi.Readers" #>
+<#
+OpenApiDocument openApiDocument;
+OpenApiDiagnostic openApiDiagnostic;
+var yamlFile = Host.ResolvePath("LoadOpenApiDll.yaml");
+using (var fileStream = new FileStream(yamlFile, FileMode.Open, FileAccess.Read)) {
+var reader = new OpenApiStreamReader();
+openApiDocument = reader.Read(fileStream, out openApiDiagnostic);
+}
+#>
+<#= openApiDocument.Info.Title #>
