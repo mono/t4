@@ -12,7 +12,7 @@ namespace Mono.TextTemplating.Tests;
 struct TestDataPath
 {
 	readonly string path;
-	public TestDataPath (string path) => this.path = path;
+	public TestDataPath (string path) => this.path = TrimEndingDirectorySeparator (path);
 
 	public static TestDataPath Get ([CallerMemberName] string testName = null)
 		=> new (Path.Combine (Environment.CurrentDirectory, "TestCases", testName));
@@ -42,13 +42,26 @@ struct TestDataPath
 
 	public TestDataPath AssertFileExists ()
 	{
-		Assert.True (File.Exists (path), $"File '{path}' does not exists");
+		Assert.True (File.Exists (path), $"File '{path}' does not exist");
 		return this;
 	}
 
 	public TestDataPath AssertDirectoryExists ()
 	{
-		Assert.True (Directory.Exists (path), $"Directory '{path}' does not exists");
+		Assert.True (Directory.Exists (path), $"Directory '{path}' does not exist");
 		return this;
 	}
+
+	static string TrimEndingDirectorySeparator (string path)
+#if NETCOREAPP3_0_OR_GREATER
+		=> Path.TrimEndingDirectorySeparator (path);
+#else
+	{
+		var trimmed = path.TrimEnd (Path.DirectorySeparatorChar);
+		if (trimmed.Length == path.Length && Path.AltDirectorySeparatorChar != Path.DirectorySeparatorChar) {
+			return trimmed.TrimEnd (Path.DirectorySeparatorChar);
+		}
+		return trimmed;
+	}
+#endif
 }
