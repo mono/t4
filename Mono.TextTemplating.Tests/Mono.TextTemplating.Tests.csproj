@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
@@ -38,17 +38,26 @@
       <_EscapedNuGetPackageRoot>$(NuGetPackageRoot.Replace('\','\\'))</_EscapedNuGetPackageRoot>
     </PropertyGroup>
     <ItemGroup>
-      <_PackageDownloadPathConsts Include="@(PackageDownload)" Version="$([System.String]::Copy('%(Version)').Replace('[','').Replace(']',''))" VarName="$([System.String]::Copy('%(Identity)_%(Version)').Replace('.','_'))" />
+      <!-- temp vars to make escaping manageable -->
+      <_PackageDownloadWithVersion Include="@(PackageDownload)" Version="$([System.String]::Copy('%(Version)').Replace('[','').Replace(']',''))" />
+      <_PackageDownloadWithPath Include="@(_PackageDownloadWithVersion)" Path="$(NuGetPackageRoot)$([System.String]::Copy('%(Identity)').ToLower())\%(Version)" />
+      <_PackageDownloadVars
+        Include="@(_PackageDownloadWithPath)"
+        VarName="$([System.String]::Copy('%(Identity)_%(Version)').Replace('.','_'))"
+        EscapedValue="$([System.String]::Copy('%(Path)').Replace('\','\\'))"
+      />
       <_PackageDownloadPathConstLines Include="namespace $(ProjectName) {" />
       <_PackageDownloadPathConstLines Include="partial class PackagePath {" />
-      <_PackageDownloadPathConstLines Include="@(_PackageDownloadPathConsts->'public static TestDataPath %(VarName) =&gt; new(&quot;$(_EscapedNuGetPackageRoot)%(Identity)\\%(Version)&quot;);')" />
+      <_PackageDownloadPathConstLines Include="@(_PackageDownloadVars->'    public static TestDataPath %(VarName) =&gt; new(&quot;%(EscapedValue)&quot;);')" />
       <_PackageDownloadPathConstLines Include="}}" />
     </ItemGroup>
 
     <WriteLinesToFile File="$(_PackageDownloadConstsPathFile)" Lines="@(_PackageDownloadPathConstLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
     <ItemGroup>
-      <_PackageDownloadPathConsts Remove="@(_PackageDownloadPathConsts)" />
+      <_PackageDownloadWithVersion Remove="@(_PackageDownloadWithVersion)" />
+      <_PackageDownloadWithPath Remove="@(_PackageDownloadWithPath)" />
+      <_PackageDownloadVars Remove="@(_PackageDownloadVars)" />
       <_PackageDownloadPathConstLines Remove="@(_PackageDownloadPathConstLines)" />
       <Compile Include="$(_PackageDownloadConstsPathFile)" />
       <FileWrites Include="$(_PackageDownloadConstsPathFile)" />
