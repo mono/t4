@@ -18,7 +18,7 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 	{
 		var testDir = TestDataPath.Get ();
 		var gen = CreateGenerator ();
-		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_1_2_3.Combine ("lib", "netstandard2.0"));
+		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_1_2_3.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
 
 		var templatePath = testDir["LoadOpenApiDll.tt"];
 		var templateText = await templatePath.ReadAllTextNormalizedAsync ();
@@ -42,9 +42,9 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 	{
 		var testDir = TestDataPath.Get (nameof (LoadOpenApiDll));
 		var gen = CreateGenerator ();
-		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_1_2_3.Combine ("lib", "netstandard2.0"));
-		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_Readers_1_2_3.Combine ("lib", "netstandard2.0"));
-		gen.ReferencePaths.Add (PackagePath.SharpYaml_1_6_5.Combine ("lib", "netstandard2.0"));
+		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_1_2_3.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
+		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_Readers_1_2_3.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
+		gen.ReferencePaths.Add (PackagePath.SharpYaml_1_6_5.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
 
 		var templatePath = testDir["LoadOpenApiReaders.tt"];
 		var templateText = await templatePath.ReadAllTextNormalizedAsync ();
@@ -63,8 +63,8 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 	public async Task MissingTransitiveReference ()
 	{
 		var gen = CreateGenerator ();
-		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_1_2_3.Combine ("lib", "netstandard2.0"));
-		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_Readers_1_2_3.Combine ("lib", "netstandard2.0"));
+		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_1_2_3.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
+		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_Readers_1_2_3.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
 
 		var testDir = TestDataPath.Get (nameof (LoadOpenApiDll));
 		var templatePath = testDir["LoadOpenApiReaders.tt"];

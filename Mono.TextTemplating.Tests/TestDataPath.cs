@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace Mono.TextTemplating.Tests;
 
@@ -38,4 +39,16 @@ struct TestDataPath
 
 	public string ReadAllText () => File.ReadAllText (path);
 	public string ReadAllTextNormalized () => File.ReadAllText (path).NormalizeNewlines ();
+
+	public TestDataPath AssertFileExists ()
+	{
+		Assert.True (File.Exists (path), $"File '{path}' does not exists");
+		return this;
+	}
+
+	public TestDataPath AssertDirectoryExists ()
+	{
+		Assert.True (Directory.Exists (path), $"Directory '{path}' does not exists");
+		return this;
+	}
 }
