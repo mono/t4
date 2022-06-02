@@ -9,6 +9,9 @@ namespace Mono.TextTemplating
 		public static void UseInProcessCompiler (this TemplatingEngine engine)
 		{
 			engine.SetCompilerFunc ((RuntimeInfo r) => new RoslynCodeCompiler (r));
+
+			RuntimeInfo.ThrowOnMissingDotNetCoreSdkDirectory = false;
+			RuntimeInfo.DefaultMaxSupportedLangVersion = CSharpLangVersion.v9_0;
 		}
 
 		public static void UseInProcessCompiler (this TemplateGenerator generator)

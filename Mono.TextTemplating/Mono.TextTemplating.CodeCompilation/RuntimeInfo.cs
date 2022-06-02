@@ -56,6 +56,9 @@ namespace Mono.TextTemplating.CodeCompilation
 		public string RefAssembliesDir { get; private set; }
 		public string RuntimeFacadesDir { get; internal set; }
 
+		internal static bool ThrowOnMissingDotNetCoreSdkDirectory { get; set; } = true;
+		internal static CSharpLangVersion? DefaultMaxSupportedLangVersion { get; set; }
+
 		public static RuntimeInfo GetRuntime ()
 		{
 			if (Type.GetType ("Mono.Runtime") != null)
@@ -135,10 +138,16 @@ namespace Mono.TextTemplating.CodeCompilation
 
 			string MakeCscPath (string d) => Path.Combine (d, "Roslyn", "bincore", "csc.dll");
 			var sdkDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "sdk"), d => File.Exists (MakeCscPath (d)), out var sdkVersion);
-			if (sdkDir == null) {
+			if (sdkDir == null && ThrowOnMissingDotNetCoreSdkDirectory) {
 				return FromError (RuntimeKind.NetCore, "Could not find csc.dll in any .NET Core SDK");
 			}
-			var maxCSharpVersion = CSharpLangVersionHelper.FromNetCoreSdkVersion (sdkVersion);
+			string cscPath = sdkDir == null ? null : MakeCscPath (sdkDir);
+			CSharpLangVersion maxCSharpVersion;
+			if (sdkVersion.Equals(SemVersion.Zero) && DefaultMaxSupportedLangVersion.HasValue) {
+				maxCSharpVersion = DefaultMaxSupportedLangVersion.Value;
+			} else {
+				maxCSharpVersion = CSharpLangVersionHelper.FromNetCoreSdkVersion (sdkVersion);
+			}
 
 			// it's ok if this is null, we may be running on an older SDK that didn't support packs
 			//in which case we fall back to resolving from the runtime dir
@@ -148,11 +157,15 @@ namespace Mono.TextTemplating.CodeCompilation
 				out _
 			);
 
-			return new RuntimeInfo (RuntimeKind.NetCore) { RuntimeDir = runtimeDir, RefAssembliesDir = refAssembliesDir, CscPath = MakeCscPath (sdkDir), MaxSupportedLangVersion = maxCSharpVersion, Version = hostVersion };
+			return new RuntimeInfo (RuntimeKind.NetCore) { RuntimeDir = runtimeDir, RefAssembliesDir = refAssembliesDir, CscPath = cscPath, MaxSupportedLangVersion = maxCSharpVersion, Version = hostVersion };
 		}
 
 		static string FindHighestVersionedDirectory (string parentFolder, Func<string, bool> validate, out SemVersion bestVersion)
 		{
+			if (!Directory.Exists (parentFolder)) {
+				bestVersion = SemVersion.Zero;
+				return null;
+			}
 			string bestMatch = null;
 			bestVersion = SemVersion.Zero;
 			foreach (var dir in Directory.EnumerateDirectories (parentFolder)) {
