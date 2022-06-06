@@ -57,7 +57,6 @@ namespace Mono.TextTemplating.CodeCompilation
 		public string RuntimeFacadesDir { get; internal set; }
 
 		internal static bool ThrowOnMissingDotNetCoreSdkDirectory { get; set; } = true;
-		internal static CSharpLangVersion? DefaultMaxSupportedLangVersion { get; set; }
 
 		public static RuntimeInfo GetRuntime ()
 		{
