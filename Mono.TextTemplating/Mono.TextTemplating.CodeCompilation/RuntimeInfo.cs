@@ -142,12 +142,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				return FromError (RuntimeKind.NetCore, "Could not find csc.dll in any .NET Core SDK");
 			}
 			string cscPath = sdkDir == null ? null : MakeCscPath (sdkDir);
-			CSharpLangVersion maxCSharpVersion;
-			if (sdkVersion.Equals(SemVersion.Zero) && DefaultMaxSupportedLangVersion.HasValue) {
-				maxCSharpVersion = DefaultMaxSupportedLangVersion.Value;
-			} else {
-				maxCSharpVersion = CSharpLangVersionHelper.FromNetCoreSdkVersion (sdkVersion);
-			}
+			CSharpLangVersion maxCSharpVersion = CSharpLangVersionHelper.FromNetCoreSdkVersion (sdkVersion);
 
 			// it's ok if this is null, we may be running on an older SDK that didn't support packs
 			//in which case we fall back to resolving from the runtime dir

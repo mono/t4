@@ -53,14 +53,11 @@ namespace Mono.TextTemplating
 			var parseOptions = args?.ParseOptions ?? new CSharpParseOptions();
 
 			if (arguments.LangVersion != null) {
-				if (LanguageVersionFacts.TryParse(arguments.LangVersion, out var langVersion)) {
-					parseOptions = parseOptions.WithLanguageVersion (langVersion);
-				} else {
-					throw new System.Exception($"Unknown value '{arguments.LangVersion}' for langversion");
-				}
+				parseOptions = WithLanguageVersion (parseOptions, arguments.LangVersion);
 			} else {
 				// need to update this when updating referenced roslyn binaries
-				CSharpLangVersionHelper.GetBestSupportedLangVersion (runtime, CSharpLangVersion.v9_0);
+				var langVersion = CSharpLangVersionHelper.GetBestSupportedLangVersion (runtime, CSharpLangVersion.v9_0);
+				parseOptions = WithLanguageVersion (parseOptions, CSharpLangVersionHelper.ToString (langVersion));
 			}
 
 			var syntaxTrees = new List<SyntaxTree> ();
@@ -119,6 +116,15 @@ namespace Mono.TextTemplating
 				Output = new List<string> (),
 				Errors = errors
 			};
+		}
+
+		static CSharpParseOptions WithLanguageVersion (CSharpParseOptions parseOptions, string langVersionText)
+		{
+			if (LanguageVersionFacts.TryParse (langVersionText, out var langVersion)) {
+				return parseOptions.WithLanguageVersion (langVersion);
+			} else {
+				throw new System.Exception ($"Unknown value '{langVersionText}' for langversion");
+			}
 		}
 	}
 }

@@ -36,7 +36,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				&& ProcessArgumentBuilder.TryParse (args, out var parsedArgs)
 				&& parsedArgs.Any (a => a.IndexOf("langversion") == 1);
 
-		static string ToString (CSharpLangVersion v) => v switch {
+		internal static string ToString (CSharpLangVersion v) => v switch {
 			CSharpLangVersion.v5_0 => "5",
 			CSharpLangVersion.v6_0 => "6",
 			CSharpLangVersion.v7_0 => "7",
