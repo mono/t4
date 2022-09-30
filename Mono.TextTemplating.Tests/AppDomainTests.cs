@@ -41,14 +41,23 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 		string basePath = null, string relativeSearchPath = null, bool shadowCopy = false,
 		[CallerMemberName] string testName = null
 		)
-		=> new (AppDomain.CreateDomain (
+	{
+		if (basePath is null) {
+			// need to be able to resolve Mono.TextTemplating to load CompiledTemplate, which will resolve other assemblies via the host.
+			basePath = AppDomain.CurrentDomain.BaseDirectory;
+			if (relativeSearchPath is not null) {
+				throw new ArgumentException ($"{nameof(relativeSearchPath)} must be null if {nameof(basePath)} is null", nameof (relativeSearchPath));
+			}
+			relativeSearchPath = AppDomain.CurrentDomain.RelativeSearchPath;
+		}
+		return new (AppDomain.CreateDomain (
 			$"Template Test - {testName ?? "(unknown)"}",
 			null,
-			basePath ?? AppDomain.CurrentDomain.BaseDirectory,
-			(basePath is not null && relativeSearchPath is not null)? relativeSearchPath : AppDomain.CurrentDomain.RelativeSearchPath,
+			basePath,
+			relativeSearchPath,
 			shadowCopy)
 		);
-
+	}
 
 	class TestTemplateGeneratorWithAppDomain : TemplateGenerator
 	{
