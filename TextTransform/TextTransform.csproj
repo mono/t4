@@ -16,10 +16,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-  </ItemGroup>
-
-  <ItemGroup>
     <!-- work around nuget pack targets not packaging private assets from project references -->
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" PrivateAssets="all" />
     <None Include="$(OutDir)\Mono.TextTemplating.dll" Pack="true" PackagePath="tools\Mono.TextTemplating.dll" />
