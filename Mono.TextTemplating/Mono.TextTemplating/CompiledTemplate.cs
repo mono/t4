@@ -183,8 +183,10 @@ namespace Mono.TextTemplating
 			}
 			catch (Exception ex) when (ex is MissingMethodException || ex is System.IO.FileNotFoundException || ex is System.Runtime.Serialization.SerializationException) {
 				throw new TemplatingEngineException (
-					$"Could not instantiate CompiledTemplate in templating AppDomain. The AppDomain's base directory may be incorrect. " +
-					$"The assembly '{typeof (CompiledTemplate).Assembly.FullName}' must be resolvable in the domain.", ex);
+					$"Could not instantiate CompiledTemplate in templating AppDomain '{domain.FriendlyName ?? "(no name)"}'. " +
+					$"The assembly '{typeof (CompiledTemplate).Assembly.FullName}' must be resolvable in the domain. " +
+					$"The AppDomain's base directory may be incorrect: '{domain.BaseDirectory}'",
+					ex);
 			}
 		}
 #endif
