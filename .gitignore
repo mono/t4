@@ -7,6 +7,7 @@
 packages/
 TestResults/
 .vs/
+testrunner
 
 # globs
 *.DS_Store
