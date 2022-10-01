@@ -275,14 +275,11 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
+			var compiledTemplate = new CompiledTemplate (host, assembly, settings.GetFullName (), settings.Culture, references);
 #if FEATURE_APPDOMAINS
-			var domain = host.ProvideTemplatingAppDomain (content);
-			if (domain != null) {
-				var template = CompiledTemplate.LoadInAppDomain (domain, host, assembly, settings.GetFullName (), settings.Culture, references);
-				return (template, references);
-			} else
+			compiledTemplate.SetTemplateContentForAppDomain (content);
 #endif
-			return (new CompiledTemplate (host, assembly, settings.GetFullName (), settings.Culture, references), references);
+			return (compiledTemplate, references);
 		}
 
 		async Task<(CompilerResults, CompiledAssemblyData)> CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu, CancellationToken token)
