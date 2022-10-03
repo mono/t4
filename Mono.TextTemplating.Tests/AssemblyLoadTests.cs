@@ -62,7 +62,7 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 		VerifyFinalState (state);
 	}
 
-	[Fact]
+	[FactExceptOnMono ("Mono incorrectly resolves the assembly if it has been loaded in a different AppDomain")]
 	public async Task MissingTransitiveReference ()
 	{
 		var gen = CreateGenerator ();
@@ -80,4 +80,16 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 
 		CleanupGenerator (gen);
 	}
+}
+
+public class FactExceptOnMonoAttribute : FactAttribute
+{
+	public FactExceptOnMonoAttribute (string reason)
+	{
+		if (IsRunningOnMono) {
+			Skip = reason;
+		}
+	}
+
+	public static bool IsRunningOnMono { get; } = System.Type.GetType ("Mono.Runtime") != null;
 }
