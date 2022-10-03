@@ -1,41 +1,53 @@
 name: Build
 
-on: [push, pull_request]
+on: workflow_call
 
 jobs:
   build:
+    name: Build ${{ matrix.os }} (${{ matrix.config }})
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest ]
         config: [ Release, Debug ]
-      fail-fast: false
     runs-on: ${{ matrix.os }}
+
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
+        submodules: recursive
         fetch-depth: 0 # GitVersioning needs deep clone
 
-    - uses: actions/setup-dotnet@v1
+    - name: Set up dotnet
+      uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: '2.1.x'
-    - uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '3.1.x'
-    - uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '5.0.x'
-    - uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '6.0.x'
+        dotnet-version: |
+          2.1.x
+          3.1.x
+          5.0.x
+          6.0.x
 
-    - name: Set up NuGet
-      uses: nuget/setup-nuget@v1
+    - name: Find MSBuild
+      if: startsWith(matrix.os, 'windows')
+      uses: microsoft/setup-msbuild@v1.1.0
+
+    - uses: actions/cache@v3
+      with:
+        path: ${{ env.NUGET_PACKAGES }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
 
     - name: Restore
-      run: dotnet restore Mono.TextTemplating.sln
+      run: dotnet restore -p:Configuration=${{ matrix.config }}
 
     - name: Build
-      run: dotnet build Mono.TextTemplating.sln -c ${{ matrix.config }} --no-restore
+      run: dotnet build --no-restore -c ${{ matrix.config }}
+
+    - name: Test
+      run: dotnet test --no-build -c ${{ matrix.config }}
 
     - name: Test (Windows)
       if: startsWith (matrix.os, 'windows')
@@ -49,9 +61,13 @@ jobs:
 #        name: test-results-${{ matrix.config }}-${{ matrix.os }}
 #        path: TestResults-${{ matrix.config }}-${{ matrix.os }}
 
+      # dotnet test doesn't support mono so we have to use the xunit console runner
+    - name: Set up NuGet
+      if: startsWith (matrix.os, 'windows') == false
+      uses: nuget/setup-nuget@v1
+
     - name: Test (Linux/Mac)
       if: startsWith (matrix.os, 'windows') == false
-      # dotnet test doesn't support mono so we have to use the xunit console runner
       run: |
         nuget install xunit.runner.console -Version 2.4.2 -OutputDirectory testrunner
         mono ./testrunner/xunit.runner.console.2.4.2/tools/net472/xunit.console.exe ./Mono.TextTemplating.Tests/bin/${{ matrix.config }}/net472/Mono.TextTemplating.Tests.dll -parallel none -noshadow
@@ -59,27 +75,9 @@ jobs:
         dotnet test -c ${{ matrix.config }} --no-build -f netcoreapp3.1
         dotnet test -c ${{ matrix.config }} --no-build -f net5.0
 
-    - uses: actions/upload-artifact@v2
-      if: matrix.config == 'Release'
+    - uses: actions/upload-artifact@v3
+      if: matrix.config == 'Release' && startsWith(matrix.os, 'windows')
       with:
         name: packages
         path: packages/Release
-
-  publish:
-    if: github.event_name == 'push'
-    needs: build
-    runs-on: windows-latest
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          path: packages
-          name: packages
-
-      - name: Publish to GPR
-        run: |
-          dotnet nuget push "packages\**\*.nupkg" --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }} --skip-duplicate
-
-      - name: Publish to NuGet.org
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          dotnet nuget push "packages\**\*.nupkg" --api-key ${{ secrets.NUGETAPIKEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        if-no-files-found: error

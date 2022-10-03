@@ -1,0 +1,17 @@
+name: Main
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-main-${{ github.ref }}-1
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+  publish:
+    needs: build
+    uses: ./.github/workflows/publish.yml
