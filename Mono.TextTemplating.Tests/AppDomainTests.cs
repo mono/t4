@@ -16,7 +16,20 @@ namespace Mono.TextTemplating.Tests;
 public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 {
 	protected override TemplateGenerator CreateGenerator ([CallerMemberName] string testName = null) => CreateGeneratorWithAppDomain (testName: testName);
+
+	protected override void CleanupGenerator (TemplateGenerator generator)
+	{
+		// verify that the AppDomain is collected
+		var weakRef = ((TestTemplateGeneratorWithAppDomain)generator).ReleaseDomain ();
+		int count = 0;
+		while (weakRef.IsAlive) {
+			GC.Collect ();
+			Assert.InRange (count++, 0, 5);
+		}
+	}
+
 	protected override SnapshotSet<string> GetInitialState () => Snapshot.LoadedAssemblies ();
+
 	protected override void VerifyFinalState (SnapshotSet<string> state)
 	{
 		(var added, var removed) = state.GetChanges ();
@@ -40,6 +53,7 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 		var templateText = await testDir["LoadOpenApiDll.tt"].ReadAllTextNormalizedAsync ();
 
 		await Assert.ThrowsAnyAsync<TemplatingEngineException> (() => badGen.ProcessTemplateAsync ("LoadOpenApiDll.tt", templateText, null));
+		CleanupGenerator (badGen);
 	}
 
 	[Fact]
@@ -56,6 +70,7 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 		Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
 		Assert.Equal (expectedOutputText, result.content);
 
+		CleanupGenerator (gen);
 		VerifyFinalState (state);
 	}
 
@@ -82,12 +97,20 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 	}
 
 	static string GetAppDomainNameForCurrentTest ([CallerMemberName] string testName = null) => $"Template Test - {testName ?? "(unknown)"}";
+
 	class TestTemplateGeneratorWithAppDomain : TemplateGenerator
 	{
-		public TestTemplateGeneratorWithAppDomain (AppDomain appDomain) => AppDomain = appDomain;
+		AppDomain appDomain;
+		public TestTemplateGeneratorWithAppDomain (AppDomain appDomain) => this.appDomain = appDomain;
 
-		public AppDomain AppDomain { get; private set; }
-		public override AppDomain ProvideTemplatingAppDomain (string content) => AppDomain;
+		public override AppDomain ProvideTemplatingAppDomain (string content) => appDomain;
+
+		public WeakReference ReleaseDomain ()
+		{
+			var weakRef = new WeakReference (appDomain);
+			appDomain = null;
+			return weakRef;
+		}
 	}
 }
 
