@@ -12,6 +12,7 @@ namespace Mono.TextTemplating.Tests;
 public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 {
 	protected virtual TemplateGenerator CreateGenerator ([CallerMemberName] string testName = null) => new ();
+	protected virtual void CleanupGenerator (TemplateGenerator generator) { }
 
 	[Fact]
 	public async Task LoadOpenApiDll ()
@@ -34,6 +35,7 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 		Assert.Equal (expectedOutputText, result.content);
 		Assert.Equal (expectedOutputPath, result.fileName);
 
+		CleanupGenerator (gen);
 		VerifyFinalState (state);
 	}
 
@@ -56,6 +58,7 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 		Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
 		Assert.Equal ("Example", result.content);
 
+		CleanupGenerator (gen);
 		VerifyFinalState (state);
 	}
 
@@ -74,5 +77,7 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 
 		var firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ()?.ErrorText;
 		Assert.Contains ("FileNotFoundException: Could not load file or assembly 'SharpYaml, Version=1.6.5.0", firstError);
+
+		CleanupGenerator (gen);
 	}
 }
