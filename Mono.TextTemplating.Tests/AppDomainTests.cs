@@ -44,7 +44,10 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 	}
 
 	static bool ShouldIgnoreAssemblyAdd (string name) =>
+		// System.Configuration may cause these to load in the main AppDomain
 		name.StartsWith ("System.Configuration,", StringComparison.Ordinal) ||
+		name.StartsWith ("System.Xml.Linq,", StringComparison.Ordinal) ||
+		name.StartsWith ("System.Data,", StringComparison.Ordinal) ||
 		name.StartsWith ("System.Reflection,", StringComparison.Ordinal);
 
 	[Fact]
