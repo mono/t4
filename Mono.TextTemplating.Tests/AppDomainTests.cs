@@ -4,6 +4,7 @@
 #if FEATURE_APPDOMAINS
 
 using System;
+using System.CodeDom.Compiler;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -19,10 +20,14 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 	protected override void VerifyFinalState (SnapshotSet<string> state)
 	{
 		(var added, var removed) = state.GetChanges ();
-		added = added.Where (a => !a.StartsWith ("System.Configuration,", StringComparison.Ordinal));
+		added = added.Where (a => !ShouldIgnoreAssemblyAdd (a));
 		Assert.Empty (added);
 		Assert.Empty (removed);
 	}
+
+	static bool ShouldIgnoreAssemblyAdd (string name) =>
+		name.StartsWith ("System.Configuration,", StringComparison.Ordinal) ||
+		name.StartsWith ("System.Reflection,", StringComparison.Ordinal);
 
 	[Fact]
 	public async Task BadAppDomain ()
@@ -37,6 +42,23 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 		await Assert.ThrowsAnyAsync<TemplatingEngineException> (() => badGen.ProcessTemplateAsync ("LoadOpenApiDll.tt", templateText, null));
 	}
 
+	[Fact]
+	public async Task RunsInAppDomain ()
+	{
+		var gen = CreateGeneratorWithAppDomain ();
+		var templateText = "<#= System.AppDomain.CurrentDomain.FriendlyName #>";
+		var expectedOutputText = GetAppDomainNameForCurrentTest ();
+
+		var state = GetInitialState ();
+
+		var result = await gen.ProcessTemplateAsync ("TemplateInAppDomain.tt", templateText, null);
+
+		Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
+		Assert.Equal (expectedOutputText, result.content);
+
+		VerifyFinalState (state);
+	}
+
 	static TestTemplateGeneratorWithAppDomain CreateGeneratorWithAppDomain (
 		string basePath = null, string relativeSearchPath = null, bool shadowCopy = false,
 		[CallerMemberName] string testName = null
@@ -46,12 +68,12 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 			// need to be able to resolve Mono.TextTemplating to load CompiledTemplate, which will resolve other assemblies via the host.
 			basePath = AppDomain.CurrentDomain.BaseDirectory;
 			if (relativeSearchPath is not null) {
-				throw new ArgumentException ($"{nameof(relativeSearchPath)} must be null if {nameof(basePath)} is null", nameof (relativeSearchPath));
+				throw new ArgumentException ($"{nameof (relativeSearchPath)} must be null if {nameof (basePath)} is null", nameof (relativeSearchPath));
 			}
 			relativeSearchPath = AppDomain.CurrentDomain.RelativeSearchPath;
 		}
 		return new (AppDomain.CreateDomain (
-			$"Template Test - {testName ?? "(unknown)"}",
+			GetAppDomainNameForCurrentTest (testName),
 			null,
 			basePath,
 			relativeSearchPath,
@@ -59,6 +81,7 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 		);
 	}
 
+	static string GetAppDomainNameForCurrentTest ([CallerMemberName] string testName = null) => $"Template Test - {testName ?? "(unknown)"}";
 	class TestTemplateGeneratorWithAppDomain : TemplateGenerator
 	{
 		public TestTemplateGeneratorWithAppDomain (AppDomain appDomain) => AppDomain = appDomain;
