@@ -3,6 +3,7 @@
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 
@@ -15,6 +16,7 @@ partial class CompiledTemplate
 {
 	class TemplateProcessor : MarshalByRefObject
 	{
+		[SuppressMessage ("Performance", "CA1822:Mark members as static", Justification = "Needs to be an instance for MarshalByRefObject")]
 		public string CreateAndProcess (ITextTemplatingEngineHost host, CompiledAssemblyData templateAssemblyData, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referencedAssemblyFiles)
 		{
 			using var context = new TemplateAssemblyContext (host, referencedAssemblyFiles);
