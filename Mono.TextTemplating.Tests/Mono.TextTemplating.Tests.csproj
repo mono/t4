@@ -35,12 +35,12 @@
   <Target Name="GeneratePackageDownloadPaths" BeforeTargets="CoreCompile">
     <PropertyGroup>
       <_PackageDownloadConstsPathFile>$(IntermediateOutputPath)PackageDownloadPathConstants.cs</_PackageDownloadConstsPathFile>
-      <_EscapedNuGetPackageRoot>$(NuGetPackageRoot.Replace('\','\\'))</_EscapedNuGetPackageRoot>
+      <_NuGetPackageRootWithTrailingSlash>$([MSBuild]::EnsureTrailingSlash("$(NuGetPackageRoot)"))</_NuGetPackageRootWithTrailingSlash>
     </PropertyGroup>
     <ItemGroup>
       <!-- temp vars to make escaping manageable -->
       <_PackageDownloadWithVersion Include="@(PackageDownload)" Version="$([System.String]::Copy('%(Version)').Replace('[','').Replace(']',''))" />
-      <_PackageDownloadWithPath Include="@(_PackageDownloadWithVersion)" Path="$(NuGetPackageRoot)$([System.String]::Copy('%(Identity)').ToLower())\%(Version)" />
+      <_PackageDownloadWithPath Include="@(_PackageDownloadWithVersion)" Path="$(_NuGetPackageRootWithTrailingSlash)$([System.String]::Copy('%(Identity)').ToLower())\%(Version)" />
       <_PackageDownloadVars
         Include="@(_PackageDownloadWithPath)"
         VarName="$([System.String]::Copy('%(Identity)_%(Version)').Replace('.','_'))"
