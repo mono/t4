@@ -49,31 +49,13 @@ jobs:
     - name: Test
       run: dotnet test --no-build -c ${{ matrix.config }}
 
-    - name: Test (Windows)
-      if: startsWith (matrix.os, 'windows')
-      run: dotnet test -c ${{ matrix.config }} --no-build
 #      run: dotnet test -c ${{ matrix.config }} --no-build --blame-hang-timeout 5m --diag TestResults-${{ matrix.config }}-${{ matrix.os }}/Log/test_log.txt --logger trx --results-directory TestResults-${{ matrix.config }}-${{ matrix.os }}
-
 #    - name: Test diagnostics
 #      if: failure() && startsWith (matrix.os, 'windows')
 #      uses: actions/upload-artifact@v2
 #      with:
 #        name: test-results-${{ matrix.config }}-${{ matrix.os }}
 #        path: TestResults-${{ matrix.config }}-${{ matrix.os }}
-
-      # dotnet test doesn't support mono so we have to use the xunit console runner
-    - name: Set up NuGet
-      if: startsWith (matrix.os, 'windows') == false
-      uses: nuget/setup-nuget@v1
-
-    - name: Test (Linux/Mac)
-      if: startsWith (matrix.os, 'windows') == false
-      run: |
-        nuget install xunit.runner.console -Version 2.4.2 -OutputDirectory testrunner
-        mono ./testrunner/xunit.runner.console.2.4.2/tools/net472/xunit.console.exe ./Mono.TextTemplating.Tests/bin/${{ matrix.config }}/net472/Mono.TextTemplating.Tests.dll -parallel none -noshadow
-        dotnet test -c ${{ matrix.config }} --no-build -f netcoreapp2.1
-        dotnet test -c ${{ matrix.config }} --no-build -f netcoreapp3.1
-        dotnet test -c ${{ matrix.config }} --no-build -f net5.0
 
     - uses: actions/upload-artifact@v3
       if: matrix.config == 'Release' && startsWith(matrix.os, 'windows')
