@@ -1,6 +1,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 using Microsoft.VisualStudio.TextTemplating;
@@ -10,6 +11,7 @@ namespace Mono.TextTemplating;
 
 partial class CompiledTemplate
 {
+	[SuppressMessage ("Performance", "CA1822:Mark members as static", Justification = "Same API for ALC and AppDomain build variants of the class")]
 	sealed class TemplateAssemblyContext : IDisposable
 	{
 #if FEATURE_ASSEMBLY_LOAD_CONTEXT
