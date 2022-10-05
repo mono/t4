@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+      - 'release/v*'
+    tags:
+      - 'v*'
 
 concurrency:
   group: ci-main-${{ github.ref }}-1
