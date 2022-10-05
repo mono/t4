@@ -1262,15 +1262,56 @@ namespace Mono.Options
 			option.Invoke (c);
 		}
 
-		private const int OptionWidth = 29;
-		private const int Description_FirstWidth  = 80 - OptionWidth;
-		private const int Description_RemWidth    = 80 - OptionWidth - 2;
+		internal class ConsoleWidths
+		{
+			const int minWindowWidth = 80;
+			const int maxWindowWidth = 120;
 
-		static  readonly    string      CommandHelpIndentStart       = new string (' ', OptionWidth);
-		static  readonly    string      CommandHelpIndentRemaining   = new string (' ', OptionWidth + 2);
+			const int optionWidth = 29;
+			const int wrapIndent = 2;
+
+			public int OptionWidth => optionWidth;
+			public int WrapIndent => wrapIndent;
+
+			public int WindowWidth { get; }
+			public int Description_FirstWidth => WindowWidth - OptionWidth;
+			public int Description_RemWidth => WindowWidth - OptionWidth - WrapIndent;
+
+			public readonly string CommandHelpIndentStart;
+			public readonly string CommandHelpIndentRemaining;
+
+			private ConsoleWidths (int windowWidth)
+			{
+				WindowWidth = windowWidth;
+
+				CommandHelpIndentStart = new string (' ', OptionWidth);
+				CommandHelpIndentRemaining = new string (' ', OptionWidth + WrapIndent);
+			}
+
+			static ConsoleWidths instance;
+
+			public static ConsoleWidths Get ()
+			{
+				int windowWidth = 0;
+				try {
+					windowWidth = System.Console.WindowWidth;
+				}
+				catch { }
+
+				windowWidth = Math.Min (Math.Max (windowWidth, minWindowWidth), maxWindowWidth);
+
+				if (instance is ConsoleWidths cw && cw.WindowWidth == windowWidth) {
+					return cw;
+				}
+
+				return instance = new ConsoleWidths (windowWidth);
+			}
+		}
 
 		public void WriteOptionDescriptions (TextWriter o)
 		{
+			var cw = ConsoleWidths.Get ();
+
 			foreach (Option p in this) {
 				int written = 0;
 
@@ -1279,27 +1320,27 @@ namespace Mono.Options
 
 				Category c = p as Category;
 				if (c != null) {
-					WriteDescription (o, p.Description, "", 80, 80);
+					WriteDescription (o, p.Description, "", cw.WindowWidth, cw.WindowWidth);
 					continue;
 				}
 				CommandOption co = p as CommandOption;
 				if (co != null) {
-					WriteCommandDescription (o, co.Command, co.CommandName);
+					WriteCommandDescription (o, co.Command, co.CommandName, cw);
 					continue;
 				}
 
 				if (!WriteOptionPrototype (o, p, ref written))
 					continue;
 
-				if (written < OptionWidth)
-					o.Write (new string (' ', OptionWidth - written));
+				if (written < cw.OptionWidth)
+					o.Write (new string (' ', cw.OptionWidth - written));
 				else {
 					o.WriteLine ();
-					o.Write (new string (' ', OptionWidth));
+					o.Write (new string (' ', cw.OptionWidth));
 				}
 
-				WriteDescription (o, p.Description, new string (' ', OptionWidth+2),
-						Description_FirstWidth, Description_RemWidth);
+				WriteDescription (o, p.Description, new string (' ', cw.OptionWidth + cw.WrapIndent),
+						cw.Description_FirstWidth, cw.Description_RemWidth);
 			}
 
 			foreach (ArgumentSource s in sources) {
@@ -1316,26 +1357,26 @@ namespace Mono.Options
 					Write (o, ref written, names [i]);
 				}
 
-				if (written < OptionWidth)
-					o.Write (new string (' ', OptionWidth - written));
+				if (written < cw.OptionWidth)
+					o.Write (new string (' ', cw.OptionWidth - written));
 				else {
 					o.WriteLine ();
-					o.Write (new string (' ', OptionWidth));
+					o.Write (new string (' ', cw.OptionWidth));
 				}
 
-				WriteDescription (o, s.Description, new string (' ', OptionWidth+2),
-						Description_FirstWidth, Description_RemWidth);
+				WriteDescription (o, s.Description, new string (' ', cw.OptionWidth + cw.WrapIndent),
+						cw.Description_FirstWidth, cw.Description_RemWidth);
 			}
 		}
 
-		internal void WriteCommandDescription (TextWriter o, Command c, string commandName)
+		internal void WriteCommandDescription (TextWriter o, Command c, string commandName, ConsoleWidths cw)
 		{
 			var name = new string (' ', 8) + (commandName ?? c.Name);
-			if (name.Length < OptionWidth - 1) {
-				WriteDescription (o, name + new string (' ', OptionWidth - name.Length) + c.Help, CommandHelpIndentRemaining, 80, Description_RemWidth);
+			if (name.Length < cw.OptionWidth - 1) {
+				WriteDescription (o, name + new string (' ', cw.OptionWidth - name.Length) + c.Help, cw.CommandHelpIndentRemaining, cw.WindowWidth, cw.Description_RemWidth);
 			} else {
-				WriteDescription (o, name, "", 80, 80);
-				WriteDescription (o, CommandHelpIndentStart + c.Help, CommandHelpIndentRemaining, 80, Description_RemWidth);
+				WriteDescription (o, name, "", cw.WindowWidth, cw.WindowWidth);
+				WriteDescription (o, cw.CommandHelpIndentStart + c.Help, cw.CommandHelpIndentRemaining, cw.WindowWidth, cw.Description_RemWidth);
 			}
 		}
 
@@ -1957,13 +1998,14 @@ namespace Mono.Options
 				CommandSet.Out.WriteLine ();
 				var commands    = GetCommands ();
 				commands.Sort ((x, y) => string.Compare (x.Key, y.Key, StringComparison.OrdinalIgnoreCase));
+				var cw = OptionSet.ConsoleWidths.Get ();
 				foreach (var c in commands) {
 					if (c.Key == "help") {
 						continue;
 					}
-					CommandSet.Options.WriteCommandDescription (CommandSet.Out, c.Value, c.Key);
+					CommandSet.Options.WriteCommandDescription (CommandSet.Out, c.Value, c.Key, cw);
 				}
-				CommandSet.Options.WriteCommandDescription (CommandSet.Out, CommandSet.help, "help");
+				CommandSet.Options.WriteCommandDescription (CommandSet.Out, CommandSet.help, "help", cw);
 				return 0;
 			}
 			if (command == null) {
