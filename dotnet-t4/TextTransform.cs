@@ -173,9 +173,11 @@ namespace Mono.TextTemplating
 			}
 
 			bool writeToStdout = outputFile == "-" || (inputIsFromStdin && string.IsNullOrEmpty (outputFile));
+			bool isDefaultOutputFilename = false;
 
 			if (!writeToStdout && string.IsNullOrEmpty (outputFile)) {
 				outputFile = inputFile;
+				isDefaultOutputFilename = true;
 				if (Path.HasExtension (outputFile)) {
 					var dir = Path.GetDirectoryName (outputFile);
 					var fn = Path.GetFileNameWithoutExtension (outputFile);
@@ -225,6 +227,9 @@ namespace Mono.TextTemplating
 				} else {
 					SplitClassName (preprocessClassName, settings);
 					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out _);
+					if (isDefaultOutputFilename) {
+						outputFile = Path.ChangeExtension (outputFile, settings.Provider.FileExtension);
+					}
 				}
 			}
 
