@@ -2,7 +2,7 @@
   <PropertyGroup>
     <PackageProjectUrl>https://github.com/mono/t4</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Authors>mhutch</Authors>
+    <Authors>Mikayla Hutchinson</Authors>
     <PackageTags>T4, templating</PackageTags>
     <PackageOutputPath>$(MSBuildThisFileDirectory)packages\$(Configuration)</PackageOutputPath>
     <LangVersion>10.0</LangVersion>
