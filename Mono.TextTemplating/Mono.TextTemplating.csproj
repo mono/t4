@@ -7,14 +7,7 @@
     <NoWarn>1591;1573</NoWarn>
     <PackageId>Mono.TextTemplating</PackageId>
     <EnablePackageValidation>true</EnablePackageValidation>
-    <Description>
-<![CDATA[Open source implementation of the T4 templating engine
-
-This package allows embedding the T4 engine in an application.
-
-* To install as a dotnet global or local tool, use `dotnet-t4` instead.
-* To install in a project as a `DotNetCliToolReference`, use `dotnet-t4-project-tool` instead.]]>
-    </Description>
+    <Description>Embeddable engine for the T4 templating language, a general-purpose way to generate text or code files using C#</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <TFxId>$([MSBuild]::GetTargetFrameworkIdentifier('$(TargetFramework)'))</TFxId>
     <DefineConstants Condition="'$(TFxId)'=='.NETFramework'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
@@ -22,9 +15,11 @@ This package allows embedding the T4 engine in an application.
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.CodeDom" Version="5.0.0" Condition="'$(TargetFramework)'!='net472'" />
+    <None Include="readme.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 </Project>
