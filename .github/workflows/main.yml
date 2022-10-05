@@ -18,3 +18,5 @@ jobs:
   publish:
     needs: build
     uses: ./.github/workflows/publish.yml
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
