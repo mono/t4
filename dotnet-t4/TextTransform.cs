@@ -224,7 +224,7 @@ namespace Mono.TextTemplating
 					(outputFile, outputContent) = generator.ProcessTemplateAsync (pt, inputFile, inputContent, outputFile, settings).Result;
 				} else {
 					SplitClassName (preprocessClassName, settings);
-					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out _, out _);
+					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out _);
 				}
 			}
 

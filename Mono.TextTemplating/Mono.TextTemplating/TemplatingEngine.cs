@@ -111,15 +111,12 @@ namespace Mono.TextTemplating
 			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references);
 		}
 
-		[System.Diagnostics.CodeAnalysis.SuppressMessage ("Performance", "CA1822:Mark members as static", Justification = "API compat")]
+		[Obsolete ("Use static method")]
 		public string PreprocessTemplate (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string language, out string[] references)
 		{
-			if (pt is null) throw new ArgumentNullException (nameof (pt));
-			if (string.IsNullOrEmpty (content)) throw new ArgumentException ($"'{nameof (content)}' cannot be null or empty.", nameof (content));
-			if (settings is null) throw new ArgumentNullException (nameof (settings));
-			if (host is null) throw new ArgumentNullException (nameof (host));
-
-			return PreprocessTemplateInternal (pt, content, settings, host, out language, out references);
+			var result = PreprocessTemplate (pt, content, settings, host, out references);
+			language = settings.Language;
+			return result;
 		}
 
 		[Obsolete("Use TemplateGenerator")]
@@ -138,11 +135,21 @@ namespace Mono.TextTemplating
 			return PreprocessTemplateInternal (pt, content, host, className, classNamespace, out language, out references, settings);
 		}
 
+		public static string PreprocessTemplate (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string[] references)
+		{
+			if (pt is null) throw new ArgumentNullException (nameof (pt));
+			if (string.IsNullOrEmpty (content)) throw new ArgumentException ($"'{nameof (content)}' cannot be null or empty.", nameof (content));
+			if (settings is null) throw new ArgumentNullException (nameof (settings));
+			if (host is null) throw new ArgumentNullException (nameof (host));
+
+			return PreprocessTemplateInternal (pt, content, settings, host, out references);
+		}
+
 		static string PreprocessTemplateInternal (ParsedTemplate pt, string content, ITextTemplatingEngineHost host, string className,
 			string classNamespace, out string language, out string[] references, TemplateSettings settings = null)
 		{
-
 			settings ??= GetSettings (host, pt);
+			language = settings.Language;
 
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
@@ -158,14 +165,13 @@ namespace Mono.TextTemplating
 				settings.Namespace = classNamespace;
 			}
 
-			return PreprocessTemplateInternal (pt, content, settings, host, out language, out references);
+			return PreprocessTemplateInternal (pt, content, settings, host, out references);
 		}
 
-		internal static string PreprocessTemplateInternal (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string language, out string[] references)
+		internal static string PreprocessTemplateInternal (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, out string[] references)
 		{
 			settings.IncludePreprocessingHelpers = string.IsNullOrEmpty (settings.Inherits);
 			settings.IsPreprocessed = true;
-			language = settings.Language;
 
 			var ccu = GenerateCompileUnit (host, content, pt, settings);
 			references = ProcessReferences (host, pt, settings).ToArray ();

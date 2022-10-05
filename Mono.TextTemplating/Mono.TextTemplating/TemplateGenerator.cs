@@ -230,6 +230,7 @@ namespace Mono.TextTemplating
 			return ParsedTemplate.FromTextInternal (inputContent, this);
 		}
 
+		[Obsolete ("Use overload without redundant `language` parameter")]
 		public string PreprocessTemplate (
 			ParsedTemplate pt,
 			string inputFile,
@@ -239,7 +240,20 @@ namespace Mono.TextTemplating
 			out string[] references)
 		{
 			InitializeForRun (inputFileName: inputFile);
-			return Engine.PreprocessTemplate (pt, inputContent, settings, this, out language, out references);
+			var result = TemplatingEngine.PreprocessTemplate (pt, inputContent, settings, this, out references);
+			language = settings.Language;
+			return result;
+		}
+
+		public string PreprocessTemplate (
+			ParsedTemplate pt,
+			string inputFile,
+			string inputContent,
+			TemplateSettings settings,
+			out string[] references)
+		{
+			InitializeForRun (inputFileName: inputFile);
+			return TemplatingEngine.PreprocessTemplate (pt, inputContent, settings, this, out references);
 		}
 
 		public async Task<(string fileName, string content)> ProcessTemplateAsync (
