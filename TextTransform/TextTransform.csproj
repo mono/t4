@@ -11,8 +11,6 @@
     <IsTool>True</IsTool>
     <Description>Command-line T4 text transform tool.</Description>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>

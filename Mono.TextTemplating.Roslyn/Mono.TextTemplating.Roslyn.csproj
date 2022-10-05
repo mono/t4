@@ -9,8 +9,6 @@
     <Description>In-process Roslyn compiler for the Mono.TextTemplating T4 templating engine</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 

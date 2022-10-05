@@ -13,8 +13,6 @@
     <DefineConstants Condition="'$(TFxId)'=='.NETFramework'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
     <DefineConstants Condition="'$(TFxId)'=='.NETCoreApp'">$(DefineConstants);FEATURE_ASSEMBLY_LOAD_CONTEXT</DefineConstants>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
