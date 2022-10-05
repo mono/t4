@@ -29,6 +29,8 @@ using System.CodeDom.Compiler;
 using System.IO;
 using Xunit;
 
+using Mono.TextTemplating.CodeDomBuilder;
+
 namespace Mono.TextTemplating.Tests
 {
 	public class GenerateIndentedClassCodeTests
@@ -40,18 +42,11 @@ namespace Mono.TextTemplating.Tests
 			var field = CreateBoolField ();
 			var property = CreateBoolProperty ();
 
-			string output = TemplatingEngine.GenerateIndentedClassCode (provider, field, property);
+			string output = IndentHelpers.GenerateIndentedClassCode (provider, field, property);
 			output = FixOutput (output);
 			string expectedOutput = FixOutput (MethodAndFieldGeneratedOutput);
 
 			Assert.Equal (expectedOutput, output);
-		}
-
-		static CodeTypeMember CreateVoidMethod ()
-		{
-			var meth = new CodeMemberMethod { Name = "MyMethod" };
-			meth.ReturnType = new CodeTypeReference (typeof(void));
-			return meth;
 		}
 
 		static CodeTypeMember CreateBoolField ()
@@ -77,25 +72,24 @@ namespace Mono.TextTemplating.Tests
 		/// </summary>
 		static string FixOutput (string output, string newLine = "\n")
 		{
-			using (var writer = new StringWriter ()) {
-				using (var reader = new StringReader (output)) {
+			using var writer = new StringWriter ();
+			using var reader = new StringReader (output);
 
-					string line;
-					while ((line = reader.ReadLine ()) != null) {
-						if (!StringUtil.IsNullOrWhiteSpace (line)) {
-							writer.Write (line);
-							writer.Write (newLine);
-						}
-					}
+			string line;
+			while ((line = reader.ReadLine ()) != null) {
+				if (!string.IsNullOrWhiteSpace (line)) {
+					writer.Write (line);
+					writer.Write (newLine);
 				}
-				return writer.ToString ();
 			}
+
+			return writer.ToString ();
 		}
 
-		public static string MethodAndFieldGeneratedOutput = 
-@"        
+		public const string MethodAndFieldGeneratedOutput =
+@"
         private bool myField;
-        
+
         private bool MyProperty {
             get {
                 return true;

@@ -1,0 +1,9 @@
+swagger: '2.0'
+info:
+  title: Example
+  version: 1.0.0
+host: example.com
+basePath: /api
+schemes:
+  - https
+paths: { }

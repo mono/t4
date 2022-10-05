@@ -1,21 +1,21 @@
-// 
+//
 // TemplateEnginePreprocessTemplateTests.cs
-//  
+//
 // Author:
 //       Matt Ward
-// 
+//
 // Copyright (c) 2011 Matt Ward
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,22 +31,22 @@ using Xunit;
 namespace Mono.TextTemplating.Tests
 {
 	public class TemplateEnginePreprocessTemplateTests
-	{	
+	{
 		[Fact]
-		public void Preprocess_Simple ()
+		public void PreprocessSimple ()
 		{
-			string input = 
+			string input =
 				"<#@ template language=\"C#\" #>\r\n" +
 				"Test\r\n";
-			
+
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (OutputSample1, "\n");
 			string output = Preprocess (input);
-			
+
 			Assert.Equal (expectedOutput, output);
 		}
-		
+
 		[Fact]
-		public void Preprocess_ControlBlockAfterIncludedTemplateWithClassFeatureBlock_ReturnsValidCSharpOutput ()
+		public void ControlBlockAfterIncludedTemplateWithClassFeatureBlock ()
 		{
 			string input = InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock.NormalizeNewlines ();
 			DummyHost host = CreateDummyHostForControlBlockAfterIncludedTemplateWithClassFeatureBlockTest ();
@@ -54,7 +54,7 @@ namespace Mono.TextTemplating.Tests
 
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock.NormalizeNewlines (), "\n");
 			string output = Preprocess (input, host);
-			
+
 			Assert.Equal (expectedOutput, output);
 		}
 
@@ -67,41 +67,39 @@ namespace Mono.TextTemplating.Tests
 
 			Assert.Equal (expectedOutput, output);
 		}
-		
+
 		#region Helpers
-		
-		string Preprocess (string input)
+
+		static string Preprocess (string input)
 		{
-			DummyHost host = new DummyHost ();
+			var host = new DummyHost ();
 			return Preprocess (input, host);
 		}
-		
-		string Preprocess (string input, DummyHost host)
+
+		static string Preprocess (string input, DummyHost host)
 		{
 			string className = "PreprocessedTemplate";
 			string classNamespace = "Templating";
-			string language = null;
-			string[] references = null;
-			
-			TemplatingEngine engine = new TemplatingEngine ();
-			string output = engine.PreprocessTemplate (input, host, className, classNamespace, out language, out references);
+
+			var engine = new TemplatingEngine ();
+			string output = engine.PreprocessTemplate (input, host, className, classNamespace, out _, out _);
 			ReportErrors (host.Errors);
 			if (output != null) {
 				return TemplatingEngineHelper.CleanCodeDom (output, "\n");
 			}
 			return null;
 		}
-		
-		void ReportErrors(CompilerErrorCollection errors)
+
+		static void ReportErrors(CompilerErrorCollection errors)
 		{
 			foreach (CompilerError error in errors) {
 				Console.WriteLine(error.ErrorText);
 			}
 		}
-		
-		DummyHost CreateDummyHostForControlBlockAfterIncludedTemplateWithClassFeatureBlockTest()
+
+		static DummyHost CreateDummyHostForControlBlockAfterIncludedTemplateWithClassFeatureBlockTest ()
 		{
-			DummyHost host = new DummyHost ();
+			var host = new DummyHost ();
 
 			string includeTemplateRequestedFileName = @"Some\Requested\Path\IncludedFile.tt";
 			if (System.IO.Path.DirectorySeparatorChar == '/') {
@@ -114,12 +112,12 @@ namespace Mono.TextTemplating.Tests
 
 			return host;
 		}
-		
+
 		#endregion
 
 		#region Input templates
 
-		static string InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock =
+		const string InputTemplate_ControlBlockAfterIncludedTemplateWithClassFeatureBlock =
 @"
 <#@ template debug=""false"" language=""C#"" #>
 <#@ output extension="".cs"" #>
@@ -139,8 +137,8 @@ Text Block 3
     }
 #>
 ";
-		
-		static string IncludedTemplate_ControlBlockAfterIncludedTemplate =
+
+		const string IncludedTemplate_ControlBlockAfterIncludedTemplate =
 @"
 <#@ template debug=""false"" language=""C#"" #>
 <#@ output extension="".cs"" #>
@@ -157,17 +155,17 @@ Included Method Body Text Block
 #>
 ";
 
-		static string InputTemplate_CaptureEncodingAndExtension =
+		const string InputTemplate_CaptureEncodingAndExtension =
 			@"
 <#@ template debug=""false"" language=""C#"" inherits=""Foo"" hostspecific=""trueFromBase"" #>
 <#@ output extension="".cs"" encoding=""utf-8"" #>
 ";
 
 		#endregion
-		
+
 		#region Expected output strings
-		
-		static string OutputSample1 = 
+
+		const string OutputSample1 =
 @"
 namespace Templating {
     
@@ -341,7 +339,7 @@ namespace Templating {
 }
 ";
 
-		static string Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock =
+		const string Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock =
 @"
 namespace Templating {
     
@@ -606,7 +604,7 @@ namespace Templating {
 }
 ";
 
-		static string Output_CaptureEncodingAndExtension = 
+		const string Output_CaptureEncodingAndExtension =
 
 		@"namespace Templating {
     

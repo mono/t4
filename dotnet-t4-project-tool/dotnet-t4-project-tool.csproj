@@ -7,26 +7,16 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <AssemblyName>dotnet-t4</AssemblyName>
     <PackageId>dotnet-t4-project-tool</PackageId>
-    <Description>
-<![CDATA[Project-installable T4 text transformation commandline tool.
-
-This package can be installed into a project using `DotNetCliToolReference`.
-
-* To install as a dotnet global or local tool, use `dotnet-t4` instead.
-* To embed the T4 engine in your app, use `Mono.TextTemplating`.]]>
-    </Description>
+    <Description>Project tool for processing T4 templates, a general-purpose way to generate text or code files using C#</Description>
     <RootNamespace>Mono.TextTemplating</RootNamespace>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-  </ItemGroup>
-
 
   <ItemGroup>
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
     <Compile Include="..\TextTransform\Options.cs" Link="Options.cs" />
     <Compile Include="..\dotnet-t4\*.cs" />
+    <None Include="readme.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 </Project>

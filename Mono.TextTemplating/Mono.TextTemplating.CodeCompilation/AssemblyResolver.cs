@@ -21,7 +21,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				"false" => false,
 				"n" => false,
 				"no" => false,
-				_ => throw new Exception ($"T4_DEBUG_DISABLE_REF_ASMS env var has unknown value '{s}'")
+				_ => throw new TemplatingEngineException ($"T4_DEBUG_DISABLE_REF_ASMS env var has unknown value '{s}'")
 			};
 
 			// if we have .NET Core reference assemblies, just reference all of them

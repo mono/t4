@@ -1,21 +1,21 @@
-﻿// 
+//
 // GenerationTests.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,9 +39,13 @@ namespace Mono.TextTemplating.Tests
 		[Fact]
 		public async Task TemplateGeneratorTest ()
 		{
+			using var ctx = new TrackingSynchronizationContext ();
+
 			var gen = new TemplateGenerator ();
 			await gen.ProcessTemplateAsync (null, "<#@ template language=\"C#\" #>", null);
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
+
+			ctx.AssertMaxCallCount (1);
 		}
 
 		[Fact]
@@ -126,12 +130,16 @@ namespace Mono.TextTemplating.Tests
 		[Fact]
 		public async Task InProcessCompilerTest ()
 		{
+			using var ctx = new TrackingSynchronizationContext ();
+
 			var gen = new TemplateGenerator ();
 			gen.UseInProcessCompiler ();
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Uri).Assembly.Location));
 			gen.ReferencePaths.Add (Path.GetDirectoryName (typeof (Enumerable).Assembly.Location));
 			await gen.ProcessTemplateAsync (null, "<#@ assembly name=\"System.dll\" #>\n<#@ assembly name=\"System.Core.dll\" #>", null);
 			Assert.Null (gen.Errors.OfType<CompilerError> ().FirstOrDefault ());
+
+			ctx.AssertMaxCallCount (1);
 		}
 
 		[Fact]

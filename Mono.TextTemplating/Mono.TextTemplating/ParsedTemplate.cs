@@ -1,21 +1,21 @@
-// 
+//
 // Template.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,9 +34,9 @@ namespace Mono.TextTemplating
 {
 	public class ParsedTemplate
 	{
-		readonly List<ISegment> importedHelperSegments = new List<ISegment> ();
+		readonly List<ISegment> importedHelperSegments = new ();
 		readonly string rootFileName;
-		
+
 		public ParsedTemplate (string rootFileName)
 		{
 			this.rootFileName = rootFileName;
@@ -52,7 +52,7 @@ namespace Mono.TextTemplating
 				}
 			}
 		}
-		
+
 		public IEnumerable<TemplateSegment> Content {
 			get {
 				foreach (ISegment seg in RawSegments) {
@@ -84,7 +84,7 @@ namespace Mono.TextTemplating
 		[Obsolete("Use TemplateGenerator.ParseTemplate")]
 		public void Parse (ITextTemplatingEngineHost host, Tokeniser tokeniser) => Parse (host, new HashSet<string>(StringComparer.OrdinalIgnoreCase), tokeniser, true);
 
-		[Obsolete]
+		[Obsolete("Should not have been public")]
 		public void ParseWithoutIncludes (Tokeniser tokeniser) => Parse (null, null, tokeniser, false);
 
 		void Parse (ITextTemplatingEngineHost host, HashSet<string> includedFiles, Tokeniser tokeniser, bool parseIncludes) => Parse (host, includedFiles, tokeniser, parseIncludes, false);
@@ -95,7 +95,7 @@ namespace Mono.TextTemplating
 			bool addToImportedHelpers = false;
 			while ((skip || tokeniser.Advance ()) && tokeniser.State != State.EOF) {
 				skip = false;
-				ISegment seg = null;	
+				ISegment seg = null;
 				switch (tokeniser.State) {
 				case State.Block:
 					if (!string.IsNullOrEmpty (tokeniser.Value))
@@ -211,8 +211,9 @@ namespace Mono.TextTemplating
 
 		void LogError (string message, Location location, bool isWarning)
 		{
-			var err = new CompilerError ();
-			err.ErrorText = message;
+			var err = new CompilerError {
+				ErrorText = message
+			};
 			if (location.FileName != null) {
 				err.Line = location.Line;
 				err.Column = location.Column;
@@ -232,30 +233,30 @@ namespace Mono.TextTemplating
 
 		public void LogWarning (string message, Location location) => LogError (message, location, true);
 	}
-	
+
 	public interface ISegment
 	{
 		Location StartLocation { get; }
 		Location EndLocation { get; set; }
 		Location TagStartLocation {get; set; }
 	}
-	
+
 	public class TemplateSegment : ISegment
 	{
 		public TemplateSegment (SegmentType type, string text, Location start)
 		{
-			this.Type = type;
-			this.StartLocation = start;
-			this.Text = text;
+			Type = type;
+			StartLocation = start;
+			Text = text;
 		}
-		
+
 		public SegmentType Type { get; private set; }
 		public string Text { get; private set; }
 		public Location TagStartLocation { get; set; }
 		public Location StartLocation { get; private set; }
 		public Location EndLocation { get; set; }
 	}
-	
+
 	public class Directive : ISegment
 	{
 		public Directive (string name, Location start)
@@ -264,13 +265,13 @@ namespace Mono.TextTemplating
 			Attributes = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
 			StartLocation = start;
 		}
-		
+
 		public string Name { get; private set; }
 		public Dictionary<string,string> Attributes { get; private set; }
 		public Location TagStartLocation { get; set; }
 		public Location StartLocation { get; private set; }
 		public Location EndLocation { get; set; }
-		
+
 		public string Extract (string key)
 		{
 			if (!Attributes.TryGetValue (key, out var value))
@@ -279,7 +280,7 @@ namespace Mono.TextTemplating
 			return value;
 		}
 	}
-	
+
 	public enum SegmentType
 	{
 		Block,
@@ -287,7 +288,7 @@ namespace Mono.TextTemplating
 		Content,
 		Helper
 	}
-	
+
 	public struct Location : IEquatable<Location>
 	{
 		public Location (string fileName, int line, int column) : this()
@@ -296,24 +297,30 @@ namespace Mono.TextTemplating
 			Column = column;
 			Line = line;
 		}
-		
+
 		public int Line { get; private set; }
 		public int Column { get; private set; }
 		public string FileName { get; private set; }
 
-		public static Location Empty => new Location (null, -1, -1);
+		public static Location Empty => new (null, -1, -1);
 
-		public Location AddLine () => new Location (FileName, Line + 1, 1);
+		public Location AddLine () => new (FileName, Line + 1, 1);
 
 		public Location AddCol () => AddCols (1);
 
-		public Location AddCols (int number) => new Location (FileName, Line, Column + number);
+		public Location AddCols (int number) => new (FileName, Line, Column + number);
 
 		public override string ToString () => $"[{FileName} ({Line},{Column})]";
 
 		public bool Equals (Location other)
-		{
-			return other.Line == Line && other.Column == Column && other.FileName == FileName;
-		}
+			=> other.Line == Line && other.Column == Column && other.FileName == FileName;
+
+		public override bool Equals (object obj) => obj is Location loc && Equals (loc);
+
+		public override int GetHashCode () => (FileName, Line, Column).GetHashCode ();
+
+		public static bool operator == (Location left, Location right) => left.Equals (right);
+
+		public static bool operator != (Location left, Location right) => !(left == right);
 	}
 }

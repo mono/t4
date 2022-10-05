@@ -1,0 +1,22 @@
+name: Main
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/v*'
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ci-main-${{ github.ref }}-1
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+  publish:
+    needs: build
+    uses: ./.github/workflows/publish.yml
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

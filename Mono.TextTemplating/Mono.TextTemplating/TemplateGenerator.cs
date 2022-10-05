@@ -1,21 +1,21 @@
-// 
+//
 // TemplatingHost.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -42,7 +42,7 @@ namespace Mono.TextTemplating
 #endif
 		ITextTemplatingEngineHost, ITextTemplatingSessionHost
 	{
-		static readonly Dictionary<string, string> KnownAssemblies = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase)
+		static readonly Dictionary<string, string> KnownAssemblies = new (StringComparer.OrdinalIgnoreCase)
 		{
 			{ "System.Core.dll", typeof(System.Linq.Enumerable).Assembly.Location },
 			{ "System.Data.dll", typeof(System.Data.DataTable).Assembly.Location },
@@ -59,7 +59,7 @@ namespace Mono.TextTemplating
 
 		//re-usable
 		TemplatingEngine engine;
-		
+
 		//per-run variables
 		Encoding encoding;
 
@@ -72,7 +72,7 @@ namespace Mono.TextTemplating
 		public string OutputFile { get; protected set; }
 		public string TemplateFile { get; protected set; }
 		public bool UseRelativeLinePragmas { get; set; }
-		
+
 		public TemplateGenerator ()
 		{
 			Refs.Add (typeof (TextTransformation).Assembly.Location);
@@ -90,12 +90,10 @@ namespace Mono.TextTemplating
 			if (string.IsNullOrEmpty (content))
 				throw new ArgumentNullException (nameof (content));
 
-			Errors.Clear ();
-			encoding = Utf8.BomlessEncoding;
-			
+			InitializeForRun ();
 			return Engine.CompileTemplateAsync (content, this, token);
 		}
-		
+
 		protected internal TemplatingEngine Engine {
 			get {
 				if (engine == null)
@@ -103,7 +101,20 @@ namespace Mono.TextTemplating
 				return engine;
 			}
 		}
-		
+
+		void InitializeForRun (string inputFileName = null, string outputFileName = null, Encoding encoding = null)
+		{
+			Errors.Clear ();
+			this.encoding = encoding ?? Utf8.BomlessEncoding;
+
+			if (outputFileName is null && inputFileName is not null) {
+				outputFileName = Path.ChangeExtension (inputFileName, ".txt");
+			}
+
+			TemplateFile = inputFileName;
+			OutputFile = outputFileName;
+		}
+
 		[Obsolete("Use ProcessTemplateAsync")]
 		public bool ProcessTemplate (string inputFile, string outputFile)
 			=> ProcessTemplateAsync (inputFile, outputFile, CancellationToken.None).Result;
@@ -114,27 +125,28 @@ namespace Mono.TextTemplating
 				throw new ArgumentNullException (nameof (inputFile));
 			if (string.IsNullOrEmpty (outputFile))
 				throw new ArgumentNullException (nameof (outputFile));
-			
+
+			InitializeForRun (inputFile, outputFile);
+
 			string content;
 			try {
 #if NETCOREAPP2_1_OR_GREATER
-				content = await File.ReadAllTextAsync (inputFile, token);
+				content = await File.ReadAllTextAsync (inputFile, token).ConfigureAwait (false);
 #else
 				content = File.ReadAllText (inputFile);
 #endif
 			}
 			catch (IOException ex) {
-				Errors.Clear ();
 				AddError ("Could not read input file '" + inputFile + "':\n" + ex);
 				return false;
 			}
 
-			var result = await ProcessTemplateAsync (inputFile, content, outputFile, token);
+			var result = await ProcessTemplateAsync (inputFile, content, outputFile, token).ConfigureAwait (false);
 
 			try {
 				if (!Errors.HasErrors) {
 #if NETCOREAPP2_1_OR_GREATER
-					await File.WriteAllTextAsync (result.fileName, result.content, encoding, token);
+					await File.WriteAllTextAsync (result.fileName, result.content, encoding, token).ConfigureAwait (false);
 #else
 					File.WriteAllText (result.fileName, result.content, encoding);
 #endif
@@ -142,33 +154,27 @@ namespace Mono.TextTemplating
 			} catch (IOException ex) {
 				AddError ("Could not write output file '" + outputFile + "':\n" + ex);
 			}
-			
+
 			return !Errors.HasErrors;
 		}
 
 		[Obsolete("Use ProcessTemplateAsync")]
 		public bool ProcessTemplate (string inputFileName, string inputContent, ref string outputFileName, out string outputContent)
 		{
-			var result = ProcessTemplateAsync (inputFileName, inputContent, outputFileName, CancellationToken.None).Result;
-			outputFileName = result.fileName;
-			outputContent = result.content;
-			return result.success;
+			(outputFileName, outputContent, var success) = ProcessTemplateAsync (inputFileName, inputContent, outputFileName, CancellationToken.None).Result;
+			return success;
 		}
 
 		public async Task<(string fileName, string content, bool success)> ProcessTemplateAsync (string inputFileName, string inputContent, string outputFileName, CancellationToken token = default)
 		{
-			Errors.Clear ();
-			encoding = Utf8.BomlessEncoding;
+			InitializeForRun (inputFileName, outputFileName);
 
-			OutputFile = outputFileName;
-			TemplateFile = inputFileName;
-			var outputContent = await Engine.ProcessTemplateAsync (inputContent, this, token);
-			outputFileName = OutputFile;
-			
-			return (outputFileName, outputContent, !Errors.HasErrors);
+			var outputContent = await Engine.ProcessTemplateAsync (inputContent, this, token).ConfigureAwait (false);
+
+			return (OutputFile, outputContent, !Errors.HasErrors);
 		}
-		
-		public bool PreprocessTemplate (string inputFile, string className, string classNamespace, 
+
+		public bool PreprocessTemplate (string inputFile, string className, string classNamespace,
 			string outputFile, Encoding encoding, out string language, out string[] references)
 		{
 			language = null;
@@ -178,38 +184,36 @@ namespace Mono.TextTemplating
 				throw new ArgumentNullException (nameof (inputFile));
 			if (string.IsNullOrEmpty (outputFile))
 				throw new ArgumentNullException (nameof (outputFile));
-			
+
+			InitializeForRun (inputFile, outputFile, encoding);
+
 			string content;
 			try {
 				content = File.ReadAllText (inputFile);
 			} catch (IOException ex) {
-				Errors.Clear ();
 				AddError ("Could not read input file '" + inputFile + "':\n" + ex);
 				return false;
 			}
-			
-			string output;
-			PreprocessTemplate (inputFile, className, classNamespace, content, out language, out references, out output);
-			
+
+			PreprocessTemplate (inputFile, className, classNamespace, content, out language, out references, out var output);
+
 			try {
 				if (!Errors.HasErrors)
 					File.WriteAllText (outputFile, output, encoding);
 			} catch (IOException ex) {
 				AddError ("Could not write output file '" + outputFile + "':\n" + ex);
 			}
-			
+
 			return !Errors.HasErrors;
 		}
-		
-		public bool PreprocessTemplate (string inputFileName, string className, string classNamespace, string inputContent, 
+
+		public bool PreprocessTemplate (string inputFileName, string className, string classNamespace, string inputContent,
 			out string language, out string[] references, out string outputContent)
 		{
-			Errors.Clear ();
-			encoding = Utf8.BomlessEncoding;
+			InitializeForRun (null, inputFileName);
 
-			TemplateFile = inputFileName;
 			outputContent = Engine.PreprocessTemplate (inputContent, this, className, classNamespace, out language, out references);
-			
+
 			return !Errors.HasErrors;
 		}
 
@@ -226,6 +230,7 @@ namespace Mono.TextTemplating
 			return ParsedTemplate.FromTextInternal (inputContent, this);
 		}
 
+		[Obsolete ("Use overload without redundant `language` parameter")]
 		public string PreprocessTemplate (
 			ParsedTemplate pt,
 			string inputFile,
@@ -234,8 +239,21 @@ namespace Mono.TextTemplating
 			out string language,
 			out string[] references)
 		{
-			TemplateFile = inputFile;
-			return Engine.PreprocessTemplate (pt, inputContent, settings, this, out language, out references);
+			InitializeForRun (inputFileName: inputFile);
+			var result = TemplatingEngine.PreprocessTemplate (pt, inputContent, settings, this, out references);
+			language = settings.Language;
+			return result;
+		}
+
+		public string PreprocessTemplate (
+			ParsedTemplate pt,
+			string inputFile,
+			string inputContent,
+			TemplateSettings settings,
+			out string[] references)
+		{
+			InitializeForRun (inputFileName: inputFile);
+			return TemplatingEngine.PreprocessTemplate (pt, inputContent, settings, this, out references);
 		}
 
 		public async Task<(string fileName, string content)> ProcessTemplateAsync (
@@ -246,13 +264,9 @@ namespace Mono.TextTemplating
 			TemplateSettings settings,
 			CancellationToken token = default)
 		{
-			Errors.Clear ();
-			encoding = Utf8.BomlessEncoding;
+			InitializeForRun (inputFileName, outputFileName);
 
-			OutputFile = outputFileName;
-			TemplateFile = inputFileName;
-			var outputContent = await Engine.ProcessTemplateAsync (pt, inputContent, settings, this, token);
-			outputFileName = OutputFile;
+			var outputContent = await Engine.ProcessTemplateAsync (pt, inputContent, settings, this, token).ConfigureAwait (false);
 
 			return (outputFileName, outputContent);
 		}
@@ -260,28 +274,25 @@ namespace Mono.TextTemplating
 		#region Virtual members
 
 		public virtual object GetHostOption (string optionName)
-		{
-			switch (optionName) {
-			case "UseRelativeLinePragmas":
-				return UseRelativeLinePragmas;
-			}
-			return null;
-		}
-		
+			=> optionName switch {
+				"UseRelativeLinePragmas" => UseRelativeLinePragmas,
+				_ => null,
+			};
+
 		public virtual AppDomain ProvideTemplatingAppDomain (string content)
 		{
 			return null;
 		}
-		
+
 		protected virtual string ResolveAssemblyReference (string assemblyReference)
 		{
-			if (System.IO.Path.IsPathRooted (assemblyReference))
- 				return assemblyReference;
- 			foreach (string referencePath in ReferencePaths) {
- 				var path = System.IO.Path.Combine (referencePath, assemblyReference);
- 				if (System.IO.File.Exists (path))
- 					return path;
- 			}
+			if (Path.IsPathRooted (assemblyReference))
+				return assemblyReference;
+			foreach (string referencePath in ReferencePaths) {
+				var path = Path.Combine (referencePath, assemblyReference);
+				if (File.Exists (path))
+					return path;
+			}
 
 			var assemblyName = new AssemblyName(assemblyReference);
 			if (assemblyName.Version != null)//Load via GAC and return full path
@@ -295,7 +306,7 @@ namespace Mono.TextTemplating
 				return assemblyReference + ".dll";
 			return assemblyReference;
 		}
-		
+
 		protected virtual string ResolveParameterValue (string directiveId, string processorName, string parameterName)
 		{
 			var key = new ParameterKey (processorName, directiveId, parameterName);
@@ -305,18 +316,18 @@ namespace Mono.TextTemplating
 				return ResolveParameterValue (null, null, parameterName);
 			return null;
 		}
-		
+
 		protected virtual Type ResolveDirectiveProcessor (string processorName)
 		{
 			if (!directiveProcessors.TryGetValue (processorName, out KeyValuePair<string, string> value))
-				throw new Exception (string.Format ("No directive processor registered as '{0}'", processorName));
+				throw new TemplatingEngineException ($"No directive processor registered as '{processorName}'");
 			var asmPath = ResolveAssemblyReference (value.Value);
 			if (asmPath == null)
-				throw new Exception (string.Format ("Could not resolve assembly '{0}' for directive processor '{1}'", value.Value, processorName));
+				throw new TemplatingEngineException ($"Could not resolve assembly '{value.Value}' for directive processor '{processorName}'");
 			var asm = Assembly.LoadFrom (asmPath);
 			return asm.GetType (value.Key, true);
 		}
-		
+
 		protected virtual string ResolvePath (string path)
 		{
 			if (!string.IsNullOrEmpty(path)) {
@@ -342,17 +353,17 @@ namespace Mono.TextTemplating
 
 			return path;
 		}
-		
+
 #endregion
-		
-		readonly Dictionary<ParameterKey,string> parameters = new Dictionary<ParameterKey, string> ();
-		readonly Dictionary<string,KeyValuePair<string,string>> directiveProcessors = new Dictionary<string, KeyValuePair<string,string>> ();
-		
+
+		readonly Dictionary<ParameterKey,string> parameters = new ();
+		readonly Dictionary<string,KeyValuePair<string,string>> directiveProcessors = new ();
+
 		public void AddDirectiveProcessor (string name, string klass, string assembly)
 		{
 			directiveProcessors.Add (name, new KeyValuePair<string,string> (klass,assembly));
 		}
-		
+
 		public void AddParameter (string processorName, string directiveName, string parameterName, string value)
 		{
 			parameters.Add (new ParameterKey (processorName, directiveName, parameterName), value);
@@ -420,12 +431,12 @@ namespace Mono.TextTemplating
 
 			return !string.IsNullOrEmpty (name);
 		}
-		
+
 		protected virtual bool LoadIncludeText (string requestFileName, out string content, out string location)
 		{
 			content = "";
 			location = ResolvePath (requestFileName);
-			
+
 			if (location == null || !File.Exists (location)) {
 				foreach (string path in IncludePaths) {
 					string f = Path.Combine (path, requestFileName);
@@ -435,10 +446,10 @@ namespace Mono.TextTemplating
 					}
 				}
 			}
-			
+
 			if (location == null)
 				return false;
-			
+
 			try {
 				content = File.ReadAllText (location);
 				return true;
@@ -447,58 +458,60 @@ namespace Mono.TextTemplating
 			}
 			return false;
 		}
-		
+
 #region Explicit ITextTemplatingEngineHost implementation
-		
+
 		bool ITextTemplatingEngineHost.LoadIncludeText (string requestFileName, out string content, out string location)
 		{
 			return LoadIncludeText (requestFileName, out content, out location);
 		}
-		
+
 		void ITextTemplatingEngineHost.LogErrors (CompilerErrorCollection errors)
 		{
-			this.Errors.AddRange (errors);
+			Errors.AddRange (errors);
 		}
-		
+
 		string ITextTemplatingEngineHost.ResolveAssemblyReference (string assemblyReference)
 		{
 			return ResolveAssemblyReference (assemblyReference);
 		}
-		
+
 		string ITextTemplatingEngineHost.ResolveParameterValue (string directiveId, string processorName, string parameterName)
 		{
 			return ResolveParameterValue (directiveId, processorName, parameterName);
 		}
-		
+
 		Type ITextTemplatingEngineHost.ResolveDirectiveProcessor (string processorName)
 		{
 			return ResolveDirectiveProcessor (processorName);
 		}
-		
+
 		string ITextTemplatingEngineHost.ResolvePath (string path)
 		{
 			return ResolvePath (path);
 		}
-		
+
 		void ITextTemplatingEngineHost.SetFileExtension (string extension)
 		{
-			extension = extension.TrimStart ('.');
-			if (Path.HasExtension (OutputFile)) {
-				OutputFile = Path.ChangeExtension (OutputFile, extension);
-			} else {
-				OutputFile = OutputFile + "." + extension;
+			if (OutputFile is not null) {
+				extension = extension.TrimStart ('.');
+				if (Path.HasExtension (OutputFile)) {
+					OutputFile = Path.ChangeExtension (OutputFile, extension);
+				} else {
+					OutputFile = OutputFile + "." + extension;
+				}
 			}
 		}
-		
+
 		void ITextTemplatingEngineHost.SetOutputEncoding (Encoding encoding, bool fromOutputDirective)
 		{
 			this.encoding = encoding;
 		}
-		
+
 		IList<string> ITextTemplatingEngineHost.StandardAssemblyReferences {
 			get { return Refs; }
 		}
-		
+
 		IList<string> ITextTemplatingEngineHost.StandardImports {
 			get { return Imports; }
 		}
@@ -512,7 +525,7 @@ namespace Mono.TextTemplating
 		/// <summary>
 		/// Returns the current session instance, creating it if necessary.
 		/// </summary>
-		public ITextTemplatingSession GetOrCreateSession () => session ?? (session = CreateSession ());
+		public ITextTemplatingSession GetOrCreateSession () => session ??= CreateSession ();
 
 		/// <summary>
 		/// Called to create a session instance.
@@ -543,24 +556,16 @@ namespace Mono.TextTemplating
 						^ this.parameterName.GetHashCode ();
 				}
 			}
-			
-			string processorName, directiveName, parameterName;
+
+			readonly string processorName, directiveName, parameterName;
 			readonly int hashCode;
-			
-			public override bool Equals (object obj)
-			{
-				return obj is ParameterKey && Equals ((ParameterKey)obj);
-			}
-			
+
+			public override bool Equals (object obj) => obj is ParameterKey other && Equals (other);
+
 			public bool Equals (ParameterKey other)
-			{
-				return processorName == other.processorName && directiveName == other.directiveName && parameterName == other.parameterName;
-			}
-			
-			public override int GetHashCode ()
-			{
-				return hashCode;
-			}
+				=> processorName == other.processorName && directiveName == other.directiveName && parameterName == other.parameterName;
+
+			public override int GetHashCode () => hashCode;
 		}
 
 		/// <summary>

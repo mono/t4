@@ -1,17 +1,17 @@
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
 // Copyright (c) Microsoft Corp. (https://www.microsoft.com)
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,7 +34,7 @@ namespace Mono.TextTemplating
 {
 	class TextTransform
 	{
-		static OptionSet optionSet, compatOptionSet;
+		static OptionSet optionSet;
 
 		public static int Main (string [] args)
 		{
@@ -47,6 +47,15 @@ namespace Mono.TextTemplating
 			}
 		}
 
+		sealed class CustomOption : Option
+		{
+			readonly Action<OptionValueCollection> action;
+			public CustomOption (string prototype, string description, int count, Action<OptionValueCollection> action, bool hidden = false)
+				: base (prototype, description, count, hidden)
+				=> this.action = action ?? throw new ArgumentNullException (nameof (action));
+			protected override void OnParseComplete (OptionContext c) => action (c.OptionValues);
+		}
+
 		static int MainInternal (string [] args)
 		{
 			if (args.Length == 0 && !Console.IsInputRedirected) {
@@ -55,8 +64,6 @@ namespace Mono.TextTemplating
 
 			var generator = new ToolTemplateGenerator ();
 			string outputFile = null, inputFile = null;
-			var directives = new List<string> ();
-			var parameters = new List<string> ();
 			var properties = new Dictionary<string,string> ();
 			string preprocessClassName = null;
 			bool debug = false;
@@ -65,76 +72,86 @@ namespace Mono.TextTemplating
 			optionSet = new OptionSet {
 				{
 					"o=|out=",
-					"Name or path of the output {<file>}. Defaults to the input filename with its " +
-					"extension changed to `.txt'. Use `-' to output to stdout.",
+					"Set the name or path of the output <file>. It defaults to the input filename with its extension changed to `.txt`, " +
+					"or to match the generated code when preprocessing, and may be overridden by template settings. " +
+					"Use `-` instead of a filename to write to stdout.",
 					s => outputFile = s
 				},
 				{
 					"r=",
-					"Name or path of an {<assembly>} reference. Assemblies will be resolved from the " +
-					"framework and the include folders",
+					"Add an {<assembly>} reference by path or assembly name. It will be resolved from the " +
+					"framework and assembly directories.",
 					s => generator.Refs.Add (s)
 				},
 				{
 					"u=|using=",
-					"Import a {<namespace>}' statement with a `using",
+					"Import a {<namespace>} by generating a using statement.",
 					s => generator.Imports.Add (s)
 				},
 				{
 					"I=",
-					"Search {<directory>} when resolving file includes",
+					"Add a {<directory>} to be searched when resolving included files.",
 					s => generator.IncludePaths.Add (s)
 				},
 				{
 					"P=",
-					"Search {<directory>} when resolving assembly references",
+					"Add a {<directory>} to be searched when resolving assemblies.",
 					s => generator.ReferencePaths.Add (s)
 				},
 				{
 					"c=|class=",
-					"Preprocess the template into class {<name>}",
+					"Preprocess the template into class {<name>} for use as a runtime template. The class name may include a namespace.",
 					(s) => preprocessClassName = s
 				},
 				{
-					"p:=",
-					"Add a {<name>}={<value>} key-value pair to the template's `Session' " +
-					"dictionary. These can also be accessed using strongly typed " +
-					"properties declared with `<#@ parameter name=\"<name>\" type=\"<type>\" #> " +
-					"directives.",
+					"p==|parameter==",
+					"Set session parameter {0:<name>} to {1:<value>}. " +
+					"The value is accessed from the template's Session dictionary, " +
+					"or from a property declared with a parameter directive: <#@ parameter name='<name>' type='<type>' #>. " +
+					"If the <name> matches a parameter directive, the <value> will be converted to that parameter's type.",
 					(k,v) => properties[k]=v
 				},
 				{
 					"debug",
-					"Generate debug symbols and keep temp files",
+					"Generate debug symbols and keep temporary files.",
 					s => debug = true
 				},
 				{
 					"v|verbose",
-					"Generate debug symbols and keep temp files",
+					"Output additional diagnostic information to stdout.",
 					s => verbose = true
 				},
 				{
 					"h|?|help",
 					"Show help",
 					s => ShowHelp (false)
-				}
-			};
+				},
+				new CustomOption (
+					"dp=!",
+					"Set {0:<directive>} to be handled by directive processor {1:<class>} in {2:<assembly>}.",
+					3,
+					a => generator.AddDirectiveProcessor(a[0], a[1], a[2])
+				),
+				new CustomOption (
+					"a=!=",
+					"Set host parameter {2:<name>} to {3:<value>}. It may optionally be scoped to a {1:<directive>} and/or {0:<processor>}. " +
+					"The value is accessed from the host's ResolveParameterValue() method " +
+					"or from a property declared with a parameter directive: <#@ parameter name='<name>' #>. ",
+					4,
+					a => {
+						if (a.Count == 2) {
+							generator.AddParameter (null, null, a[0], a[1]);
+						} else if (a.Count == 3) {
+							generator.AddParameter (null, a[0], a[1], a[2]);
 
-			compatOptionSet = new OptionSet {
-				{
-					"dp=",
-					"Directive processor (name!class!assembly)",
-					s => directives.Add (s)
-				},
-				{
-					"a=",
-					"Parameters (name=value) or ([processorName!][directiveName!]name!value)",
-					s => parameters.Add (s)
-				},
+						} else {
+							generator.AddParameter (a[0], a[1], a[2], a[3]);
+						}
+					}
+				)
 			};
 
 			var remainingArgs = optionSet.Parse (args);
-			remainingArgs = compatOptionSet.Parse (remainingArgs);
 
 			string inputContent = null;
 			bool inputIsFromStdin = false;
@@ -156,9 +173,11 @@ namespace Mono.TextTemplating
 			}
 
 			bool writeToStdout = outputFile == "-" || (inputIsFromStdin && string.IsNullOrEmpty (outputFile));
+			bool isDefaultOutputFilename = false;
 
 			if (!writeToStdout && string.IsNullOrEmpty (outputFile)) {
 				outputFile = inputFile;
+				isDefaultOutputFilename = true;
 				if (Path.HasExtension (outputFile)) {
 					var dir = Path.GetDirectoryName (outputFile);
 					var fn = Path.GetFileNameWithoutExtension (outputFile);
@@ -180,17 +199,6 @@ namespace Mono.TextTemplating
 
 			if (inputContent.Length == 0) {
 				Console.Error.WriteLine ("Input is empty");
-				return 1;
-			}
-
-			foreach (var par in parameters) {
-				if (!generator.TryAddParameter (par)) {
-					Console.Error.WriteLine ("Parameter has incorrect format: {0}", par);
-					return 1;
-				}
-			}
-
-			if (!AddDirectiveProcessors (generator, directives)) {
 				return 1;
 			}
 
@@ -218,7 +226,10 @@ namespace Mono.TextTemplating
 					(outputFile, outputContent) = generator.ProcessTemplateAsync (pt, inputFile, inputContent, outputFile, settings).Result;
 				} else {
 					SplitClassName (preprocessClassName, settings);
-					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out _, out _);
+					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out _);
+					if (isDefaultOutputFilename) {
+						outputFile = Path.ChangeExtension (outputFile, settings.Provider.FileExtension);
+					}
 				}
 			}
 
@@ -313,33 +324,9 @@ namespace Mono.TextTemplating
 			return false;
 		}
 
-		static bool AddDirectiveProcessors (TemplateGenerator generator, List<string> directives)
-		{
-			foreach (var dir in directives) {
-				var split = dir.Split ('!');
-
-				if (split.Length != 3) {
-					Console.Error.WriteLine ("Directive must have 3 values: {0}", dir);
-					return false;
-				}
-
-				for (int i = 0; i < 3; i++) {
-					string s = split [i];
-					if (string.IsNullOrEmpty (s)) {
-						string kind = i == 0 ? "name" : (i == 1 ? "class" : "assembly");
-						Console.Error.WriteLine ("Directive has missing {0} value: {1}", kind, dir);
-						return false;
-					}
-				}
-
-				generator.AddDirectiveProcessor (split [0], split [1], split [2]);
-			}
-			return true;
-		}
-
 		static void LogErrors (TemplateGenerator generator)
 		{
-			foreach (System.CodeDom.Compiler.CompilerError err in generator.Errors) {
+			foreach (CompilerError err in generator.Errors) {
 				var oldColor = Console.ForegroundColor;
 				Console.ForegroundColor = err.IsWarning? ConsoleColor.Yellow : ConsoleColor.Red;
 				if (!string.IsNullOrEmpty (err.FileName)) {
@@ -367,18 +354,16 @@ namespace Mono.TextTemplating
 		{
 			var name = Path.GetFileNameWithoutExtension (Assembly.GetExecutingAssembly ().Location);
 			Console.WriteLine ("T4 text template processor version {0}", ThisAssembly.AssemblyInformationalVersion);
-			Console.WriteLine ("Usage: {0} [options] input-file", name);
+			Console.WriteLine ("Usage: {0} [options] [template-file]", name);
 			if (concise) {
 				Console.WriteLine ("Use --help to display options.");
 			} else {
 				Console.WriteLine ();
+				Console.WriteLine ("The template-file argument is required unless the template text is piped in via stdin.");
+				Console.WriteLine ();
 				Console.WriteLine ("Options:");
 				Console.WriteLine ();
 				optionSet.WriteOptionDescriptions (Console.Out);
-				Console.WriteLine ();
-				Console.WriteLine ("TextTransform.exe compatibility options (deprecated):");
-				Console.WriteLine ();
-				compatOptionSet.WriteOptionDescriptions (Console.Out);
 				Console.WriteLine ();
 				Environment.Exit (0);
 			}

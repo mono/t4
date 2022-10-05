@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#if NETCOREAPP
+#if FEATURE_ASSEMBLY_LOAD_CONTEXT
 
 using System.CodeDom.Compiler;
 using System.IO;
@@ -23,6 +23,9 @@ namespace Mono.TextTemplating
 		readonly AssemblyName hostAsmName;
 
 		public TemplateAssemblyLoadContext (string[] templateAssemblyFiles, ITextTemplatingEngineHost host)
+#if NETCOREAPP3_0_OR_GREATER
+			: base (isCollectible: true)
+#endif
 		{
 			this.templateAssemblyFiles = templateAssemblyFiles;
 			this.host = host;

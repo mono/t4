@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
@@ -7,37 +7,83 @@
     <DefineConstants Condition="'$(TargetFramework)'=='net472'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
     <DefaultItemExcludes>$(DefaultItemExcludes);MSBuildTestCases\**;TestCases\**</DefaultItemExcludes>
   </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Mono.TextTemplating.Build\Mono.TextTemplating.Build.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+
     <PackageReference Include="Microsoft.Build.Locator" Version="1.4.1" />
-    <PackageReference Include="System.Reflection.MetadataLoadContext" Version ="5.0.1" />
-    <!--
-    Microsoft.NET.Test.Sdk brings in a version of NuGet.Frameworks that's older than the one used by MSBuild
-    and loads first, thereby breaking loading of MSBuild assemblies. Force-upgrade it.
-    -->
-    <PackageReference Include="NuGet.Frameworks" Version="5.8.0" />
-    <!--
-    <PackageReference Include="Microsoft.Build.Locator" Version="1.2.6" />
-    -->
     <PackageReference Include="Microsoft.Build" Version="16.8.0" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.Build.Framework" Version="16.8.0" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.8.0" ExcludeAssets="runtime" />
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version ="5.0.1" />
+
     <!-- fix conflicts in indirect references -->
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" PrivateAssets="all" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+        <!--
+    Microsoft.NET.Test.Sdk brings in a version of NuGet.Frameworks that's older than the one used by MSBuild
+    and loads first, thereby breaking loading of MSBuild assemblies. Force-upgrade it.
+    -->
+    <PackageReference Include="NuGet.Frameworks" Version="5.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <!-- newer versions drop netcoreapp2.1 -->
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+    <!-- seems to be required for tests to run on Mono -->
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.3.2" Condition="'$(TargetFramework)'=='net472' And $([MSBuild]::IsOSUnixLike())" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="MSBuildTestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="TestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
     <!-- disable parallel test execution on github actions, it hangs the runner there -->
-    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'"/>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'" />
   </ItemGroup>
+
+  <!-- download packages that contains dlls referenced by test tt files -->
+  <ItemGroup>
+    <PackageDownload Include="Microsoft.OpenApi" Version="[1.2.3]" />
+    <PackageDownload Include="Microsoft.OpenApi.Readers" Version="[1.2.3]" />
+    <PackageDownload Include="SharpYaml" Version="[1.6.5]" />
+  </ItemGroup>
+
+  <!-- write paths to downloaded packages into consts that tests can use -->
+  <Target Name="GeneratePackageDownloadPaths" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_PackageDownloadConstsPathFile>$(IntermediateOutputPath)PackageDownloadPathConstants.cs</_PackageDownloadConstsPathFile>
+      <_NuGetPackageRootWithTrailingSlash>$([MSBuild]::EnsureTrailingSlash("$(NuGetPackageRoot)"))</_NuGetPackageRootWithTrailingSlash>
+    </PropertyGroup>
+    <ItemGroup>
+      <!-- temp vars to make escaping manageable -->
+      <_PackageDownloadWithVersion Include="@(PackageDownload)" Version="$([System.String]::Copy('%(Version)').Replace('[','').Replace(']',''))" />
+      <_PackageDownloadWithPath Include="@(_PackageDownloadWithVersion)" Path="$(_NuGetPackageRootWithTrailingSlash)$([System.String]::Copy('%(Identity)').ToLower())\%(Version)" />
+      <_PackageDownloadVars
+        Include="@(_PackageDownloadWithPath)"
+        VarName="$([System.String]::Copy('%(Identity)_%(Version)').Replace('.','_'))"
+        EscapedValue="$([System.String]::Copy('%(Path)').Replace('\','\\'))"
+      />
+      <_PackageDownloadPathConstLines Include="namespace $(ProjectName) {" />
+      <_PackageDownloadPathConstLines Include="partial class PackagePath {" />
+      <_PackageDownloadPathConstLines Include="@(_PackageDownloadVars->'    public static TestDataPath %(VarName) =&gt; new(&quot;%(EscapedValue)&quot;);')" />
+      <_PackageDownloadPathConstLines Include="}}" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(_PackageDownloadConstsPathFile)" Lines="@(_PackageDownloadPathConstLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+
+    <ItemGroup>
+      <_PackageDownloadWithVersion Remove="@(_PackageDownloadWithVersion)" />
+      <_PackageDownloadWithPath Remove="@(_PackageDownloadWithPath)" />
+      <_PackageDownloadVars Remove="@(_PackageDownloadVars)" />
+      <_PackageDownloadPathConstLines Remove="@(_PackageDownloadPathConstLines)" />
+      <Compile Include="$(_PackageDownloadConstsPathFile)" />
+      <FileWrites Include="$(_PackageDownloadConstsPathFile)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

@@ -30,11 +30,10 @@ namespace Mono.TextTemplating.CodeCompilation
 	{
         public static SemVersion Zero { get; } = new SemVersion(0,0,0, null, null, "0.0.0");
 
-		static readonly Regex SemVerRegex =
-			new Regex (
-				@"(?<Major>0|(?:[1-9]\d*))(?:\.(?<Minor>0|(?:[1-9]\d*))(?:\.(?<Patch>0|(?:[1-9]\d*)))?(?:\-(?<PreRelease>[0-9A-Z\.-]+))?(?:\+(?<Meta>[0-9A-Z\.-]+))?)?",
-				RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase
-			);
+		static readonly Regex SemVerRegex = new (
+			@"(?<Major>0|(?:[1-9]\d*))(?:\.(?<Minor>0|(?:[1-9]\d*))(?:\.(?<Patch>0|(?:[1-9]\d*)))?(?:\-(?<PreRelease>[0-9A-Z\.-]+))?(?:\+(?<Meta>[0-9A-Z\.-]+))?)?",
+			RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase
+		);
 
 
 		public int Major { get; }
@@ -163,30 +162,16 @@ namespace Mono.TextTemplating.CodeCompilation
 				return -1;
 			}
 
-            switch(StringComparer.InvariantCultureIgnoreCase.Compare(PreRelease, other.PreRelease)) {
-				case 1:
-					return 1;
-
-				case -1:
-					return -1;
-
-                default:
-	                return StringComparer.InvariantCultureIgnoreCase.Compare (Meta, other.Meta);
-			}
+			return StringComparer.InvariantCultureIgnoreCase.Compare (PreRelease, other.PreRelease) switch {
+				1 => 1,
+				-1 => -1,
+				_ => StringComparer.InvariantCultureIgnoreCase.Compare (Meta, other.Meta)
+			};
 		}
 
-		public int CompareTo (object obj)
-		{
-			return (obj is SemVersion semVersion)
-                ? CompareTo (semVersion)
-				: -1;
-		}
+		public int CompareTo (object obj) => (obj is SemVersion semVersion)? CompareTo (semVersion) : -1;
 
-		public override bool Equals (object obj)
-		{
-			return (obj is SemVersion semVersion)
-			       && Equals (semVersion);
-		}
+		public override bool Equals (object obj) => (obj is SemVersion semVersion) && Equals (semVersion);
 
 		public override int GetHashCode ()
 		{
@@ -200,23 +185,13 @@ namespace Mono.TextTemplating.CodeCompilation
 			}
 		}
 
-		public override string ToString ()
-			=> VersionString;
+		public override string ToString () => VersionString;
 
-		// Define the is greater than operator.
-		public static bool operator > (SemVersion operand1, SemVersion operand2)
-            => operand1.CompareTo (operand2) == 1;
-
-		// Define the is less than operator.
-		public static bool operator < (SemVersion operand1, SemVersion operand2)
-			=> operand1.CompareTo (operand2) == -1;
-
-		// Define the is greater than or equal to operator.
-		public static bool operator >= (SemVersion operand1, SemVersion operand2)
-			=> operand1.CompareTo (operand2) >= 0;
-
-		// Define the is less than or equal to operator.
-		public static bool operator <= (SemVersion operand1, SemVersion operand2)
-			=> operand1.CompareTo (operand2) <= 0;
+		public static bool operator > (SemVersion left, SemVersion right) => left.CompareTo (right) == 1;
+		public static bool operator < (SemVersion left, SemVersion right) => left.CompareTo (right) == -1;
+		public static bool operator >= (SemVersion left, SemVersion right) => left.CompareTo (right) >= 0;
+		public static bool operator <= (SemVersion left, SemVersion right) => left.CompareTo (right) <= 0;
+		public static bool operator == (SemVersion left, SemVersion right) => left.Equals (right);
+		public static bool operator != (SemVersion left, SemVersion right) => !(left == right);
 	}
 }

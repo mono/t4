@@ -1,0 +1,26 @@
+name: Publish
+
+on:
+  workflow_call:
+    secrets:
+      NUGET_API_KEY:
+        description: 'NuGet.org API key for the packages to be published'
+        required: true
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          path: packages
+          name: packages
+
+      - name: Publish to GPR
+        run: |
+          dotnet nuget push "packages\**\*.nupkg" --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }} --skip-duplicate
+
+      - name: Publish to NuGet.org
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          dotnet nuget push "packages\**\*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

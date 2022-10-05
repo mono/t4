@@ -1,0 +1,23 @@
+<#@ output extension=".yaml" #>
+<#@ assembly name="Microsoft.OpenApi.dll" #>
+<#@ import namespace="Microsoft.OpenApi" #>
+<#@ import namespace="Microsoft.OpenApi.Models" #>
+<#@ import namespace="Microsoft.OpenApi.Extensions" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+var document = new OpenApiDocument
+{
+    Info = new OpenApiInfo
+    {
+        Version = "1.0.0",
+        Title = "Example",
+    },
+    Servers = new List<OpenApiServer>
+    {
+        new OpenApiServer { Url = "https://example.com/api" }
+    }
+};
+
+#>
+<#= document.Serialize(OpenApiSpecVersion.OpenApi2_0, OpenApiFormat.Yaml) #>

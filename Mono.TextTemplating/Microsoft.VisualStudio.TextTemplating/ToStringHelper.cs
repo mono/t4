@@ -45,12 +45,10 @@ namespace Microsoft.VisualStudio.TextTemplating
 			if (objectToConvert == null)
 				throw new ArgumentNullException (nameof (objectToConvert));
 
-			IConvertible conv = objectToConvert as IConvertible;
-			if (conv != null)
+			if (objectToConvert is IConvertible conv)
 				return conv.ToString (formatProvider);
 			
-			var str = objectToConvert as string;
-			if (str != null)
+			if (objectToConvert is string str)
 				return str;
 			
 			//TODO: implement a cache of types and DynamicMethods

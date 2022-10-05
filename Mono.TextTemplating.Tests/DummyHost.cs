@@ -31,83 +31,55 @@ using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating.Tests
 {
-	
+
 	public class DummyHost : ITextTemplatingEngineHost
 	{
-		public readonly Dictionary<string, string> Locations = new Dictionary<string, string> ();
-		public readonly Dictionary<string, string> Contents = new Dictionary<string, string> ();
-		public readonly Dictionary<string, object> HostOptions = new Dictionary<string, object> ();
-	 	List<string> standardAssemblyReferences = new List<string> ();
-		List<string> standardImports = new List<string> ();
-		public readonly CompilerErrorCollection Errors = new CompilerErrorCollection ();
-		public readonly Dictionary<string, Type> DirectiveProcessors = new Dictionary<string, Type> ();
-		
+		public Dictionary<string, string> Locations { get; } = new ();
+		public Dictionary<string, string> Contents { get; } = new ();
+		public Dictionary<string, object> HostOptions { get; } = new ();
+		public CompilerErrorCollection Errors { get; } = new ();
+		public Dictionary<string, Type> DirectiveProcessors { get; } = new ();
+
+		readonly List<string> standardAssemblyReferences = new ();
+		readonly List<string> standardImports = new ();
+
 		public virtual object GetHostOption (string optionName)
 		{
-			object o;
-			HostOptions.TryGetValue (optionName, out o);
-			return o;
+			HostOptions.TryGetValue (optionName, out var option);
+			return option;
 		}
-		
+
 		public virtual bool LoadIncludeText (string requestFileName, out string content, out string location)
 		{
 			content = null;
 			return Locations.TryGetValue (requestFileName, out location)
 				&& Contents.TryGetValue (location, out content);
 		}
-		
-		public virtual void LogErrors (CompilerErrorCollection errors)
-		{
-			Errors.AddRange (errors);
-		}
-		
-		public virtual AppDomain ProvideTemplatingAppDomain (string content)
-		{
-			return null;
-		}
-		
-		public virtual string ResolveAssemblyReference (string assemblyReference)
-		{
-			throw new System.NotImplementedException();
-		}
-		
+
+		public virtual void LogErrors (CompilerErrorCollection errors) => Errors.AddRange (errors);
+
+		public virtual AppDomain ProvideTemplatingAppDomain (string content) => null;
+
+		public virtual string ResolveAssemblyReference (string assemblyReference) => throw new NotImplementedException ();
+
 		public virtual Type ResolveDirectiveProcessor (string processorName)
 		{
-			Type t;
-			DirectiveProcessors.TryGetValue (processorName, out t);
+			DirectiveProcessors.TryGetValue (processorName, out Type t);
 			return t;
 		}
-		
-		public virtual string ResolveParameterValue (string directiveId, string processorName, string parameterName)
-		{
-			throw new System.NotImplementedException();
-		}
-		
-		public virtual string ResolvePath (string path)
-		{
-			throw new System.NotImplementedException();
-		}
-		
-		public virtual void SetFileExtension (string extension)
-		{
-			throw new System.NotImplementedException();
-		}
-		
-		public virtual void SetOutputEncoding (System.Text.Encoding encoding, bool fromOutputDirective)
-		{
-			throw new System.NotImplementedException();
-		}
-		
-		public virtual IList<string> StandardAssemblyReferences {
-			get { return standardAssemblyReferences; }
-		}
-		
-		public virtual IList<string> StandardImports {
-			get { return standardImports; }
-		}
-		
-		public virtual string TemplateFile {
-			get; set;
-		}
+
+		public virtual string ResolveParameterValue (string directiveId, string processorName, string parameterName) => throw new NotImplementedException ();
+
+		public virtual string ResolvePath (string path) => throw new NotImplementedException ();
+
+		public virtual void SetFileExtension (string extension) => throw new NotImplementedException ();
+
+		public virtual void SetOutputEncoding (System.Text.Encoding encoding, bool fromOutputDirective) => throw new NotImplementedException ();
+
+		public virtual IList<string> StandardAssemblyReferences => standardAssemblyReferences;
+
+		public virtual IList<string> StandardImports => standardImports;
+
+		public virtual string TemplateFile { get; set; }
 	}
 }

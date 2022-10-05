@@ -36,11 +36,9 @@ namespace Mono.TextTemplating.CodeCompilation
 	/// </summary>
 	class ProcessArgumentBuilder
 	{
-		StringBuilder sb = new StringBuilder ();
+		readonly StringBuilder sb = new ();
 
-		public string ProcessPath {
-			get; private set;
-		}
+		public string ProcessPath { get; }
 
 		// .NET doesn't allow escaping chars other than " and \ inside " quotes
 		const string escapeDoubleQuoteCharsStr = "\\\"";
@@ -72,19 +70,6 @@ namespace Mono.TextTemplating.CodeCompilation
 		{
 			foreach (var a in args)
 				Add (a);
-		}
-
-		/// <summary>
-		/// Adds a formatted argument, quoting and escaping as necessary.
-		/// </summary>
-		public void AddQuotedFormat (string argumentFormat, params object[] values)
-		{
-			AddQuoted (string.Format (argumentFormat, values));
-		}
-
-		public void AddQuotedFormat (string argumentFormat, object val0)
-		{
-			AddQuoted (string.Format (argumentFormat, val0));
 		}
 
 		/// <summary>Adds an argument, quoting and escaping as necessary.</summary>
@@ -200,16 +185,16 @@ namespace Mono.TextTemplating.CodeCompilation
 
 		static bool TryParse (string commandline, out string[] argv, out Exception ex)
 		{
-			StringBuilder builder = new StringBuilder ();
-			List<string> args = new List<string> ();
+			var builder = new StringBuilder ();
+			var args = new List<string> ();
 			string argument;
-			int i = 0, j;
+			int i = 0;
 			char c;
 
 			while (i < commandline.Length) {
 				c = commandline[i];
 				if (c != ' ' && c != '\t') {
-					if ((argument = GetArgument (builder, commandline, i, out j, out ex)) == null) {
+					if ((argument = GetArgument (builder, commandline, i, out int j, out ex)) == null) {
 						argv = null;
 						return false;
 					}
@@ -227,22 +212,11 @@ namespace Mono.TextTemplating.CodeCompilation
 			return true;
 		}
 
-		public static bool TryParse (string commandline, out string[] argv)
-		{
-			Exception ex;
-
-			return TryParse (commandline, out argv, out ex);
-		}
+		public static bool TryParse (string commandline, out string[] argv) => TryParse (commandline, out argv, out _);
 
 		public static string[] Parse (string commandline)
-		{
-			string[] argv;
-			Exception ex;
-
-			if (!TryParse (commandline, out argv, out ex))
-				throw ex;
-
-			return argv;
-		}
+			=> TryParse (commandline, out string[] argv, out Exception ex)
+				? argv
+				: throw ex;
 	}
 }
