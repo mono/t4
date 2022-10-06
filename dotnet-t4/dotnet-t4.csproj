@@ -2,16 +2,12 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <PackAsTool>true</PackAsTool>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <AssemblyName>t4</AssemblyName>
     <PackageId>dotnet-t4</PackageId>
     <RollForward>LatestMajor</RollForward>
     <Description>Command-line tool for processing T4 templates, a general-purpose way to generate text or code files using C#</Description>
     <ToolCommandName>t4</ToolCommandName>
     <RootNamespace>Mono.TextTemplating</RootNamespace>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 

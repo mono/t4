@@ -1,23 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp3.1;net472</TargetFrameworks>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>1591;1573</NoWarn>
-    <PackageId>Mono.TextTemplating</PackageId>
-    <EnablePackageValidation>true</EnablePackageValidation>
-    <Description>Embeddable engine for the T4 templating language, a general-purpose way to generate text or code files using C#</Description>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <TFxId>$([MSBuild]::GetTargetFrameworkIdentifier('$(TargetFramework)'))</TFxId>
     <DefineConstants Condition="'$(TFxId)'=='.NETFramework'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
     <DefineConstants Condition="'$(TFxId)'=='.NETCoreApp'">$(DefineConstants);FEATURE_ASSEMBLY_LOAD_CONTEXT</DefineConstants>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Mono.TextTemplating</PackageId>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <Description>Embeddable engine for the T4 templating language, a general-purpose way to generate text or code files using C#</Description>
+    <PackageValidationBaselineVersion>2.2.1</PackageValidationBaselineVersion>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.CodeDom" Version="5.0.0" Condition="'$(TargetFramework)'!='net472'" />
     <None Include="readme.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mono.TextTemplating.Tests" />
+    <InternalsVisibleTo Include="Mono.TextTemplating.Build" />
+    <InternalsVisibleTo Include="Mono.TextTemplating.Roslyn" />
   </ItemGroup>
 </Project>

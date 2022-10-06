@@ -4,12 +4,10 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <PackageType>DotNetCliTool</PackageType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <AssemblyName>dotnet-t4</AssemblyName>
     <PackageId>dotnet-t4-project-tool</PackageId>
     <Description>Project tool for processing T4 templates, a general-purpose way to generate text or code files using C#</Description>
     <RootNamespace>Mono.TextTemplating</RootNamespace>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
