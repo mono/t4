@@ -19,6 +19,8 @@ namespace Mono.TextTemplating.Build
 	// maybe we should add some common ones by default?
 	public class TextTransform : Task
 	{
+		public TextTransform () : base (Messages.ResourceManager) { }
+
 		public string DefaultNamespace { get; set; }
 		public ITaskItem [] PreprocessTemplates { get; set; }
 		public ITaskItem [] TransformTemplates { get; set; }

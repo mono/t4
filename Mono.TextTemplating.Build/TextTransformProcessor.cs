@@ -19,7 +19,7 @@ namespace Mono.TextTemplating.Build
 	{
 		public static bool Process (TaskLoggingHelper taskLog, TemplateBuildState previousBuildState, TemplateBuildState buildState, bool preprocessOnly)
 		{
-			(var transforms, var preprocessed) = buildState.GetStaleAndNewTemplates (previousBuildState, preprocessOnly, new WriteTimeCache ().GetWriteTime);
+			(var transforms, var preprocessed) = buildState.GetStaleAndNewTemplates (previousBuildState, preprocessOnly, new WriteTimeCache ().GetWriteTime, taskLog);
 
 			if ((transforms == null || transforms.Count == 0) && (preprocessed == null || preprocessed.Count == 0)) {
 				return true;
@@ -94,7 +94,7 @@ namespace Mono.TextTemplating.Build
 						string preprocessClassName = Path.GetFileNameWithoutExtension (inputFile);
 						settings.Name = preprocessClassName;
 
-						var outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out _, out var references);
+						var outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out var references);
 
 						if (generator.Errors.HasErrors) {
 							return;
