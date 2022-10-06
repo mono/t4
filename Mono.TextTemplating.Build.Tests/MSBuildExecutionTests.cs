@@ -14,8 +14,6 @@ using Mono.TextTemplating.Build;
 
 using Xunit;
 
-#if NET5_0 || NET472
-
 namespace Mono.TextTemplating.Tests
 {
 	public class MSBuildExecutionTests : IClassFixture<MSBuildFixture>
@@ -23,7 +21,7 @@ namespace Mono.TextTemplating.Tests
 		Project LoadTestProject (string name, [CallerMemberName] string testName = null)
 		{
 			var asmDir = Environment.CurrentDirectory;
-			var srcDir = Path.Combine (asmDir, "MSBuildTestCases", name);
+			var srcDir = Path.Combine (asmDir, "TestCases", name);
 
 			var destDir = Path.Combine (asmDir, "test-output", testName ?? name);
 
@@ -371,5 +369,3 @@ namespace Mono.TextTemplating.Tests
 		}
 	}
 }
-
-#endif

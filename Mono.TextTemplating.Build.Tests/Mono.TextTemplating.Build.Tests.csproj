@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net472;net6.0</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <DefaultItemExcludes>$(DefaultItemExcludes);TestCases\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Mono.TextTemplating.Build\Mono.TextTemplating.Build.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.5.5" />
+    <PackageReference Include="Microsoft.Build" Version="17.3.1" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.3.1" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.3.1" ExcludeAssets="runtime" />
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version ="6.0.0" />
+    <!--
+    Microsoft.NET.Test.Sdk brings in a version of NuGet.Frameworks that's older than the one used by MSBuild
+    and loads first, thereby breaking loading of MSBuild assemblies. Force-upgrade it.
+    -->
+    <PackageReference Include="NuGet.Frameworks" Version="6.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <!-- newer versions drop netcoreapp2.1 -->
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+    <!-- seems to be required for tests to run on Mono -->
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.3.2" Condition="'$(TargetFramework)'=='net472' And $([MSBuild]::IsOSUnixLike())" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="TestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- disable parallel test execution on github actions, it hangs the runner there -->
+    <None Include="..\Mono.TextTemplating.Tests\xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'" />
+    <Compile Include="..\Mono.TextTemplating.Tests\Platform.cs" />
+    <Compile Include="..\Mono.TextTemplating.Tests\TestDataPath.cs" />
+  </ItemGroup>
+
+</Project>

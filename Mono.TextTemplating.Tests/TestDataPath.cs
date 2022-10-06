@@ -65,3 +65,10 @@ struct TestDataPath
 	}
 #endif
 }
+
+static class StringNormalizationExtensions
+{
+	public static string NormalizeNewlines (this string s, string newLine = "\n") => s.Replace ("\r\n", "\n").Replace ("\n", newLine);
+
+	public static string NormalizeEscapedNewlines (this string s, string escapedNewline = "\\n") => s.Replace ("\\r\\n", "\\n").Replace ("\\n", escapedNewline);
+}

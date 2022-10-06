@@ -1,0 +1,5 @@
+<Project>
+<!--
+Prevent test projects from using the repo's Directory.Build.props by providing a blank one.
+-->
+</Project>
