@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="TestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="TestCases\**\*.*" />
     <!-- disable parallel test execution on github actions, it hangs the runner there -->
     <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'" />
   </ItemGroup>

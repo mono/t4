@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net472;net6.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="TestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="TestCases\**\*.*" />
     <!-- disable parallel test execution on github actions, it hangs the runner there -->
     <None Include="..\Mono.TextTemplating.Tests\xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'" />
     <Compile Include="..\Mono.TextTemplating.Tests\Platform.cs" />

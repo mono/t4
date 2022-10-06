@@ -9,201 +9,173 @@ using Xunit;
 
 namespace Mono.TextTemplating.Tests
 {
-	public class MSBuildExecutionTests : MSBuildTestBase
+	public class MSBuildExecutionTests : IClassFixture<MSBuildFixture>
 	{
 		[Fact]
 		public void TransformExplicitWithArguments ()
 		{
-			var proj = LoadTestProject ("TransformTemplates");
+			using var ctx = new MSBuildTestContext ();
+			var project = ctx.LoadTestProject ("TransformTemplates");
 
-			var instance = CreateAndBuildInstance (proj, "TransformTemplates");
+			var instance = project.Build ("TransformTemplates");
 
-			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
-			Assert.True (File.Exists (generated));
-			Assert.StartsWith ("Hello 2019!", File.ReadAllText (generated));
+			var generated = project.DirectoryPath["foo.txt"].AssertTextStartsWith ("Hello 2019!");
 
-			Assert.Equal (generated, Assert.Single (instance.GetItems ("GeneratedTemplates")).GetMetadataValue ("FullPath"));
-			Assert.Empty (instance.GetItems ("PreprocessedTemplates"));
+			instance.AssertSingleItem ("GeneratedTemplates", withFullPath: generated);
+			instance.AssertNoItems ("PreprocessedTemplates");
 		}
 
 		[Fact]
 		public void TransformOnBuild ()
 		{
-			var proj = LoadTestProject ("TransformTemplates");
-			proj.SetProperty ("TransformOnBuild", "true");
+			using var ctx = new MSBuildTestContext ();
+			var project = ctx.LoadTestProject ("TransformTemplates")
+				.WithProperty ("TransformOnBuild", "true");
 
-			RestoreProject (proj);
+			project.Restore ();
 
-			var instance = CreateAndBuildInstance (proj, "Build");
+			var instance = project.Build ("Build");
 
-			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
-			Assert.True (File.Exists (generated));
-			Assert.StartsWith ("Hello 2019!", File.ReadAllText (generated));
+			var generatedFilePath = project.DirectoryPath["foo.txt"].AssertTextStartsWith("Hello 2019!");
 
-			Assert.Equal (generated, Assert.Single (instance.GetItems ("GeneratedTemplates")).GetMetadataValue ("FullPath"));
-			Assert.Empty (instance.GetItems ("PreprocessedTemplates"));
+			instance.AssertSingleItem ("GeneratedTemplates", withFullPath: generatedFilePath);
+			instance.AssertNoItems ("PreprocessedTemplates");
 		}
 
 		[Fact]
 		public void TransformOnBuildDisabled ()
 		{
-			var proj = LoadTestProject ("TransformTemplates");
+			using var ctx = new MSBuildTestContext ();
+			var project = ctx.LoadTestProject ("TransformTemplates");
 
-			RestoreProject (proj);
+			project.Restore ();
 
-			var instance = CreateAndBuildInstance (proj, "Build");
+			var instance = project.Build ("Build");
 
-			var generated = Path.Combine (proj.DirectoryPath, "foo.txt");
-			Assert.False (File.Exists (generated));
+			project.DirectoryPath["foo.txt"].AssertFileExists (false);
 
-			Assert.Empty (instance.GetItems ("GeneratedTemplates"));
-			Assert.Empty (instance.GetItems ("PreprocessedTemplates"));
+			instance.AssertNoItems ("GeneratedTemplates", "PreprocessedTemplates");
 		}
 
 		[Fact]
 		public void PreprocessLegacy ()
 		{
-			var proj = LoadTestProject ("PreprocessTemplate");
-			proj.SetProperty ("UseLegacyT4Preprocessing", "true");
+			using var ctx = new MSBuildTestContext ();
+			var project = ctx.LoadTestProject ("PreprocessTemplate")
+				.WithProperty ("UseLegacyT4Preprocessing", "true");
 
-			var instance = CreateAndBuildInstance (proj, "TransformTemplates");
+			var instance = project.Build ("TransformTemplates");
 
-			var generated = Path.Combine (proj.DirectoryPath, "foo.cs");
-			Assert.True (File.Exists (generated));
-			Assert.StartsWith ("//--------", File.ReadAllText (generated));
+			var generatedFilePath = project.DirectoryPath["foo.cs"].AssertTextStartsWith ("//--------");
 
-			Assert.Empty (instance.GetItems ("GeneratedTemplates"));
-			Assert.Equal (generated, Assert.Single (instance.GetItems ("PreprocessedTemplates")).GetMetadataValue ("FullPath"));
+			instance.AssertSingleItem ("PreprocessedTemplates", generatedFilePath);
+			instance.AssertNoItems ("GeneratedTemplates");
 		}
 
 		[Fact]
 		public void PreprocessOnBuild ()
 		{
-			var proj = LoadTestProject ("PreprocessTemplate");
+			using var ctx = new MSBuildTestContext ();
+			var project = ctx.LoadTestProject ("PreprocessTemplate");
 
-			RestoreProject (proj);
+			project.Restore ();
 
-			var instance = CreateAndBuildInstance (proj, "Build");
+			var instance = project.Build ("Build");
+			var objDir = project.DirectoryPath["obj", "Debug", "netstandard2.0"];
 
-			var generated = Path.Combine (proj.DirectoryPath, "obj", "Debug", "netstandard2.0", "TextTransform", "foo.cs");
-			Assert.True (File.Exists (generated));
-			Assert.StartsWith ("//--------", File.ReadAllText (generated));
+			var generatedFilePath = instance.GetIntermediateDirFile ("TextTransform", "foo.cs")
+				.AssertTextStartsWith ("//--------");
 
-			Assert.Empty (instance.GetItems ("GeneratedTemplates"));
-			Assert.Equal (generated, Assert.Single (instance.GetItems ("PreprocessedTemplates")).GetMetadataValue ("FullPath"));
+			instance.AssertSingleItem ("PreprocessedTemplates", generatedFilePath);
+			instance.AssertNoItems ("GeneratedTemplates");
 
-			var dll = Path.Combine (proj.DirectoryPath, "bin", "Debug", "netstandard2.0", "PreprocessTemplate.dll");
-			Assert.True (File.Exists (dll));
-
-			// context: "Should MetadataLoadContext consider System.Private.CoreLib as a core assembly name?"
-			// https://github.com/dotnet/runtime/issues/41921
-			var coreAssembly = typeof (object).Assembly;
-			var resolver = new System.Reflection.PathAssemblyResolver (new string[] { coreAssembly.Location });
-			var loader = new System.Reflection.MetadataLoadContext (resolver, coreAssemblyName: coreAssembly.GetName ().Name);
-			// make sure we don't lock the file
-			var asm = loader.LoadFromByteArray (File.ReadAllBytes (dll));
-
-			Assert.NotNull (asm.GetType ("PreprocessTemplate.foo"));
+			instance.GetTargetPath ()
+				.AssertFileName ("PreprocessTemplate.dll")
+				.AssertAssemblyContainsType ("PreprocessTemplate.foo");
 		}
 
 		[Fact]
 		public void PreprocessOnDesignTimeBuild ()
 		{
-			var proj = LoadTestProject ("PreprocessTemplate");
-			proj.SetProperty ("DesignTimeBuild", "true");
-			proj.SetProperty ("SkipCompilerExecution", "true");
+			using var ctx = new MSBuildTestContext ();
+			var project = ctx.LoadTestProject ("PreprocessTemplate")
+				.WithProperty ("DesignTimeBuild", "true")
+				.WithProperty ("SkipCompilerExecution", "true");
 
-			RestoreProject (proj);
+			project.Restore ();
 
-			var instance = CreateAndBuildInstance (proj, "CoreCompile");
+			var instance = project.Build ("CoreCompile");
 
-			var generated = Path.Combine (proj.DirectoryPath, "obj", "Debug", "netstandard2.0", "TextTransform", "foo.cs");
-			Assert.True (File.Exists (generated));
-			Assert.StartsWith ("//--------", File.ReadAllText (generated));
+			var generatedFilePath = instance.GetIntermediateDirFile ("TextTransform", "foo.cs")
+				.AssertTextStartsWith ("//--------");
 
-			Assert.Empty (instance.GetItems ("GeneratedTemplates"));
-			Assert.Equal (generated, Assert.Single (instance.GetItems ("PreprocessedTemplates")).GetMetadataValue ("FullPath"));
+			instance.AssertSingleItem ("PreprocessedTemplates", generatedFilePath);
+			instance.AssertNoItems ("GeneratedTemplates");
 		}
 
 		[Fact]
 		public void IncrementalTransform ()
 		{
-			var proj = LoadTestProject ("TransformWithInclude");
+			using var ctx = new MSBuildTestContext ();
+			var project = ctx.LoadTestProject ("TransformWithInclude");
 
-			RestoreProject (proj);
+			project.Restore ();
 
-			var fooGenerated = Path.Combine (proj.DirectoryPath, "foo.txt");
-			var fooTemplate = Path.Combine (proj.DirectoryPath, "foo.tt");
-			var barGenerated = Path.Combine (proj.DirectoryPath, "bar.txt");
-			var barTemplate = Path.Combine (proj.DirectoryPath, "bar.tt");
-			var includeFile = Path.Combine (proj.DirectoryPath, "helper.ttinclude");
+			var fooGenerated = project.DirectoryPath ["foo.txt"];
+			var fooTemplate = project.DirectoryPath ["foo.tt"];
+			var barGenerated = project.DirectoryPath ["bar.txt"];
+			var barTemplate = project.DirectoryPath ["bar.tt"];
+			var includeFile = project.DirectoryPath ["helper.ttinclude"];
 
 			void ExecuteAndValidate()
 			{
-				var instance = CreateAndBuildInstance (proj, "TransformTemplates");
+				var instance = project.Build ("TransformTemplates");
 
-				var generatedItems = instance.GetItems ("GeneratedTemplates");
-				Assert.Collection(generatedItems, a => Assert.Equal(fooGenerated, a.GetMetadataValue ("FullPath")), b => Assert.Equal (barGenerated, b.GetMetadataValue ("FullPath")));
-				Assert.Empty (instance.GetItems ("PreprocessedTemplates"));
-				Assert.True (File.Exists (fooGenerated));
+				instance.GetItems ("GeneratedTemplates").AssertPaths (fooGenerated, barGenerated);
+				instance.AssertNoItems ("PreprocessedTemplates");
+				fooGenerated.AssertFileExists ();
 			}
 
 			ExecuteAndValidate ();
 
-			Assert.StartsWith ("Helper says Hello 2019!", File.ReadAllText (fooGenerated));
-			var fooWriteTime = File.GetLastWriteTime (fooGenerated);
-			var barWriteTime = File.GetLastWriteTime (barGenerated);
+			fooGenerated.AssertTextStartsWith ("Helper says Hello 2019!");
+			var fooWriteTime = new WriteTimeTracker (fooGenerated);
+			var barWriteTime = new WriteTimeTracker (barGenerated);
 
-			ExecuteAndValidate ();
-			var fooWriteTimeAfterNoChange = File.GetLastWriteTime (fooGenerated);
-			var barWriteTimeAfterNoChange = File.GetLastWriteTime (barGenerated);
-			Assert.Equal (fooWriteTime, fooWriteTimeAfterNoChange);
-			Assert.Equal (barWriteTime, barWriteTimeAfterNoChange);
+			void AssertNoopBuild ()
+			{
+				ExecuteAndValidate ();
+				fooWriteTime.AssertSame ();
+				barWriteTime.AssertSame ();
+			}
+
+			AssertNoopBuild ();
 
 			// check touching a template causes rebuild of that file only
 			File.SetLastWriteTime (fooTemplate, DateTime.Now);
 			ExecuteAndValidate ();
-			fooWriteTime = File.GetLastWriteTime (fooGenerated);
-			barWriteTime = File.GetLastWriteTime (barGenerated);
-			Assert.True (fooWriteTime > fooWriteTimeAfterNoChange);
-			Assert.True (barWriteTime == barWriteTimeAfterNoChange);
+			fooWriteTime.AssertChanged ();
+			barWriteTime.AssertSame ();
 
-			ExecuteAndValidate ();
-			fooWriteTimeAfterNoChange = File.GetLastWriteTime (fooGenerated);
-			barWriteTimeAfterNoChange = File.GetLastWriteTime (barGenerated);
-			Assert.Equal (fooWriteTime, fooWriteTimeAfterNoChange);
-			Assert.Equal (barWriteTime, barWriteTimeAfterNoChange);
+			AssertNoopBuild ();
 
 			// check touching the include causes rebuild of the file that uses it
 			File.SetLastWriteTime (includeFile, DateTime.Now);
 			ExecuteAndValidate ();
-			fooWriteTime = File.GetLastWriteTime (fooGenerated);
-			barWriteTime = File.GetLastWriteTime (barGenerated);
-			Assert.True (fooWriteTime > fooWriteTimeAfterNoChange);
-			Assert.True (barWriteTime == barWriteTimeAfterNoChange);
+			fooWriteTime.AssertChanged ();
+			barWriteTime.AssertSame ();
 
-			ExecuteAndValidate ();
-			fooWriteTimeAfterNoChange = File.GetLastWriteTime (fooGenerated);
-			barWriteTimeAfterNoChange = File.GetLastWriteTime (barGenerated);
-			Assert.Equal (fooWriteTime, fooWriteTimeAfterNoChange);
-			Assert.Equal (barWriteTime, barWriteTimeAfterNoChange);
+			AssertNoopBuild ();
 
 			// check changing a parameter causes rebuild of both files
 			File.SetLastWriteTime (includeFile, DateTime.Now);
-			var yearArg = proj.GetItems ("T4Argument").Single (i => i.UnevaluatedInclude == "Year");
-			yearArg.SetMetadataValue ("Value", "2021");
+			project.Project.GetItems ("T4Argument").Single (i => i.UnevaluatedInclude == "Year").SetMetadataValue ("Value", "2021");
 			ExecuteAndValidate ();
-			Assert.StartsWith ("Helper says Hello 2021!", File.ReadAllText (fooGenerated));
-			fooWriteTime = File.GetLastWriteTime (fooGenerated);
-			barWriteTime = File.GetLastWriteTime (barGenerated);
-			Assert.True (fooWriteTime > fooWriteTimeAfterNoChange);
-			Assert.True (barWriteTime > barWriteTimeAfterNoChange);
+			fooGenerated.AssertTextStartsWith ("Helper says Hello 2021!");
+			fooWriteTime.AssertChanged ();
+			barWriteTime.AssertChanged ();
 
-			ExecuteAndValidate ();
-			fooWriteTimeAfterNoChange = File.GetLastWriteTime (fooGenerated);
-			barWriteTimeAfterNoChange = File.GetLastWriteTime (barGenerated);
-			Assert.Equal (fooWriteTime, fooWriteTimeAfterNoChange);
-			Assert.Equal (barWriteTime, barWriteTimeAfterNoChange);
+			AssertNoopBuild ();
 		}
 	}
 }
