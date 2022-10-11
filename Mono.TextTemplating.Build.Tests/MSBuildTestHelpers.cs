@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 
 using Microsoft.Build.Locator;
+using Xunit;
 
 // based on MonoDevelop.MSBuild.Tests.MSBuildTestHelpers from  MonoDevelop.MSBuildEditor
 namespace Mono.TextTemplating.Tests
@@ -58,7 +59,7 @@ namespace Mono.TextTemplating.Tests
 				}
 			}
 
-			throw new Exception ("Could not find MSBuild");
+			Assert.Fail ("Could not find MSBuild");
 		}
 
 		static IEnumerable<string> GetPossibleMSBuildDirectoriesLinux ()

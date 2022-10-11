@@ -16,7 +16,7 @@ namespace Mono.TextTemplating.Build
 	[MessagePackObject]
 	public class TemplateBuildState
 	{
-		public static int CURRENT_FORMAT_VERSION = 0;
+		public const int CURRENT_FORMAT_VERSION = 0;
 
 		[Key (0)]
 		public int FormatVersion { get; set; } = CURRENT_FORMAT_VERSION;
@@ -183,6 +183,8 @@ namespace Mono.TextTemplating.Build
 
 			public bool Equals (DirectiveProcessor other)
 				=> Name == other?.Name && Class == other.Name && Assembly == other?.Assembly;
+
+			public override bool Equals (object obj) => Equals (obj as DirectiveProcessor);
 		}
 
 		[MessagePackObject]
@@ -199,6 +201,8 @@ namespace Mono.TextTemplating.Build
 
 			public bool Equals (Parameter other)
 				=> Processor == other?.Processor && Directive == other.Directive && Name == other?.Name && Value == other?.Value;
+
+			public override bool Equals (object obj) => Equals (obj as Parameter);
 		}
 
 		// TODO: cache warnings
