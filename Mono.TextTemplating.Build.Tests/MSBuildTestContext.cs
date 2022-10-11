@@ -105,7 +105,9 @@ namespace Mono.TextTemplating.Tests
 		public ProjectInstance Build (string target)
 		{
 			var instance = Project.CreateProjectInstance ();
-			var success = instance.Build (target, context.Engine.Loggers.Append (new MSBuildTestErrorLogger (assertEmpty: true)));
+			var logger = new MSBuildTestErrorLogger ();
+			var success = instance.Build (target, context.Engine.Loggers.Append (logger));
+			logger.AssertEmpty ();
 
 			Assert.True (success);
 
@@ -127,10 +129,6 @@ namespace Mono.TextTemplating.Tests
 
 	class MSBuildTestErrorLogger : ILogger
 	{
-		readonly bool assertEmpty;
-
-		public MSBuildTestErrorLogger (bool assertEmpty) => this.assertEmpty = assertEmpty;
-
 		public List<BuildEventArgs> ErrorsAndWarnings { get; } = new List<BuildEventArgs> ();
 
 		public LoggerVerbosity Verbosity { get; set; } = LoggerVerbosity.Minimal;
@@ -147,12 +145,9 @@ namespace Mono.TextTemplating.Tests
 
 		void EventSource_ErrorRaised (object sender, BuildErrorEventArgs e) => ErrorsAndWarnings.Add (e);
 
-		public void Shutdown ()
-		{
-			if (assertEmpty) {
-				Assert.Empty (ErrorsAndWarnings.Select (e => e.Message));
-			}
-		}
+		public void AssertEmpty () => Assert.Empty (ErrorsAndWarnings.Select (e => e.Message));
+
+		public void Shutdown () { }
 	}
 
 	static class MSBuildTestExtensions
