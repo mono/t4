@@ -204,9 +204,11 @@ namespace Mono.TextTemplating.Tests
 			return assemblyPath;
 		}
 
+		static string ToNativePath (string path) => path?.Replace ('\\', Path.DirectorySeparatorChar);
+
 		public static TestDataPath GetPathProperty (this ProjectInstance instance, string propertyName)
 		{
-			var path = instance.GetPropertyValue (propertyName);
+			var path = ToNativePath (instance.GetPropertyValue (propertyName));
 			Assert.NotEmpty (path);
 			return new TestDataPath (Path.Combine (instance.Directory, path));
 		}
