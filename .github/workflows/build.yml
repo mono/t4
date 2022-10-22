@@ -47,15 +47,16 @@ jobs:
       run: dotnet build Mono.TextTemplating.sln -c ${{ matrix.config }} --no-restore
 
     - name: Test
-      run: dotnet test --no-build -c ${{ matrix.config }}
+      run: dotnet test --no-build -c ${{ matrix.config }} --logger trx --results-directory "TestResults-${{ matrix.os }}-${{ matrix.config }}"
 
 #      run: dotnet test -c ${{ matrix.config }} --no-build --blame-hang-timeout 5m --diag TestResults-${{ matrix.config }}-${{ matrix.os }}/Log/test_log.txt --logger trx --results-directory TestResults-${{ matrix.config }}-${{ matrix.os }}
-#    - name: Test diagnostics
-#      if: failure() && startsWith (matrix.os, 'windows')
-#      uses: actions/upload-artifact@v2
-#      with:
-#        name: test-results-${{ matrix.config }}-${{ matrix.os }}
-#        path: TestResults-${{ matrix.config }}-${{ matrix.os }}
+
+    - name: Upload Test Results
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: "TestResults-${{ matrix.os }}-${{ matrix.config }}"
+        path: "TestResults-${{ matrix.os }}-${{ matrix.config }}"
 
     - uses: actions/upload-artifact@v3
       if: matrix.config == 'Release' && startsWith(matrix.os, 'windows')
