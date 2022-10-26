@@ -6,14 +6,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-
+using System.Text;
 using Microsoft.Build.Evaluation;
 using Microsoft.Build.Execution;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Logging;
-
 using Mono.TextTemplating.Build;
-
 using Xunit;
 
 namespace Mono.TextTemplating.Tests
@@ -145,7 +143,22 @@ namespace Mono.TextTemplating.Tests
 
 		void EventSource_ErrorRaised (object sender, BuildErrorEventArgs e) => ErrorsAndWarnings.Add (e);
 
-		public void AssertEmpty () => Assert.Empty (ErrorsAndWarnings.Select (e => e.Message));
+		public void AssertEmpty ()
+		{
+			if (ErrorsAndWarnings.Count == 0) {
+				return;
+			}
+
+			var sb = new StringBuilder ();
+			sb.AppendLine ("Unexpected build errors/warnings:");
+
+			foreach (var evt in ErrorsAndWarnings) {
+				sb.AppendFormatted (evt);
+				sb.AppendLine ();
+			}
+
+			throw new Xunit.Sdk.XunitException (sb.ToString ());
+		}
 
 		public void Shutdown () { }
 	}
@@ -222,5 +235,68 @@ namespace Mono.TextTemplating.Tests
 	class MSBuildFixture
 	{
 		public MSBuildFixture () => MSBuildTestHelpers.RegisterMSBuildAssemblies ();
+	}
+
+	static class MSBuildEventExtensions
+	{
+		public static void AppendFormatted (this StringBuilder sb, BuildEventArgs evt)
+		{
+			if (evt is BuildErrorEventArgs err) {
+				FormatBuildEvent (sb, err);
+			} else {
+				FormatBuildEvent (sb, (BuildWarningEventArgs)evt);
+			}
+		}
+
+		static void FormatBuildEvent (StringBuilder sb, BuildErrorEventArgs evt)
+			=> FormatBuildEvent (sb, evt.File, evt.LineNumber, evt.EndLineNumber, evt.ColumnNumber, evt.EndColumnNumber, evt.Subcategory, "error", evt.Code, evt.Message);
+
+		static void FormatBuildEvent (StringBuilder sb, BuildWarningEventArgs evt)
+			=> FormatBuildEvent (sb, evt.File, evt.LineNumber, evt.EndLineNumber, evt.ColumnNumber, evt.EndColumnNumber, evt.Subcategory, "warning", evt.Code, evt.Message);
+
+		static void FormatBuildEvent (StringBuilder sb, string file, int line, int endLine, int col, int endCol, string subcategory, string category, string code, string message)
+		{
+			if (!string.IsNullOrEmpty (file)) {
+				sb.Append (file);
+				if (line > 0) {
+					sb.Append ('(');
+					sb.Append (line);
+					if (endLine > 0) {
+						sb.Append ('-');
+						sb.Append (endLine);
+					}
+					if (col > 0) {
+						sb.Append (col);
+						if (endCol > 0) {
+							sb.Append ('-');
+							sb.Append (endCol);
+						}
+					}
+					sb.Append (')');
+				}
+			} else {
+				sb.Append ("MSBUILD");
+			}
+
+			sb.Append (": ");
+
+			if (!string.IsNullOrEmpty (subcategory)) {
+				sb.Append (subcategory);
+				sb.Append (' ');
+			}
+
+			sb.Append (category);
+			sb.Append (' ');
+
+			if (!string.IsNullOrEmpty (code)) {
+				sb.Append (code);
+			}
+
+			sb.Append (": ");
+
+			if (!string.IsNullOrEmpty (message)) {
+				sb.Append (message);
+			}
+		}
 	}
 }
