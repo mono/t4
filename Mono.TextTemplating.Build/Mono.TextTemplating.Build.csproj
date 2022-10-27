@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp2.1;net472</TargetFrameworks>
+    <PackageId>T4.BuildTools</PackageId>
+    <Description>MSBuild build targets for the T4 templating language, a general-purpose way to generate text or code files using C#</Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <!-- if the assemblies are in a subdirectory of the build folder then MSBuild can
+         end up loading Mono.TextTemplating.dll for the wrong runtime -->
+    <BuildOutputTargetFolder>buildTasks</BuildOutputTargetFolder>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <Target Name="AddTargetsFilesToPack" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <_PackageFiles Include="Mono.TextTemplating.Build.props" PackagePath="build" Pack="true" />
+      <_PackageFiles Include="Mono.TextTemplating.Build.targets" PackagePath="build" Pack="true" />
+      <_PackageFiles Include="multitargeting.props" PackagePath="buildMultiTargeting\Mono.TextTemplating.Build.props" Pack="true" />
+      <_PackageFiles Include="multitargeting.targets" PackagePath="buildMultiTargeting\Mono.TextTemplating.Build.targets" Pack="true" />
+      <_PackageFiles Include="Mono.TextTemplating.Build.targets.buildschema.json" PackagePath="build" Pack="true" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="AddCopyLocalToPack" BeforeTargets="_GetBuildOutputFilesWithTfm" DependsOnTargets="ReferenceCopyLocalPathsOutputGroup">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPathsOutputGroupOutput)" TargetFramework="$(TargetFramework)" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePackAnalyzer" Version="2.2.85" PrivateAssets="all" />
+    <PackageReference Include="MessagePack" Version="2.2.85" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="15.1.548" PrivateAssets="all" IncludeAssets="compile" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.548" PrivateAssets="all" IncludeAssets="compile" />
+    <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Messages.Designer.cs" DesignTime="True" AutoGen="True" DependentUpon="Messages.resx" />
+    <EmbeddedResource Update="Messages.resx" Generator="ResXFileCodeGenerator" LastGenOutput="Messages.Designer.cs" />
+  </ItemGroup>
+</Project>

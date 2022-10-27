@@ -87,9 +87,9 @@ namespace Mono.TextTemplating.Tests
 		}
 
 		public const string MethodAndFieldGeneratedOutput =
-@"        
+@"
         private bool myField;
-        
+
         private bool MyProperty {
             get {
                 return true;

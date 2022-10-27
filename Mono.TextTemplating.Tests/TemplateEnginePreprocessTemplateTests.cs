@@ -1,21 +1,21 @@
-// 
+//
 // TemplateEnginePreprocessTemplateTests.cs
-//  
+//
 // Author:
 //       Matt Ward
-// 
+//
 // Copyright (c) 2011 Matt Ward
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,20 +31,20 @@ using Xunit;
 namespace Mono.TextTemplating.Tests
 {
 	public class TemplateEnginePreprocessTemplateTests
-	{	
+	{
 		[Fact]
 		public void PreprocessSimple ()
 		{
-			string input = 
+			string input =
 				"<#@ template language=\"C#\" #>\r\n" +
 				"Test\r\n";
-			
+
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (OutputSample1, "\n");
 			string output = Preprocess (input);
-			
+
 			Assert.Equal (expectedOutput, output);
 		}
-		
+
 		[Fact]
 		public void ControlBlockAfterIncludedTemplateWithClassFeatureBlock ()
 		{
@@ -54,7 +54,7 @@ namespace Mono.TextTemplating.Tests
 
 			string expectedOutput = TemplatingEngineHelper.CleanCodeDom (Output_ControlBlockAfterIncludedTemplateWithClassFeatureBlock.NormalizeNewlines (), "\n");
 			string output = Preprocess (input, host);
-			
+
 			Assert.Equal (expectedOutput, output);
 		}
 
@@ -67,20 +67,20 @@ namespace Mono.TextTemplating.Tests
 
 			Assert.Equal (expectedOutput, output);
 		}
-		
+
 		#region Helpers
-		
+
 		static string Preprocess (string input)
 		{
 			var host = new DummyHost ();
 			return Preprocess (input, host);
 		}
-		
+
 		static string Preprocess (string input, DummyHost host)
 		{
 			string className = "PreprocessedTemplate";
 			string classNamespace = "Templating";
-			
+
 			var engine = new TemplatingEngine ();
 			string output = engine.PreprocessTemplate (input, host, className, classNamespace, out _, out _);
 			ReportErrors (host.Errors);
@@ -89,7 +89,7 @@ namespace Mono.TextTemplating.Tests
 			}
 			return null;
 		}
-		
+
 		static void ReportErrors(CompilerErrorCollection errors)
 		{
 			foreach (CompilerError error in errors) {
@@ -112,7 +112,7 @@ namespace Mono.TextTemplating.Tests
 
 			return host;
 		}
-		
+
 		#endregion
 
 		#region Input templates
@@ -162,10 +162,10 @@ Included Method Body Text Block
 ";
 
 		#endregion
-		
+
 		#region Expected output strings
-		
-		const string OutputSample1 = 
+
+		const string OutputSample1 =
 @"
 namespace Templating {
     
@@ -604,7 +604,7 @@ namespace Templating {
 }
 ";
 
-		const string Output_CaptureEncodingAndExtension = 
+		const string Output_CaptureEncodingAndExtension =
 
 		@"namespace Templating {
     

@@ -2,15 +2,11 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <OutputType>Exe</OutputType>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>1591;1573</NoWarn>
-    <LangVersion>7.1</LangVersion>
     <PackageId>Mono.TextTemplating.Console</PackageId>
     <IsTool>True</IsTool>
     <Description>Command-line T4 text transform tool.</Description>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

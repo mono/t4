@@ -1,21 +1,21 @@
-// 
+//
 // Template.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,7 +36,7 @@ namespace Mono.TextTemplating
 	{
 		readonly List<ISegment> importedHelperSegments = new ();
 		readonly string rootFileName;
-		
+
 		public ParsedTemplate (string rootFileName)
 		{
 			this.rootFileName = rootFileName;
@@ -52,7 +52,7 @@ namespace Mono.TextTemplating
 				}
 			}
 		}
-		
+
 		public IEnumerable<TemplateSegment> Content {
 			get {
 				foreach (ISegment seg in RawSegments) {
@@ -95,7 +95,7 @@ namespace Mono.TextTemplating
 			bool addToImportedHelpers = false;
 			while ((skip || tokeniser.Advance ()) && tokeniser.State != State.EOF) {
 				skip = false;
-				ISegment seg = null;	
+				ISegment seg = null;
 				switch (tokeniser.State) {
 				case State.Block:
 					if (!string.IsNullOrEmpty (tokeniser.Value))
@@ -233,14 +233,14 @@ namespace Mono.TextTemplating
 
 		public void LogWarning (string message, Location location) => LogError (message, location, true);
 	}
-	
+
 	public interface ISegment
 	{
 		Location StartLocation { get; }
 		Location EndLocation { get; set; }
 		Location TagStartLocation {get; set; }
 	}
-	
+
 	public class TemplateSegment : ISegment
 	{
 		public TemplateSegment (SegmentType type, string text, Location start)
@@ -249,14 +249,14 @@ namespace Mono.TextTemplating
 			StartLocation = start;
 			Text = text;
 		}
-		
+
 		public SegmentType Type { get; private set; }
 		public string Text { get; private set; }
 		public Location TagStartLocation { get; set; }
 		public Location StartLocation { get; private set; }
 		public Location EndLocation { get; set; }
 	}
-	
+
 	public class Directive : ISegment
 	{
 		public Directive (string name, Location start)
@@ -265,13 +265,13 @@ namespace Mono.TextTemplating
 			Attributes = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
 			StartLocation = start;
 		}
-		
+
 		public string Name { get; private set; }
 		public Dictionary<string,string> Attributes { get; private set; }
 		public Location TagStartLocation { get; set; }
 		public Location StartLocation { get; private set; }
 		public Location EndLocation { get; set; }
-		
+
 		public string Extract (string key)
 		{
 			if (!Attributes.TryGetValue (key, out var value))
@@ -280,7 +280,7 @@ namespace Mono.TextTemplating
 			return value;
 		}
 	}
-	
+
 	public enum SegmentType
 	{
 		Block,
@@ -288,7 +288,7 @@ namespace Mono.TextTemplating
 		Content,
 		Helper
 	}
-	
+
 	public struct Location : IEquatable<Location>
 	{
 		public Location (string fileName, int line, int column) : this()
@@ -297,7 +297,7 @@ namespace Mono.TextTemplating
 			Column = column;
 			Line = line;
 		}
-		
+
 		public int Line { get; private set; }
 		public int Column { get; private set; }
 		public string FileName { get; private set; }

@@ -1,20 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\TextTemplating.snk</AssemblyOriginatorKeyFile>
     <IsPackable>false</IsPackable>
     <DefineConstants Condition="'$(TargetFramework)'=='net472'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
     <DefaultItemExcludes>$(DefaultItemExcludes);TestCases\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Mono.TextTemplating.Build\Mono.TextTemplating.Build.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj" />
-    <!-- fix conflicts in indirect references -->
+  </ItemGroup>
+    <!-- fix conflicts in indirect references
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" PrivateAssets="all" />
-  </ItemGroup>
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    -->
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
@@ -26,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="TestCases\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="TestCases\**\*.*" />
     <!-- disable parallel test execution on github actions, it hangs the runner there -->
     <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'" />
   </ItemGroup>

@@ -234,7 +234,7 @@ Five
 		[Fact]
 		public void RelativeInclude ()
 		{
-			var testFile = TestDataPath.Get ().Combine ("RelativeInclude.tt");
+			var testFile = TestDataPath.GetTestCase ().Combine ("RelativeInclude.tt");
 			var host = new TemplateGenerator ();
 			var pt = host.ParseTemplate (testFile, File.ReadAllText (testFile));
 			Assert.Collection (pt.Content, c => Assert.Equal("Hello", c.Text));

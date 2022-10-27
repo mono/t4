@@ -17,7 +17,7 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 	[Fact]
 	public async Task LoadOpenApiDll ()
 	{
-		var testDir = TestDataPath.Get ();
+		var testDir = TestDataPath.GetTestCase ();
 		var gen = CreateGenerator ();
 		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_1_2_3.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
 
@@ -42,7 +42,7 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 	[Fact]
 	public async Task LoadOpenApiReadersDll ()
 	{
-		var testDir = TestDataPath.Get (nameof (LoadOpenApiDll));
+		var testDir = TestDataPath.GetTestCase (nameof (LoadOpenApiDll));
 		var gen = CreateGenerator ();
 		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_1_2_3.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
 		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_Readers_1_2_3.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
@@ -69,7 +69,7 @@ public abstract class AssemblyLoadTests<T> : StatefulTest<T>
 		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_1_2_3.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
 		gen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_Readers_1_2_3.Combine ("lib", "netstandard2.0").AssertDirectoryExists ());
 
-		var testDir = TestDataPath.Get (nameof (LoadOpenApiDll));
+		var testDir = TestDataPath.GetTestCase (nameof (LoadOpenApiDll));
 		var templatePath = testDir["LoadOpenApiReaders.tt"];
 		var templateText = await templatePath.ReadAllTextNormalizedAsync ();
 

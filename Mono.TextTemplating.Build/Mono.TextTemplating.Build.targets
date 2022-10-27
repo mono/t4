@@ -1,0 +1,110 @@
+<Project>
+  <PropertyGroup>
+    <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\buildTasks\netcoreapp2.1\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
+    <TextTransformTaskAssembly Condition="'$(TextTransformTaskAssembly)'=='' And '$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\buildTasks\net472\Mono.TextTemplating.Build.dll</TextTransformTaskAssembly>
+  </PropertyGroup>
+
+  <UsingTask AssemblyFile="$(TextTransformTaskAssembly)" TaskName="TextTransform" />
+
+  <!-- default values -->
+  <PropertyGroup>
+    <UseLegacyT4Preprocessing Condition="'$(UseLegacyT4Preprocessing)'==''">False</UseLegacyT4Preprocessing>
+    <TransformOnBuild Condition="'$(TransformOnBuild)'==''">False</TransformOnBuild>
+    <TransformOutOfDateOnly Condition="$(TransformOutOfDateOnly)==''">true</TransformOutOfDateOnly>
+    <!-- legacy compat -->
+    <T4DefaultNamespace Condition="'$(T4DefaultNamespace)'==''">$(PreprocessTemplateDefaultNamespace)</T4DefaultNamespace>
+    <T4DefaultNamespace Condition="'$(T4DefaultNamespace)'==''">$(RootNamespace)</T4DefaultNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- legacy compat -->
+    <T4IncludePath Include="$(IncludeFolders)" />
+    <!-- legacy compat -->
+    <T4Argument Include="@(T4ParameterValues)" />
+    <!-- this property allows passing args on the commandline via /p:T4Arguments="name=val;name2=val2", it's not intended to be used in projects -->
+    <T4Argument Include="$(T4Arguments)" />
+  </ItemGroup>
+
+  <!-- this is intended to be invoked explicitly -->
+  <Target Name="TransformTemplates"
+          DependsOnTargets="_SetExplicitTransformProperties;_TransformTemplates" />
+
+  <!-- this is invoked in full builds -->
+  <Target Name="_TransformTemplatesOnBuild"
+          BeforeTargets="BeforeBuild"
+          Condition="'$(TransformOnBuild)'=='True' Or '$(UseLegacyT4Preprocessing)' == 'False'"
+          DependsOnTargets="_SetTransformOnBuildProperties;_TransformTemplates" />
+
+  <!-- this is invoked in design time builds -->
+  <Target Name="_TransformTemplatesDesignTime"
+          BeforeTargets="CoreCompile"
+          DependsOnTargets="_SetTransformDesignTimeProperties;_TransformTemplates"
+          Condition="'$(UseLegacyT4Preprocessing)' == 'False' And ('$(DesignTimeBuild)' == 'True' Or '$(BuildingProject)' != 'True')" />
+
+  <Target Name="_SetExplicitTransformProperties">
+    <PropertyGroup>
+      <_T4TransformKind>Explicit</_T4TransformKind>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="_SetTransformOnBuildProperties">
+    <PropertyGroup>
+      <_T4TransformKind>OnBuild</_T4TransformKind>
+      <TransformFile></TransformFile>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="_SetTransformDesignTimeProperties">
+    <PropertyGroup>
+      <_T4TransformKind>DesignTime</_T4TransformKind>
+      <TransformFile></TransformFile>
+    </PropertyGroup>
+  </Target>
+
+  <!--
+  Hook in the BeforeTransform/AfterTransform extension points.
+  They run regardless of whether we have any items to transform, as they may want to inject
+  items to be transformed.
+  -->
+  <Target Name="_TransformTemplates"
+          DependsOnTargets="$(BeforeTransform);_TransformTemplatesCore;$(AfterTransform)" />
+
+  <Target Name="_TransformTemplatesCore"
+          Condition="'@(T4Preprocess)'!='' Or ('$(_T4TransformKind)'!='DesignTime' and '@(T4Transform)'!='')">
+
+    <PropertyGroup>
+      <_T4PreprocessOnly>False</_T4PreprocessOnly>
+      <_T4PreprocessOnly Condition="'$(_T4TransformKind)'=='DesignTime' Or ('$(_T4TransformKind)'=='OnBuild' And '$(TransformOnBuild)'=='False')">True</_T4PreprocessOnly>
+      <_T4IntermediateTemplateOutputDir Condition="'$(_T4IntermediateTemplateOutputDir)'==''">$(IntermediateOutputPath)TextTransform\</_T4IntermediateTemplateOutputDir>
+    </PropertyGroup>
+
+    <TextTransform
+      DefaultNamespace="$(T4DefaultNamespace)"
+      DirectiveProcessors="@(DirectiveProcessor)"
+      IncludePaths="@(T4IncludePath)"
+      ParameterValues="@(T4Argument)"
+      ReferencePaths="@(T4ReferencePath)"
+      TransformTemplates="@(T4Transform)"
+      PreprocessTemplates="@(T4Preprocess)"
+      AssemblyReferences="@(T4AssemblyReference)"
+      PreprocessOnly="$(_T4PreprocessOnly)"
+      UseLegacyPreprocessingMode="$(UseLegacyT4Preprocessing)"
+      IntermediateDirectory="$(_T4IntermediateTemplateOutputDir)"
+      TransformOutOfDateOnly="$(TransformOutOfDateOnly)"
+      >
+        <Output TaskParameter="TransformTemplateOutput" ItemName="GeneratedTemplates" />
+        <Output TaskParameter="PreprocessedTemplateOutput" ItemName="PreprocessedTemplates" />
+        <Output TaskParameter="RequiredAssemblies" ItemName="T4RequiredAssemblies" />
+      </TextTransform>
+
+      <ItemGroup Condition="'$(UseLegacyT4Preprocessing)'=='False'">
+        <Compile Include="@(PreprocessedTemplates)" />
+        <FileWrites Include="@(PreprocessedTemplates)" />
+      </ItemGroup>
+
+      <ItemGroup>
+        <FileWrites Include="$(_T4IntermediateTemplateOutputDir)t4-build-state.msgpack" />
+      </ItemGroup>
+  </Target>
+
+</Project>

@@ -4,12 +4,17 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Authors>Mikayla Hutchinson</Authors>
     <PackageTags>T4, templating</PackageTags>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageOutputPath>$(MSBuildThisFileDirectory)packages\$(Configuration)</PackageOutputPath>
-    <LangVersion>10.0</LangVersion>
-    <PackageValidationBaselineVersion>2.2.1</PackageValidationBaselineVersion>
-    <CheckEolTargetFramework>False</CheckEolTargetFramework>
-    <AnalysisLevel>latest-Recommended</AnalysisLevel>
+    <EnablePackageValidation>true</EnablePackageValidation>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <LangVersion>10.0</LangVersion>
+    <AnalysisLevel>latest-Recommended</AnalysisLevel>
+    <CheckEolTargetFramework>False</CheckEolTargetFramework>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.255" PrivateAssets="all" />
   </ItemGroup>
@@ -26,4 +31,16 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
   </ItemGroup>
+
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)TextTemplating.snk</AssemblyOriginatorKeyFile>
+    <T4PublicKey>0024000004800000940000000602000000240000525341310004000001000100490b59506a03eb5fc5524722a6526eff804b7880a968a581a0bbb73cd6ab93c7b94a14150cb4ea40f610bebf607cea5e8a93ef25d124983300f4bdfe44859430a20a4ed2ac32cfd3a6f0aa12702df819b7799cc0fcf077eea706a27252d59a8a10e5164c2cdddd6680ca76b02ca244e83c1a8cc44b2691052b93ab30bcc613ad</T4PublicKey>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <InternalsVisibleTo>
+      <Key>$(T4PublicKey)</Key>
+    </InternalsVisibleTo>
+  </ItemDefinitionGroup>
 </Project>

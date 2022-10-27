@@ -42,13 +42,13 @@ namespace Mono.TextTemplating.Tests
 
 		readonly List<string> standardAssemblyReferences = new ();
 		readonly List<string> standardImports = new ();
-		
+
 		public virtual object GetHostOption (string optionName)
 		{
 			HostOptions.TryGetValue (optionName, out var option);
 			return option;
 		}
-		
+
 		public virtual bool LoadIncludeText (string requestFileName, out string content, out string location)
 		{
 			content = null;

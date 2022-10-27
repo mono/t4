@@ -54,7 +54,7 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 	[Fact]
 	public async Task BadAppDomain ()
 	{
-		var testDir = TestDataPath.Get (nameof (LoadOpenApiDll));
+		var testDir = TestDataPath.GetTestCase (nameof (LoadOpenApiDll));
 		var badGen = CreateGeneratorWithAppDomain (testDir, testDir);
 
 		badGen.ReferencePaths.Add (PackagePath.Microsoft_OpenApi_1_2_3.Combine ("lib", "netstandard2.0"));

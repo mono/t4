@@ -1,21 +1,21 @@
-// 
+//
 // GenerationTests.cs
-//  
+//
 // Author:
 //       Mikayla Hutchinson <m.j.hutchinson@gmail.com>
-// 
+//
 // Copyright (c) 2009 Novell, Inc. (http://www.novell.com)
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -45,7 +45,7 @@ namespace Mono.TextTemplating.Tests
 			string Output = OutputSample1.NormalizeEscapedNewlines ();
 			GenerateOutput (Input, Output, "\n");
 		}
-		
+
 		[Fact]
 		public void GenerateMacNewlines ()
 		{
@@ -53,7 +53,7 @@ namespace Mono.TextTemplating.Tests
 			string MacOutput = OutputSample1.NormalizeEscapedNewlines ("\\r");
 			GenerateOutput (MacInput, MacOutput, "\r");
 		}
-		
+
 		[Fact]
 		public void GenerateWindowsNewlines ()
 		{
@@ -72,7 +72,7 @@ namespace Mono.TextTemplating.Tests
 			TemplateSettings settings = TemplatingEngine.GetSettings (host, pt);
 			Assert.Equal ("C#", settings.Language);
 		}
-		
+
 		//NOTE: we set the newline property on the code generator so that the whole files has matching newlines,
 		// in order to match the newlines in the verbatim code blocks
 		static void GenerateOutput (string input, string expectedOutput, string newline)
@@ -86,9 +86,9 @@ namespace Mono.TextTemplating.Tests
 			expectedOutput = TemplatingEngineHelper.CleanCodeDom (expectedOutput, newline);
 			Assert.Equal (expectedOutput, generated);
 		}
-		
+
 		#region Helpers
-		
+
 		static string GenerateCode (ITextTemplatingEngineHost host, string content, string name, string generatorNewline)
 		{
 			var pt = ParsedTemplate.FromTextInternal (content, host);
@@ -96,7 +96,7 @@ namespace Mono.TextTemplating.Tests
 				host.LogErrors (pt.Errors);
 				return null;
 			}
-			
+
 			TemplateSettings settings = TemplatingEngine.GetSettings (host, pt);
 			if (name != null)
 				settings.Namespace = name;
@@ -104,13 +104,13 @@ namespace Mono.TextTemplating.Tests
 				host.LogErrors (pt.Errors);
 				return null;
 			}
-			
+
 			var ccu = TemplatingEngine.GenerateCompileUnit (host, content, pt, settings);
 			if (pt.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				return null;
 			}
-			
+
 			var opts = new CodeGeneratorOptions ();
 			using var writer = new StringWriter () { NewLine = generatorNewline };
 			settings.Provider.GenerateCodeFromCompileUnit (ccu, writer, opts);
@@ -180,12 +180,5 @@ var foo = 5;
 }
 ";
 		#endregion
-	}
-
-	static class StringNormalizationExtensions
-	{
-		public static string NormalizeNewlines (this string s, string newLine = "\n") => s.Replace ("\r\n", "\n").Replace ("\n", newLine);
-
-		public static string NormalizeEscapedNewlines (this string s, string escapedNewline = "\\n") => s.Replace ("\\r\\n", "\\n").Replace ("\\n", escapedNewline);
 	}
 }
