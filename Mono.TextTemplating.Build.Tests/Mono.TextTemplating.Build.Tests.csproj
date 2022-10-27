@@ -19,7 +19,7 @@
     Microsoft.NET.Test.Sdk brings in a version of NuGet.Frameworks that's older than the one used by MSBuild
     and loads first, thereby breaking loading of MSBuild assemblies. Force-upgrade it.
     -->
-    <PackageReference Include="NuGet.Frameworks" Version="6.3.0" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.3.1" />
   </ItemGroup>
 
   <ItemGroup>
