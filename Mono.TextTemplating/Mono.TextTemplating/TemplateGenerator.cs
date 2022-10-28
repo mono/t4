@@ -268,7 +268,7 @@ namespace Mono.TextTemplating
 
 			var outputContent = await Engine.ProcessTemplateAsync (pt, inputContent, settings, this, token).ConfigureAwait (false);
 
-			return (outputFileName, outputContent);
+			return (OutputFile, outputContent);
 		}
 
 		#region Virtual members

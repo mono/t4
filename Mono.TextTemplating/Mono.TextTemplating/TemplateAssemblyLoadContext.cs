@@ -3,6 +3,7 @@
 
 #if FEATURE_ASSEMBLY_LOAD_CONTEXT
 
+using System;
 using System.CodeDom.Compiler;
 using System.IO;
 using System.Reflection;
@@ -52,9 +53,20 @@ namespace Mono.TextTemplating
 				return hostAssembly;
 			}
 
-			foreach (var asmFile in templateAssemblyFiles) {
-				if (assemblyName.Name == Path.GetFileNameWithoutExtension (asmFile)) {
-					return LoadFromAssemblyPath (asmFile);
+			for (int i = 0; i < templateAssemblyFiles.Length; i++) {
+				var asmFile = templateAssemblyFiles[i];
+				if (asmFile is null) {
+					continue;
+				}
+				if (MemoryExtensions.Equals (assemblyName.Name, Path.GetFileNameWithoutExtension (asmFile.AsSpan()), StringComparison.OrdinalIgnoreCase)) {
+					// if the file doesn't exist, fall through to host.ResolveAssemblyReference
+					if (File.Exists (asmFile)) {
+						return LoadFromAssemblyPath (asmFile);
+					} else {
+						// null out the missing file so we don't check it exists again
+						templateAssemblyFiles[i] = null;
+						break;
+					}
 				}
 			}
 
