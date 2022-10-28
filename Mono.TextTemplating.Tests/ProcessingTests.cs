@@ -118,6 +118,22 @@ namespace Mono.TextTemplating.Tests
 #endif
 
 		[Fact]
+		public async Task SetOutputExtension ()
+		{
+			string inputContent = "<#@ output extension=\".cfg\" #>";
+			string inputFile = "hello.tt";
+			string outputName = "hello.txt";
+
+			// this reproduces the calls made by dotnet-t4
+			var gen = new TemplateGenerator ();
+			var pt = gen.ParseTemplate (inputFile, inputContent);
+			TemplateSettings settings = TemplatingEngine.GetSettings (gen, pt);
+			(outputName, _) = await gen.ProcessTemplateAsync (pt, inputFile, inputContent, outputName, settings);
+
+			Assert.Equal ("hello.cfg", outputName);
+		}
+
+		[Fact]
 		public async Task ImportReferencesTest ()
 		{
 			var gen = new TemplateGenerator ();
