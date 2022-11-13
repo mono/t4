@@ -66,7 +66,7 @@ namespace Mono.TextTemplating
 
 		// this is deprecated to prevent accidentally passing a host without the TemplateFile property set
 		[Obsolete("Use TemplateGenerator.ParseTemplate")]
-		public static ParsedTemplate FromText (string content, ITextTemplatingEngineHost host) => FromText (content, host);
+		public static ParsedTemplate FromText (string content, ITextTemplatingEngineHost host) => FromTextInternal (content, host);
 
 		internal static ParsedTemplate FromTextInternal (string content, ITextTemplatingEngineHost host)
 		{
