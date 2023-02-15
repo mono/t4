@@ -6,15 +6,16 @@
   "items": {
     "T4ReferencePath": {
       "description": "Additional folders to search for T4 references",
-      "kind": "folder"
+      "type": "folder"
     },
     "T4IncludePath": {
       "description": "Additional folders to search for T4 includes",
-      "kind": "folder"
+      "type": "folder"
     },
     "T4ParameterValues": {
-      "description": "[Deprecated] T4 key-value property to pass to T4 templates. Legacy alternative to `@(T4Argument)`.",
-      "includeDescription": "T4 property keys",
+      "description": "T4 key-value property to pass to T4 templates",
+      "includeDescription": "T4 property key",
+      "deprecationMessage": "Legacy alternative to `@(T4Argument)`",
       "metadata": {
         "Value": "The T4 property value"
       }
@@ -28,11 +29,11 @@
     },
     "T4Transform": {
       "description": "Files to be transformed using the T4 engine",
-      "kind": "file"
+      "type": "file"
     },
     "T4Preprocess": {
       "description": "Files to be preprocessed using the T4 engine",
-      "kind": "file"
+      "type": "file"
     },
     "DirectiveProcessor": {
       "description": "A T4 directive processor",
@@ -40,92 +41,105 @@
         "Class": "Fully qualified name of the processor class",
         "Assembly": {
           "description": "Location of the assembly containing the processor",
-          "kind": "file"
+          "type": "file"
         },
         "Codebase": {
-          "description": "[Deprecated] Alias for `%(Assembly)`, the location of the assembly containing the processor",
-          "kind": "file"
+          "description": "The location of the assembly containing the processor",
+          "deprecationMessage": "Legacy alternative to `%(Assembly)`",
+          "type": "file"
         }
       }
     },
     "T4AssemblyReference": {
       "description": "Assemblies to be referenced by T4 templates",
-      "kind": "file"
+      "type": "file"
     },
     "T4RequiredAssemblies": {
-      "description": "After running the Transform target, the assemblies that must be referenced to compile the preprocessed templates",
-      "kind": "file"
+      "description": "After running the TransformTemplates target, the assemblies that must be referenced to compile the preprocessed templates",
+      "type": "file"
     },
-    "GeneratedTemplateOutput": {
-      "description": "After running the Transform target, the output of all tranformed templates",
-      "kind": "file"
+    "GeneratedTemplates": {
+      "description": "After running the TransformTemplates target, the output of all transformed templates",
+      "type": "file"
     },
-    "PreprocessedTemplateOutput": {
-      "description": "After running the Transform target, the output of all preprocessed templates",
-      "kind": "file"
+    "PreprocessedTemplates": {
+      "description": "After running the TransformTemplates target, the output of all preprocessed templates",
+      "type": "file"
     }
   },
   "metadata": [
     {
-      "#": "Metadata that controls how a specific template is processed",
-      "$appliesTo": [ "None", "Compile", "Content", "EmbeddedResource", "T4Transform", "T4Preprocess" ],
+      // Metadata that controls how a specific template is processed
+      "$appliesTo": [ "T4Transform", "T4Preprocess" ],
       "OutputFilePath": {
         "description": "Overrides the output folder for a T4 template. Note that Visual Studio does not respect this.",
-        "kind": "folder"
+        "type": "folder"
       },
       "OutputFileName": {
         "description": "Overrides the output filename for a T4 template. Note that Visual Studio does not respect this.",
-        "kind": "filename"
+        "type": "file"
       }
     }
   ],
   "properties": {
     "TransformOnBuild": {
       "description": "Automatically transform T4 templates on build.",
-      "kind": "bool",
-      "default": "false"
+      "type": "bool",
+      "defaultValue": "false"
     },
     "TransformOutOfDateOnly": {
       "description": "Only transform out of date T4 templates",
-      "kind": "bool",
-      "default": "true"
+      "type": "bool",
+      "defaultValue": "true"
     },
     "TransformFile": {
       "description": "The T4 files to transform when running the Transform target",
-      "kind": "file-list"
+      "type": "file",
+      "isList": true
     },
     "BeforeTransform": {
       "description": "Targets to run before the T4 Transform target",
-      "kind": "target-list"
+      "type": "target-name",
+      "deprecationMessage": "Use `BeforeTargets=\"BeforeTransform\" for target ordering`",
+      "isList": true
     },
     "AfterTransform": {
       "description": "Targets to run after the T4 Transform target",
-      "kind": "target-list"
+      "type": "target-name",
+      "deprecationMessage": "Use `AfterTargets=\"AfterTransform\" for target ordering`",
+      "isList": true
     },
     "IncludeFolders": {
-      "description": "[Deprecated] Additional folders to search for T4 includes. Legacy alternative to `@(T4IncludePath)`.",
-      "kind": "folder-list"
+      "description": "Additional folders to search for T4 includes",
+      "type": "folder",
+      "isList": true,
+      "deprecationMessage": "Legacy alternative to `@(T4IncludePath)`"
     },
     "T4DefaultNamespace": {
-      "description": "Default namespace for preprocessed templates. Defaults to `$(RootNamespace)`."
+      "description": "Default namespace for preprocessed templates.",
+      "defaultValue": "$(RootNamespace)"
     },
     "PreprocessTemplateDefaultNamespace": {
-      "description": "[Deprecated] Default namespace for preprocessed templates. Defaults to `$(RootNamespace)`.  Legacy alternative to `$(T4DefaultNamespace)`."
+      "description": "Default namespace for preprocessed templates",
+      "defaultValue": "$(RootNamespace)",
+      "deprecationMessage": "Legacy alternative to`$(T4DefaultNamespace)`"
     },
     "UseLegacyT4Preprocessing": {
       "description": "Place preprocessed templates beside the templates instead of dynamically injecting them into the build.",
-      "kind": "bool",
-      "default": "false"
+      "type": "bool"
     },
     "T4Arguments": {
       "description": "Semicolon-separated list of values to convert to `@(T4Argument)` items. Intended to be used from command-line invocations only.",
-      "includeDescription": "T4 property keys",
-      "metadata": {
-        "Value": "The T4 property value"
+      "isList": true,
+      "type": {
+        "description": "Key-value pair",
+        "allowUnknownValues": true,
+        "values": {}
       }
     }
   },
   "targets": {
-    "TransformTemplates": "Transform T4 templates. If `$(TransformFile)` is set, only the templates listed in it will be transformed."
+    "TransformTemplates": "Invoke to explicitly transform T4 templates. If `$(TransformFile)` is set, only the templates listed in it will be transformed. Not invoked for automatic transformations; use `TransformTemplatesCore` for target ordering.",
+    "TransformTemplatesCore": "Runs when explicitly or automatically transforming templates. Use as ordering reference for `BeforeTargets`/`AfterTargets` in custom targets."
   }
 }

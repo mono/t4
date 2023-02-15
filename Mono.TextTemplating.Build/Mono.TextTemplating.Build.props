@@ -5,10 +5,25 @@
   </PropertyGroup>
 
   <ItemDefinitionGroup>
-    <!-- hide T4 key/value pairs from the solution tree -->
+    <!-- hide T4 key/value pairs and other non-file items from the solution tree -->
     <T4ParameterValues>
       <Visible>False</Visible>
     </T4ParameterValues>
+    <T4Argument>
+      <Visible>False</Visible>
+    </T4Argument>
+    <DirectiveProcessor>
+      <Visible>False</Visible>
+    </DirectiveProcessor>
+    <T4ReferencePath>
+      <Visible>False</Visible>
+    </T4ReferencePath>
+    <T4IncludePath>
+      <Visible>False</Visible>
+    </T4IncludePath>
+    <T4AssemblyReference>
+      <Visible>False</Visible>
+    </T4AssemblyReference>
     <!-- transform on save in VS -->
     <T4Transform>
       <Generator>MSBuild:TransformAll</Generator>
