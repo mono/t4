@@ -28,80 +28,54 @@ Template transformation can be customized using a range of MSBuild properties, i
 
 ### Items
 
-<table>
-<tr>
-<th>Item</th><th>Description</th>
-</tr>
-<tr><td>
+| Item | Description
+| -- | --
+| `T4Argument` | Pass a parameter value to the T4 templates, optionally scoped to a directive processor and/or directive. This may use `Value` metadata, with optional `Processor` and/or `Directive` metadata, or it may encode the value and processor into the `Include` with the `<name=>=<value>` or `<processor>!<directive>!<name>!<value>` formats used by the CLI `t4 -a` option.
+| `DirectiveProcessor` | Register a custom directive processor by name. The `Class` and `Assembly` may be provided as metadata, or encoded into the `Include` with the `<name>!<class>!<assembly>` format used by the CLI `t4 --dp` option.
+| `T4ReferencePath` | Adds a search directory for resolving assembly references in `T4Transform` templates. Affects `<#@assembly#>` directives and calls to the host's `ResolveAssemblyReference(...)` method.
+|`T4IncludePath` | Adds a search directory for resolving `<#@include#>` directives in `T4Transform` and `T4Preprocess` templates. For `T4Transform` items, this also affects calls to the host's `LoadIncludeText(...)` method.
+| `T4AssemblyReference` | Additional assemblies to be referenced when processing `T4Transform` items. May be a absolute path, or relative to the project or the `T4ReferencePath` directories.
 
-`T4Argument`
+Both `T4Argument` and `DirectiveProcessor` items support either setting metadata via MSBuild metadata or encoding it into the `Include` in the same format supported by the options of the `t4` CLI tool. If both encoded metadata and MSBuild metadata are present, the MSBuild metadata takes precedence.
 
-</td><td>
-Pass a parameter value to the T4 templates, optionally scoped to a directive processor and/or directive. This may take one of several forms:
+> **NOTE:** Encoded metadata is supported for convenience, and to support parsing `T4Argument` items from the `T4Arguments` property. However, using MSBuild metadata is preferred when possible as it allows simplified manipulation of the items.
 
-* Parameter name and `Value` metadata, with optional `Processor` and/or `Directive` metadata
-* Encoded `<name=>=<value>` key-value pair
-* The `<processor>!<directive>!<name>!<value>` format used by the CLI `t4 -a` option
-
-For example:
+For example, the following `T4Argument` items are equivalent:
 
 ```xml
 <ItemGroup>
-  <T4Argument Include="Greeting" Value="Hello!" />
-  <T4Argument Include="Year=2023" />
+  <T4Argument Include="Greeting" Value="Hello" />
+  <T4Argument Include="Greeting=Hello" />
+</ItemGroup>
+```
+
+As are the following `T4Argument` items:
+
+```xml
+<ItemGroup>
+  <T4Argument Include="Month" Value="June" Processor="MyProcessor" Directive="MyDirective" />
+  <T4Argument Include="Month=June" Processor="MyProcessor" Directive="MyDirective" />
   <T4Argument Include="MyProcessor!MyDirective!Month!June" />
 </ItemGroup>
 ```
 
-</td></tr><tr><td>
-
-`DirectiveProcessor`
-
-</td><td>
-
-Register a custom directive processor. This may use the same use the `<name>!<class>!<assembly>` format as the CLI `t4 --dp` option, or separate `Class` and `Assembly` metadata.
+Similarly, the following `DirectiveProcessor` items are equivalent:
 
 ```xml
 <ItemGroup>
-  <DirectiveProcessor Include="FirstProcessor" Class="MyProcessors.SecondProcessor" Assembly="MyProcessors.dll" />
-  <DirectiveProcessor Include="SecondProcessor!MyProcessors.SecondProcessor!MyProcessors.dll" />
+  <DirectiveProcessor Include="MyProcessor" Class="Me.MyProcessor" Assembly="MyProcessors.dll" />
+  <DirectiveProcessor Include="MyProcessor!Me.MyProcessor!MyProcessors.dll" />
 </ItemGroup>
 ```
 
-</td></tr><tr><td>
-
-`T4ReferencePath`
-
-</td><td>
-
-Adds a search directory for resolving assembly references in `T4Transform` templates. Affects `<#@assembly#>` directives and calls to the host's `ResolveAssemblyReference(...)` method.
-
-</td></tr><tr><td>
-
-`T4IncludePath`
-
-</td><td>
-
-Adds a search directory for resolving `<#@include#>` directives in `T4Transform` and `T4Preprocess` templates. For `T4Transform` items, this also affects calls to the host's `LoadIncludeText(...)` method.
-
-</td></tr><tr><td>
-
-`T4AssemblyReference`
-
-</td><td>
-
-Additional assemblies to be referenced when processing `T4Transform` items. May be a absolute path, or relative to the project or the `T4ReferencePath` directories.
-
-</td></tr></table>
-
 ### Item Metadata
 
-The `T4Transform` and `T4Preprocess` items have optional metadata that can be used to control the  path used for the generated output.
+`T4Transform` items have optional metadata that can be used to control the path used for the generated output. These can also be used for `T4Preprocess` items when using legacy preprocessing.
 
 | Metadata | Description
 | -- | --
-|  `OutputFilePath`| Overrides the output folder
-|  `OutputFileName`| Overrides the output file name
+|  `OutputDirectory`| Set an output directory for the file generated by the template. If this is not set, it defaults to the directory containing the template file. It is evaluated relative to the project directory, not relative to the template file. If the directory does not exist, it wil; be created.
+|  `OutputFileName`| Set a filename to be used for the template output instead of deriving one from the template filename. If this is set, it will be the exact name used for the generated file. Any `<#@extension..#>` directive present in the template file will be ignored, and no other extension will be added. This filename may include directory components, and is evaluated relative to the template directory, which defaults to the directory containing the template file.
 
 ### CLI Properties
 
@@ -136,7 +110,7 @@ For example:
 </Target>
 ```
 
-## Compatibility
+## Legacy Compatibility
 
 The following properties, items and metadata are provided for partial backwards compatibility with the Visual Studio [Microsoft.TextTemplating](https://learn.microsoft.com/en-us/visualstudio/modeling/code-generation-in-a-build-process) MSBuild targets.
 
@@ -149,3 +123,4 @@ The following properties, items and metadata are provided for partial backwards 
 | Property | `AfterTransform` | List of targets to run before template transformation. Use `BeforeTargets="TransformTemplatesCore"` instead.
 | Property | `AfterTransform` | List of targets to run after template transformation. Use `AfterTargets="TransformTemplatesCore"` instead.
 | Metadata | `DirectiveProcessor.Codebase` | Equivalent to `Assembly` metadata
+| Metadata | `T4Transform.OutputFilePath` | Equivalent to `OutputDirectory` metadata

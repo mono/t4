@@ -99,6 +99,7 @@ namespace Mono.TextTemplating.Build
 					string inputFile = ppt.ItemSpec;
 					string outputFile;
 					if (UseLegacyPreprocessingMode) {
+						//TODO: OutputFilePath, OutputFileName
 						outputFile = Path.ChangeExtension (inputFile, ".cs");
 					} else {
 						//FIXME: this could cause collisions. generate a path based on relative path and link metadata
@@ -114,6 +115,9 @@ namespace Mono.TextTemplating.Build
 			if (TransformTemplates != null) {
 				buildState.TransformTemplates = new List<TemplateBuildState.TransformTemplate> ();
 				foreach (var tt in TransformTemplates) {
+					//TODO: OutputFilePath, OutputFileName
+					//var outputFilePathMetadata = tt.GetMetadata("OutputFilePath");
+					//var outputFileNameMetadata = tt.GetMetadata("OutputFileName");
 					string inputFile = tt.ItemSpec;
 					string outputFile = Path.ChangeExtension (inputFile, ".txt");
 					buildState.TransformTemplates.Add (new TemplateBuildState.TransformTemplate {
