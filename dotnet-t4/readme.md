@@ -61,6 +61,7 @@ Option | Description
 `-I=<directory>` | Add a `<directory>` to be searched when resolving included files
 `-P=<directory>` | Add a `<directory>` to be searched when resolving assemblies.
 `-c`<br/>`--class=<name>` | Preprocess the template into class `<name>` for use as a runtime template. The class name may include a namespace.
+`-l`<br/>`--useRelativeLinePragmas` | Use relative paths in line pragmas.
 `-p`, `--parameter=<name>=<value>` |  Set session parameter `<name>` to `<value>`. The value is accessed from the template's `Session` dictionary, or from a property declared with a parameter directive: `<#@ parameter name='<name>' type='<type>' #>.` <br/> If the `<name>` matches a parameter with a non-string type, the `<value>` will be converted to that type.
 `--debug` | Generate debug symbols and keep temporary files.
 `-v` <br/> `--verbose` | Output additional diagnostic information to stdout.

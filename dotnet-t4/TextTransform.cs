@@ -104,6 +104,11 @@ namespace Mono.TextTemplating
 					(s) => preprocessClassName = s
 				},
 				{
+					"l|useRelativeLinePragmas",
+					"Use relative paths in line pragmas.",
+					s => generator.UseRelativeLinePragmas = true
+				},
+				{
 					"p==|parameter==",
 					"Set session parameter {0:<name>} to {1:<value>}. " +
 					"The value is accessed from the template's Session dictionary, " +
