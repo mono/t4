@@ -58,12 +58,10 @@ namespace Mono.TextTemplating.Tests
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
 
-			// note: when running on netsdk we use the highest available csc regardless of runtime version,
-			// so records will always be available on our test environments
-#if NETFRAMEWORK
-			Assert.NotNull (firstError);
-#else
+#if NET5_0_OR_GREATER
 			Assert.Null (firstError);
+#else
+			Assert.NotNull (firstError);
 #endif
 		}
 

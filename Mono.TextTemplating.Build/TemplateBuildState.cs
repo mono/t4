@@ -16,10 +16,10 @@ namespace Mono.TextTemplating.Build
 	[MessagePackObject]
 	public class TemplateBuildState
 	{
-		public const int CURRENT_FORMAT_VERSION = 0;
+		public const int CurrentFormatVersion = 0;
 
 		[Key (0)]
-		public int FormatVersion { get; set; } = CURRENT_FORMAT_VERSION;
+		public int FormatVersion { get; set; } = CurrentFormatVersion;
 		[Key (1)]
 		public string DefaultNamespace { get; set; }
 		[Key (2)]
