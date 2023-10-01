@@ -388,7 +388,7 @@ namespace Mono.TextTemplating
 			processor = directive = name = value = "";
 
 			int start = 0;
-			int end = parameter.IndexOfAny (new [] { '=', '!' });
+			int end = parameter.IndexOfAny (parameterInitialSplitChars);
 			if (end < 0)
 				return false;
 
@@ -572,6 +572,8 @@ namespace Mono.TextTemplating
 		/// If non-null, the template's Host property will be the full type of this host.
 		/// </summary>
 		public virtual Type SpecificHostType { get { return null; } }
+
+		static readonly char[] parameterInitialSplitChars = new [] { '=', '!' };
 
 		/// <summary>
 		/// Gets any additional directive processors to be included in the processing run.

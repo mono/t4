@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating.Build
 {
-	class MSBuildTemplateGenerator : TemplateGenerator
+	sealed class MSBuildTemplateGenerator : TemplateGenerator
 	{
 		public MSBuildTemplateGenerator ()
 		{

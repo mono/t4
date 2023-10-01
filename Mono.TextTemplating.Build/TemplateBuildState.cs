@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 using MessagePack;
@@ -16,10 +17,10 @@ namespace Mono.TextTemplating.Build
 	[MessagePackObject]
 	public class TemplateBuildState
 	{
-		public const int CURRENT_FORMAT_VERSION = 0;
+		public const int CurrentFormatVersion = 0;
 
 		[Key (0)]
-		public int FormatVersion { get; set; } = CURRENT_FORMAT_VERSION;
+		public int FormatVersion { get; set; } = CurrentFormatVersion;
 		[Key (1)]
 		public string DefaultNamespace { get; set; }
 		[Key (2)]
@@ -185,6 +186,8 @@ namespace Mono.TextTemplating.Build
 				=> Name == other?.Name && Class == other.Name && Assembly == other?.Assembly;
 
 			public override bool Equals (object obj) => Equals (obj as DirectiveProcessor);
+
+			public override int GetHashCode () => HashCode.Combine (Name, Class, Assembly);
 		}
 
 		[MessagePackObject]
@@ -203,6 +206,8 @@ namespace Mono.TextTemplating.Build
 				=> Processor == other?.Processor && Directive == other.Directive && Name == other?.Name && Value == other?.Value;
 
 			public override bool Equals (object obj) => Equals (obj as Parameter);
+
+			public override int GetHashCode () => HashCode.Combine (Processor, Directive, Name, Value);
 		}
 
 		// TODO: cache warnings
@@ -280,5 +285,13 @@ namespace Mono.TextTemplating.Build
 				return false;
 			}
 		}
+
+#if !NETCOREAPP2_1_OR_GREATER
+		struct HashCode
+		{
+			public static int Combine<T1, T2, T3> (T1 value1, T2 value2, T3 value3) => (value1?.GetHashCode () ?? 0) ^ (value2?.GetHashCode () ?? 0) ^ (value3?.GetHashCode () ?? 0);
+			public static int Combine<T1, T2, T3, T4> (T1 value1, T2 value2, T3 value3, T4 value4) => Combine (value1, value2, value3) ^ (value4?.GetHashCode () ?? 0);
+		}
+#endif
 	}
 }

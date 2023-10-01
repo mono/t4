@@ -147,7 +147,7 @@ struct TestDataPath
 	}
 }
 
-class WriteTimeTracker
+sealed class WriteTimeTracker
 {
 	readonly TestDataPath file;
 	DateTime lastWriteTime;

@@ -45,7 +45,7 @@ namespace Mono.TextTemplating.Tests
 
 		public ProjectCollection Engine { get; }
 
-		static ILogger CreateBinLogger (string testName) => new BinaryLogger { Parameters = $"LogFile=binlogs/{testName}.binlog" };
+		static BinaryLogger CreateBinLogger (string testName) => new BinaryLogger { Parameters = $"LogFile=binlogs/{testName}.binlog" };
 
 		public void Dispose ()
 		{
@@ -71,7 +71,7 @@ namespace Mono.TextTemplating.Tests
 		}
 	}
 
-	class MSBuildTestProject
+	sealed class MSBuildTestProject
 	{
 		public MSBuildTestProject (MSBuildTestContext context, Project project)
 		{
@@ -125,7 +125,7 @@ namespace Mono.TextTemplating.Tests
 		}
 	}
 
-	class MSBuildTestErrorLogger : ILogger
+	sealed class MSBuildTestErrorLogger : ILogger
 	{
 		public List<BuildEventArgs> ErrorsAndWarnings { get; } = new List<BuildEventArgs> ();
 
@@ -232,7 +232,7 @@ namespace Mono.TextTemplating.Tests
 			=> GetIntermediateDir (instance).Combine (paths);
 	}
 
-	class MSBuildFixture
+	sealed class MSBuildFixture
 	{
 		public MSBuildFixture () => MSBuildTestHelpers.RegisterMSBuildAssemblies ();
 	}

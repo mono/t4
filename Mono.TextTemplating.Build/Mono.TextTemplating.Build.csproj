@@ -10,6 +10,7 @@
          end up loading Mono.TextTemplating.dll for the wrong runtime -->
     <BuildOutputTargetFolder>buildTasks</BuildOutputTargetFolder>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
 
   <Target Name="AddTargetsFilesToPack" BeforeTargets="GenerateNuspec">

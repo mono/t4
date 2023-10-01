@@ -25,7 +25,7 @@ using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating
 {
-	class ToolTemplateGenerator : TemplateGenerator
+	sealed class ToolTemplateGenerator : TemplateGenerator
 	{
 		public ToolTemplateGenerator ()
 		{

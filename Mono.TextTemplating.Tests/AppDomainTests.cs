@@ -107,7 +107,7 @@ public class AppDomainTests : AssemblyLoadTests<SnapshotSet<string>>
 
 	static string GetAppDomainNameForCurrentTest ([CallerMemberName] string testName = null) => $"Template Test - {testName ?? "(unknown)"}";
 
-	class TestTemplateGeneratorWithAppDomain : TemplateGenerator
+	sealed class TestTemplateGeneratorWithAppDomain : TemplateGenerator
 	{
 		AppDomain appDomain;
 		public TestTemplateGeneratorWithAppDomain (AppDomain appDomain) => this.appDomain = appDomain;

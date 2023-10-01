@@ -55,7 +55,7 @@
         EscapedValue="$([System.String]::Copy('%(Path)').Replace('\','\\'))"
       />
       <_PackageDownloadPathConstLines Include="namespace $(ProjectName) {" />
-      <_PackageDownloadPathConstLines Include="partial class PackagePath {" />
+      <_PackageDownloadPathConstLines Include="sealed class PackagePath {" />
       <_PackageDownloadPathConstLines Include="@(_PackageDownloadVars->'    public static TestDataPath %(VarName) =&gt; new(&quot;%(EscapedValue)&quot;);')" />
       <_PackageDownloadPathConstLines Include="}}" />
     </ItemGroup>

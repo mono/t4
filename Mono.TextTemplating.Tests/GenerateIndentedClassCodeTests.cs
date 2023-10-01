@@ -49,13 +49,13 @@ namespace Mono.TextTemplating.Tests
 			Assert.Equal (expectedOutput, output);
 		}
 
-		static CodeTypeMember CreateBoolField ()
+		static CodeMemberField CreateBoolField ()
 		{
 			var type = new CodeTypeReference (typeof(bool));
 			return new CodeMemberField { Name = "myField", Type = type };
 		}
 
-		static CodeTypeMember CreateBoolProperty ()
+		static CodeMemberProperty CreateBoolProperty ()
 		{
 			var type = new CodeTypeReference (typeof(bool));
 			var prop = new CodeMemberProperty { Name = "MyProperty", Type = type };

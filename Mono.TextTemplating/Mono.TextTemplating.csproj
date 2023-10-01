@@ -15,11 +15,12 @@
     <Description>Embeddable engine for the T4 templating language, a general-purpose way to generate text or code files using C#</Description>
     <PackageValidationBaselineVersion>2.2.1</PackageValidationBaselineVersion>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.CodeDom" Version="5.0.0" Condition="'$(TargetFramework)'!='net472'" />
-    <None Include="readme.md" Pack="true" PackagePath="\"/>
+    <None Include="readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
