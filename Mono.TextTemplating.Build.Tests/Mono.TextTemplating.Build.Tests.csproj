@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net48;$(TargetFrameworks)</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <DefaultItemExcludes>$(DefaultItemExcludes);TestCases\**</DefaultItemExcludes>
   </PropertyGroup>
@@ -27,14 +28,10 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
     <PackageReference Include="xunit" Version="2.5.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.1" />
-    <!-- seems to be required for tests to run on Mono -->
-    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.7.2" Condition="'$(TargetFramework)'=='net472' And $([MSBuild]::IsOSUnixLike())" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="TestCases\**\*.*" />
-    <!-- disable parallel test execution on github actions, it hangs the runner there -->
-    <None Include="..\Mono.TextTemplating.Tests\xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'" />
     <Compile Include="..\Mono.TextTemplating.Tests\Platform.cs" />
     <Compile Include="..\Mono.TextTemplating.Tests\TestDataPath.cs" />
   </ItemGroup>

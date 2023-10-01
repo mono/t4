@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net472;$(TargetFrameworks)</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <DefineConstants Condition="'$(TargetFramework)'=='net472'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
     <DefaultItemExcludes>$(DefaultItemExcludes);TestCases\**</DefaultItemExcludes>
@@ -10,24 +11,15 @@
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj" />
   </ItemGroup>
-    <!-- fix conflicts in indirect references
-    <PackageReference Include="System.Collections.Immutable" Version="5.0.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" PrivateAssets="all" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    -->
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
     <PackageReference Include="xunit" Version="2.5.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.1" />
-    <!-- seems to be required for tests to run on Mono -->
-    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.7.2" Condition="'$(TargetFramework)'=='net472' And $([MSBuild]::IsOSUnixLike())" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="TestCases\**\*.*" />
-    <!-- disable parallel test execution on github actions, it hangs the runner there -->
-    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(GITHUB_ACTIONS)'=='true'" />
   </ItemGroup>
 
   <!-- download packages that contains dlls referenced by test tt files -->
