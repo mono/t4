@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net6.0;net472</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>1591;1573</NoWarn>
     <TFxId>$([MSBuild]::GetTargetFrameworkIdentifier('$(TargetFramework)'))</TFxId>
@@ -21,6 +21,10 @@
   <ItemGroup>
     <PackageReference Include="System.CodeDom" Version="5.0.0" Condition="'$(TargetFramework)'!='net472'" />
     <None Include="readme.md" Pack="true" PackagePath="\" />
+    <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\net461\Mono.TextTemplating.targets" />
+    <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\net472\_._" />
+    <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\netcoreapp2.0\Mono.TextTemplating.targets" />
+    <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\net6.0\_._" />
   </ItemGroup>
 
   <ItemGroup>

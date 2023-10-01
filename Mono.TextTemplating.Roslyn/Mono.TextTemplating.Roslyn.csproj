@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;net472</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net472;net6.0</TargetFrameworks>
     <PackageId>Mono.TextTemplating.Roslyn</PackageId>
     <DefaultNamespace>Mono.TextTemplating</DefaultNamespace>
     <Description>In-process Roslyn compiler for the Mono.TextTemplating T4 templating engine</Description>

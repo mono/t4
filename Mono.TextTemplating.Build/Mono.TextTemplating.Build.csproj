@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;net472</TargetFrameworks>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
     <PackageId>T4.BuildTools</PackageId>
     <Description>MSBuild build targets for the T4 templating language, a general-purpose way to generate text or code files using C#</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
