@@ -10,26 +10,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Locator" Version="1.5.5" />
-    <PackageReference Include="Microsoft.Build" Version="17.3.1" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="17.3.1" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.3.1" ExcludeAssets="runtime" />
-    <PackageReference Include="System.Reflection.MetadataLoadContext" Version ="6.0.0" />
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.6.10" />
+    <PackageReference Include="Microsoft.Build" Version="17.3.2" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.3.2" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.3.2" ExcludeAssets="runtime" />
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version="7.0.0" />
     <!--
     Microsoft.NET.Test.Sdk brings in a version of NuGet.Frameworks that's older than the one used by MSBuild
     and loads first, thereby breaking loading of MSBuild assemblies. Force-upgrade it.
     -->
-    <PackageReference Include="NuGet.Frameworks" Version="6.4.0" />
-    <PackageReference Include="System.Text.Json" Version="6.0.6" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.7.0" />
+    <PackageReference Include="System.Text.Json" Version="7.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
-    <PackageReference Include="xunit" Version="2.4.2" />
-    <!-- newer versions drop netcoreapp2.1 -->
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+    <PackageReference Include="xunit" Version="2.5.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.1" />
     <!-- seems to be required for tests to run on Mono -->
-    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.3.2" Condition="'$(TargetFramework)'=='net472' And $([MSBuild]::IsOSUnixLike())" />
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.7.2" Condition="'$(TargetFramework)'=='net472' And $([MSBuild]::IsOSUnixLike())" />
   </ItemGroup>
 
   <ItemGroup>

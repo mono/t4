@@ -19,7 +19,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.CodeDom" Version="5.0.0" Condition="'$(TargetFramework)'!='net472'" />
+    <!-- limit to 6.0 so that the MSBuild task can load on .NET 6.0 -->
+    <PackageReference Include="System.CodeDom" Version="6.0.0" Condition="'$(TargetFramework)'!='net472'" />
     <None Include="readme.md" Pack="true" PackagePath="\" />
     <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\net461\Mono.TextTemplating.targets" />
     <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\net472\_._" />

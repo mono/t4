@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Mono.TextTemplating.Build\Mono.TextTemplating.Build.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" />
     <ProjectReference Include="..\Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj" />
   </ItemGroup>
@@ -18,12 +17,11 @@
     -->
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
-    <PackageReference Include="xunit" Version="2.4.2" />
-    <!-- newer versions drop netcoreapp2.1 -->
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+    <PackageReference Include="xunit" Version="2.5.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.1" />
     <!-- seems to be required for tests to run on Mono -->
-    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.3.2" Condition="'$(TargetFramework)'=='net472' And $([MSBuild]::IsOSUnixLike())" />
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.7.2" Condition="'$(TargetFramework)'=='net472' And $([MSBuild]::IsOSUnixLike())" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,11 +47,7 @@
       <!-- temp vars to make escaping manageable -->
       <_PackageDownloadWithVersion Include="@(PackageDownload)" Version="$([System.String]::Copy('%(Version)').Replace('[','').Replace(']',''))" />
       <_PackageDownloadWithPath Include="@(_PackageDownloadWithVersion)" Path="$(_NuGetPackageRootWithTrailingSlash)$([System.String]::Copy('%(Identity)').ToLower())\%(Version)" />
-      <_PackageDownloadVars
-        Include="@(_PackageDownloadWithPath)"
-        VarName="$([System.String]::Copy('%(Identity)_%(Version)').Replace('.','_'))"
-        EscapedValue="$([System.String]::Copy('%(Path)').Replace('\','\\'))"
-      />
+      <_PackageDownloadVars Include="@(_PackageDownloadWithPath)" VarName="$([System.String]::Copy('%(Identity)_%(Version)').Replace('.','_'))" EscapedValue="$([System.String]::Copy('%(Path)').Replace('\','\\'))" />
       <_PackageDownloadPathConstLines Include="namespace $(ProjectName) {" />
       <_PackageDownloadPathConstLines Include="sealed class PackagePath {" />
       <_PackageDownloadPathConstLines Include="@(_PackageDownloadVars->'    public static TestDataPath %(VarName) =&gt; new(&quot;%(EscapedValue)&quot;);')" />

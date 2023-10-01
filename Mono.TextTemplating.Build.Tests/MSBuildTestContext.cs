@@ -188,7 +188,7 @@ namespace Mono.TextTemplating.Tests
 			var actualPaths = items.Select (item => item.GetMetadataValue ("FullPath")).ToHashSet ();
 			foreach (var expectedPath in expectedFullPaths) {
 				if (!actualPaths.Remove (expectedPath)) {
-					throw new Xunit.Sdk.ContainsException (expectedPath, actualPaths);
+					throw Xunit.Sdk.ContainsException.ForSetItemNotFound ("\"" + expectedPath + "\"", "\"" + string.Join ("\", \"", actualPaths) + "\"");
 				}
 			}
 			Assert.Empty (actualPaths);
