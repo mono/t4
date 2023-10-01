@@ -78,6 +78,10 @@ csharp_style_throw_expression = true:suggestion
 csharp_style_conditional_delegate_call = true:suggestion
 
 dotnet_style_require_accessibility_modifiers = omit_if_default:warning
+
+# ArgumentNullException.ThrowIfNull not present in some TFMs
+dotnet_diagnostic.CA1510.severity = none
+
 # hack: suppress analyzers on the imported file Options.cs
 [Options.cs]
 generated_code = true
