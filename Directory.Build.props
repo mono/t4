@@ -19,6 +19,10 @@
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.6.133" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="LICENSE.txt" Visible="False" />
+  </ItemGroup>
+
   <!-- reproducible build -->
   <PropertyGroup>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

@@ -127,19 +127,19 @@
     <value>Failed to save T4 build state. All T4 files will be reprocessed on next run.</value>
   </data>
   <data name="DirectiveProcessorDoesNotHaveThreeValues" xml:space="preserve">
-    <value>Directive processor '{0}' could not be split into 'name!class!assembly' components</value>
-  </data>
-  <data name="DirectiveProcessorMissingComponent" xml:space="preserve">
-    <value>Directive processor '{0}' is missing  component '{1}'</value>
+    <value>Directive processor '{0}' has encoded form with incorrect number of components</value>
   </data>
   <data name="DirectiveProcessorNoAssembly" xml:space="preserve">
     <value>Directive processor '{0}' has no 'Assembly' metadata</value>
   </data>
+  <data name="DirectiveProcessorNoClass" xml:space="preserve">
+    <value>Directive processor '{0}' has no 'Class' metadata</value>
+  </data>
   <data name="LoadedStateFile" xml:space="preserve">
     <value>Loaded state file '{0}'</value>
   </data>
-  <data name="ParameterNoValue" xml:space="preserve">
-    <value>Template parameter '{0}' has neither  'Value' metadata nor a value encoded in the name</value>
+  <data name="ArgumentNoValue" xml:space="preserve">
+    <value>Template argument '{0}' has no 'Value' metadata</value>
   </data>
   <data name="RecoverableInternalError" xml:space="preserve">
     <value>T4 engine encountered a recoverable internal error. Although it should not affect output, please report it as it may affect reliability and performance.</value>

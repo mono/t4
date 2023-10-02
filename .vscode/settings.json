@@ -1,0 +1,17 @@
+{
+  "files.associations": {
+    "*.buildschema.json": "jsonc"
+  },
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "/*.buildschema.json"
+      ],
+      "url": "https://raw.githubusercontent.com/mhutch/MonoDevelop.MSBuildEditor/main/MonoDevelop.MSBuild/Schemas/buildschema.json"
+    }
+  ],
+  "cSpell.words": [
+    "Preprocess",
+    "reimplementation"
+  ]
+}

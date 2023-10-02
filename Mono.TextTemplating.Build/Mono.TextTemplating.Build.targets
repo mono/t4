@@ -27,18 +27,18 @@
 
   <!-- this is intended to be invoked explicitly -->
   <Target Name="TransformTemplates"
-          DependsOnTargets="_SetExplicitTransformProperties;_TransformTemplates" />
+          DependsOnTargets="_SetExplicitTransformProperties;TransformTemplatesCore" />
 
   <!-- this is invoked in full builds -->
   <Target Name="_TransformTemplatesOnBuild"
           BeforeTargets="BeforeBuild"
           Condition="'$(TransformOnBuild)'=='True' Or '$(UseLegacyT4Preprocessing)' == 'False'"
-          DependsOnTargets="_SetTransformOnBuildProperties;_TransformTemplates" />
+          DependsOnTargets="_SetTransformOnBuildProperties;TransformTemplatesCore" />
 
   <!-- this is invoked in design time builds -->
   <Target Name="_TransformTemplatesDesignTime"
           BeforeTargets="CoreCompile"
-          DependsOnTargets="_SetTransformDesignTimeProperties;_TransformTemplates"
+          DependsOnTargets="_SetTransformDesignTimeProperties;TransformTemplatesCore"
           Condition="'$(UseLegacyT4Preprocessing)' == 'False' And ('$(DesignTimeBuild)' == 'True' Or '$(BuildingProject)' != 'True')" />
 
   <Target Name="_SetExplicitTransformProperties">
@@ -66,7 +66,7 @@
   They run regardless of whether we have any items to transform, as they may want to inject
   items to be transformed.
   -->
-  <Target Name="_TransformTemplates"
+  <Target Name="TransformTemplatesCore"
           DependsOnTargets="$(BeforeTransform);_TransformTemplatesCore;$(AfterTransform)" />
 
   <Target Name="_TransformTemplatesCore"

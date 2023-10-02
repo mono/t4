@@ -99,6 +99,7 @@ namespace Mono.TextTemplating.Build
 					string inputFile = ppt.ItemSpec;
 					string outputFile;
 					if (UseLegacyPreprocessingMode) {
+						//TODO: OutputFilePath, OutputFileName
 						outputFile = Path.ChangeExtension (inputFile, ".cs");
 					} else {
 						//FIXME: this could cause collisions. generate a path based on relative path and link metadata
@@ -114,6 +115,9 @@ namespace Mono.TextTemplating.Build
 			if (TransformTemplates != null) {
 				buildState.TransformTemplates = new List<TemplateBuildState.TransformTemplate> ();
 				foreach (var tt in TransformTemplates) {
+					//TODO: OutputFilePath, OutputFileName
+					//var outputFilePathMetadata = tt.TryGetMetadata("OutputFilePath");
+					//var outputFileNameMetadata = tt.TryGetMetadata("OutputFileName");
 					string inputFile = tt.ItemSpec;
 					string outputFile = Path.ChangeExtension (inputFile, ".txt");
 					buildState.TransformTemplates.Add (new TemplateBuildState.TransformTemplate {
@@ -140,10 +144,7 @@ namespace Mono.TextTemplating.Build
 			}
 
 			//TODO
-			//IntermediateDirectory
 			//RequiredAssemblies
-			//GeneratedTemplates
-			//PreprocessedTemplates
 			//settings.Debug
 			//settings.Log
 			//metadata to override output name, class name and namespace
@@ -167,16 +168,27 @@ namespace Mono.TextTemplating.Build
 
 			foreach (var par in ParameterValues) {
 				string paramName = par.ItemSpec;
+				string processorName, directiveName, paramVal;
 
-				string paramVal = par.GetMetadata ("Value");
-				string processorName, directiveName;
-
-				if (!string.IsNullOrEmpty (paramVal)) {
-					processorName = par.GetMetadata ("Processor");
-					directiveName = par.GetMetadata ("Directive");
+				if (TemplateGenerator.TryParseParameter (paramName, out processorName, out directiveName, out string parsedName, out paramVal)) {
+					paramName = parsedName;
 				}
-				else if (!TemplateGenerator.TryParseParameter (paramName, out processorName, out directiveName, out paramName, out paramVal)) {
-					Log.LogErrorFromResources (nameof(Messages.ParameterNoValue), par);
+
+				// metadata overrides encoded values. todo: warn when this happens?
+				if (par.TryGetMetadata ("Value", out string valueMetadata)) {
+					paramVal = valueMetadata;
+				}
+
+				if (par.TryGetMetadata ("Processor", out string processorMetadata)) {
+					processorName = processorMetadata;
+				}
+
+				if (par.TryGetMetadata ("Directive", out string directiveMetadata)) {
+					directiveName = directiveMetadata;
+				}
+
+				if(paramVal is null) {
+					Log.LogWarningFromResources (nameof(Messages.ArgumentNoValue), par);
 					success = false;
 					continue;
 				}
@@ -205,44 +217,46 @@ namespace Mono.TextTemplating.Build
 			foreach (var dirItem in DirectiveProcessors) {
 
 				var name = dirItem.ItemSpec;
-				var className = dirItem.GetMetadata ("Class");
+				string className = null, assembly = null;
 
-				if (className != null) {
-					var assembly = dirItem.GetMetadata ("Assembly") ?? dirItem.GetMetadata ("Codebase");
-					if (string.IsNullOrEmpty (assembly)) {
-						Log.LogErrorFromResources (nameof(Messages.DirectiveProcessorNoAssembly), name);
-						hasErrors = true;
+				if (name.IndexOf('!') > -1) {
+					var split = name.Split ('!');
+					if (split.Length != 3) {
+						Log.LogErrorFromResources (nameof(Messages.DirectiveProcessorDoesNotHaveThreeValues), name);
+						return false;
 					}
-
-					buildState.DirectiveProcessors.Add (new TemplateBuildState.DirectiveProcessor {
-						Name = name,
-						Class = className,
-						Assembly = assembly
-					});
-					continue;
+					//empty values for these are fine; they may get set through metadata
+					name = split[0];
+					className = split[1];
+					assembly = split[2];
 				}
 
-				var split = name.Split ('!');
-				if (split.Length != 3) {
-					Log.LogErrorFromResources (nameof(Messages.DirectiveProcessorDoesNotHaveThreeValues), name);
+				if (dirItem.TryGetMetadata ("Class", out string classMetadata)) {
+					className = classMetadata;
+				}
+
+				if (dirItem.TryGetMetadata ("Codebase", out string codebaseMetadata)) {
+					assembly = codebaseMetadata;
+				}
+
+				if (dirItem.TryGetMetadata ("Assembly", out string assemblyMetadata)) {
+					assembly = assemblyMetadata;
+				}
+
+				if (string.IsNullOrEmpty (className)) {
+					Log.LogErrorFromResources (nameof(Messages.DirectiveProcessorNoClass), name);
 					hasErrors = true;
-					continue;
 				}
 
-				for (int i = 0; i < 3; i++) {
-					string s = split[i];
-					if (string.IsNullOrEmpty (s)) {
-						string kind = i == 0 ? "name" : (i == 1 ? "class" : "assembly");
-						Log.LogErrorFromResources (nameof(Messages.DirectiveProcessorMissingComponent), kind, name);
-						hasErrors = true;
-						continue;
-					}
+				if (string.IsNullOrEmpty (assembly)) {
+					Log.LogErrorFromResources (nameof(Messages.DirectiveProcessorNoAssembly), name);
+					hasErrors = true;
 				}
 
 				buildState.DirectiveProcessors.Add (new TemplateBuildState.DirectiveProcessor {
-					Name = split[0],
-					Class = split[1],
-					Assembly = split[2]
+					Name = name,
+					Class = className,
+					Assembly = assembly
 				});
 			}
 
@@ -295,6 +309,21 @@ namespace Mono.TextTemplating.Build
 				catch {
 				}
 			}
+		}
+	}
+
+	static class TaskItemExtensions
+	{
+		public static bool TryGetMetadata (this ITaskItem item, string name, out string value)
+		{
+			var potentialValue = item.GetMetadata (name);
+			if (potentialValue?.Length > 0) {
+				value = potentialValue;
+				return true;
+			}
+
+			value = null;
+			return false;
 		}
 	}
 }
