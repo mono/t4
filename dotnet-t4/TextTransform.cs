@@ -27,7 +27,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
+
 using Microsoft.VisualStudio.TextTemplating;
+
 using Mono.Options;
 
 namespace Mono.TextTemplating
@@ -36,10 +39,10 @@ namespace Mono.TextTemplating
 	{
 		static OptionSet optionSet;
 
-		public static int Main (string [] args)
+		public static async Task<int> Main (string [] args)
 		{
 			try {
-				return MainInternal (args);
+				return await MainInternal (args);
 			}
 			catch (Exception e) {
 				Console.Error.WriteLine (e);
@@ -56,7 +59,7 @@ namespace Mono.TextTemplating
 			protected override void OnParseComplete (OptionContext c) => action (c.OptionValues);
 		}
 
-		static int MainInternal (string [] args)
+		static async Task<int> MainInternal (string [] args)
 		{
 			if (args.Length == 0 && !Console.IsInputRedirected) {
 				ShowHelp (true);
@@ -228,7 +231,7 @@ namespace Mono.TextTemplating
 
 			if (!generator.Errors.HasErrors) {
 				if (preprocessClassName == null) {
-					(outputFile, outputContent) = generator.ProcessTemplateAsync (pt, inputFile, inputContent, outputFile, settings).Result;
+					(outputFile, outputContent) = await generator.ProcessTemplateAsync (pt, inputFile, inputContent, outputFile, settings);
 				} else {
 					SplitClassName (preprocessClassName, settings);
 					outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out _);
