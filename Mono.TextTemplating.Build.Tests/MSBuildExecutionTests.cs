@@ -9,6 +9,8 @@ using Xunit;
 
 namespace Mono.TextTemplating.Tests
 {
+	// MSBuild relies on changing the current working directory to the project directory so we need to run tests serially
+	[CollectionDefinition (nameof (MSBuildExecutionTests), DisableParallelization = true)]
 	public class MSBuildExecutionTests : IClassFixture<MSBuildFixture>
 	{
 		[Fact]
