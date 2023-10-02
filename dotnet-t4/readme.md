@@ -38,7 +38,13 @@ Number | Square | Cube
 Alternatively, invoking `t4 powers.tt -c MyApp.Powers` will produce a `powers.cs` file containing the runtime template class, which you can compile into your app and execute at runtime with new parameter values:
 
 ```csharp
-string powersTableMarkdown = new MyApp.Powers { Max = 10 }.Process();
+var template = new MyApp.Powers {
+    Session = new Dictionary<string, object> {
+        { "Max", 10 }
+    }
+};
+template.Initialize();
+string powersTableMarkdown = template.TransformText();
 ```
 
 To learn more about the T4 language, see the [Visual Studio T4 documentation](https://learn.microsoft.com/en-us/visualstudio/modeling/writing-a-t4-text-template?view=vs-2022).
