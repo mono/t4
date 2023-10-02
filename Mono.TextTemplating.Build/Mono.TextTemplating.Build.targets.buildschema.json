@@ -1,8 +1,5 @@
 {
   "license": "Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See LICENSE file in the project root for full license information.",
-  "intellisenseImports": [
-    "$(MSBuildBinPath)\\Microsoft.Common.CurrentVersion.targets"
-  ],
   "items": {
     "T4ReferencePath": {
       "description": "Additional folders to search for T4 references",
@@ -21,10 +18,12 @@
       }
     },
     "T4Argument": {
-      "description": "T4 key-value property to pass to T4 templates",
-      "includeDescription": "T4 property keys",
+      "description": "T4 template argument, optionally scoped to a directive and/or directive processor. The value, processor and directive may be provided using the `Value, `Processor` and `Directive metadata, or encoded into the `Include` with the syntax `name=value`, `directive!name!value` or `processor!directive!name!value`.",
+      "includeDescription": "T4 argument name",
       "metadata": {
-        "Value": "The T4 property value"
+        "Value": "The T4 argument value. Overrides any value encoded in the `Include`.",
+        "Processor": "The T4 directive processor to use for this argument. Overrides any value encoded in the `Include`.",
+        "Directive": "The T4 directive to use for this argument. Overrides any value encoded in the `Include`."
       }
     },
     "T4Transform": {
@@ -36,7 +35,8 @@
       "type": "file"
     },
     "DirectiveProcessor": {
-      "description": "A T4 directive processor",
+      "description": "A T4 directive processor. The fully qualified class name and assembly path may be provided in `Class` and `Assembly` metadata, or encoded in `Include` with the syntax `name!class!assembly`.",
+      "includeDescription": "T4 directive processor name",
       "metadata": {
         "Class": "Fully qualified name of the processor class",
         "Assembly": {
@@ -100,13 +100,13 @@
     "BeforeTransform": {
       "description": "Targets to run before the T4 Transform target",
       "type": "target-name",
-      "deprecationMessage": "Use `BeforeTargets=\"BeforeTransform\" for target ordering`",
+      "deprecationMessage": "Use `BeforeTargets=\"TransformTemplatesCore\" for target ordering`",
       "isList": true
     },
     "AfterTransform": {
       "description": "Targets to run after the T4 Transform target",
       "type": "target-name",
-      "deprecationMessage": "Use `AfterTargets=\"AfterTransform\" for target ordering`",
+      "deprecationMessage": "Use `AfterTargets=\"TransformTemplatesCore\" for target ordering`",
       "isList": true
     },
     "IncludeFolders": {
