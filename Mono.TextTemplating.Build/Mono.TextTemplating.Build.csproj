@@ -11,6 +11,7 @@
     <BuildOutputTargetFolder>buildTasks</BuildOutputTargetFolder>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <NeutralLanguage>en-US</NeutralLanguage>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <Target Name="AddTargetsFilesToPack" BeforeTargets="GenerateNuspec">
@@ -30,6 +31,7 @@
   </Target>
 
   <ItemGroup>
+    <None Include="readme.md" Pack="true" PackagePath="\" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" PrivateAssets="all" />
     <PackageReference Include="MessagePackAnalyzer" Version="2.5.129" PrivateAssets="all" />
     <PackageReference Include="MessagePack" Version="2.5.129" PrivateAssets="all" />

@@ -7,7 +7,6 @@
     <Description>In-process Roslyn compiler for the Mono.TextTemplating T4 templating engine</Description>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <EnablePackageValidation>true</EnablePackageValidation>
   </PropertyGroup>
 
   <ItemGroup>
