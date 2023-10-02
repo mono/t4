@@ -306,9 +306,7 @@ namespace Mono.TextTemplating
 			// there are no equivalent for directories, so we create a directory
 			// based on the file name, which *should* be unique as long as the file
 			// exists.
-			var tempFile = Path.GetTempFileName ();
-			var tempFolder = tempFile + "dir";
-			Directory.CreateDirectory (tempFolder);
+			var tempFolder = TempSubdirectoryHelper.Create ("t4-").FullName;
 
 			if (settings.Log != null) {
 				settings.Log.WriteLine ($"Generating code in '{tempFolder}'");
@@ -332,7 +330,7 @@ namespace Mono.TextTemplating
 
 			var result = await compiler.CompileFile (args, settings.Log, token).ConfigureAwait (false);
 
-			var r = new CompilerResults (new TempFileCollection ());
+			var r = new CompilerResults (new TempFileCollection (tempFolder));
 			r.TempFiles.AddFile (sourceFilename, false);
 
 			if (result.ResponseFile != null) {
@@ -370,7 +368,6 @@ namespace Mono.TextTemplating
 				r.TempFiles.Delete ();
 				// we can delete our temporary file after our temporary folder is deleted.
 				Directory.Delete (tempFolder);
-				File.Delete (tempFile);
 			}
 
 			return (r, compiledAssembly);
