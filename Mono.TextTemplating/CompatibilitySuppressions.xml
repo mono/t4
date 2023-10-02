@@ -1,9 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Suppressions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <!-- fixes binary incompatibility between multitargeted versions -->
   <Suppression>
-    <!-- fixes binary incompatibility between multitargeted versions -->
     <DiagnosticId>CP0006</DiagnosticId>
     <Target>M:Microsoft.VisualStudio.TextTemplating.ITextTemplatingEngineHost.ProvideTemplatingAppDomain(System.String)</Target>
+    <Left>lib/netstandard2.0/Mono.TextTemplating.dll</Left>
+    <Right>lib/netstandard2.0/Mono.TextTemplating.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+    <!-- VST4 compat, should not have been public, unlikely to impact users -->
+  <Suppression>
+    <DiagnosticId>CP0019</DiagnosticId>
+    <Target>M:Microsoft.VisualStudio.TextTemplating.DirectiveProcessorException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)</Target>
+    <Left>lib/net472/Mono.TextTemplating.dll</Left>
+    <Right>lib/net472/Mono.TextTemplating.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0019</DiagnosticId>
+    <Target>M:Microsoft.VisualStudio.TextTemplating.DirectiveProcessorException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)</Target>
     <Left>lib/netstandard2.0/Mono.TextTemplating.dll</Left>
     <Right>lib/netstandard2.0/Mono.TextTemplating.dll</Right>
     <IsBaselineSuppression>true</IsBaselineSuppression>

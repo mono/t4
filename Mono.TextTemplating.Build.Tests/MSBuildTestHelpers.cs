@@ -41,7 +41,9 @@ namespace Mono.TextTemplating.Tests
 				//attempt to read the msbuild.dll location from the launch script
 				//FIXME: handle quoting in the script
 				Console.WriteLine ("Found msbuild script in PATH: {0}", msbuildInPath);
+#pragma warning disable CA1861 // Avoid constant arrays as arguments
 				var tokens = File.ReadAllText (msbuildInPath).Split (new [] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+#pragma warning restore CA1861 // Avoid constant arrays as arguments
 				var filename = tokens.FirstOrDefault (t => t.EndsWith ("MSBuild.dll", StringComparison.OrdinalIgnoreCase));
 				if (filename != null && File.Exists (filename)) {
 					var dir = Path.GetDirectoryName (filename);

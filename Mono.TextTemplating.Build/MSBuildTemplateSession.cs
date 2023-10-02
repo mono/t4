@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.TextTemplating;
 
 namespace Mono.TextTemplating.Build
 {
-	class MSBuildTemplateSession : ITextTemplatingSession
+	sealed class MSBuildTemplateSession : ITextTemplatingSession
 	{
 		readonly Dictionary<string, object> session = new Dictionary<string, object> ();
 		readonly MSBuildTemplateGenerator toolTemplateGenerator;

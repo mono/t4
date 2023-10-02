@@ -57,10 +57,13 @@ namespace Mono.TextTemplating.Tests
 			await gen.ProcessTemplateAsync (null, template, outputName);
 
 			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
-#if NET5_0
-			Assert.Null (firstError);
-#else
+
+			// note: when running on netsdk we use the highest available csc regardless of runtime version,
+			// so records will always be available on our test environments
+#if NETFRAMEWORK
 			Assert.NotNull (firstError);
+#else
+			Assert.Null (firstError);
 #endif
 		}
 

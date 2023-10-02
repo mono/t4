@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft Corp (https://www.microsoft.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,7 +27,7 @@ using System.Runtime.Serialization;
 
 namespace Mono.TextTemplating
 {
-	class ToolTemplateSession : ITextTemplatingSession
+	sealed class ToolTemplateSession : ITextTemplatingSession
 	{
 		readonly Dictionary<string, object> session = new Dictionary<string, object> ();
 		readonly ToolTemplateGenerator toolTemplateGenerator;

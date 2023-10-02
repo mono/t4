@@ -17,7 +17,7 @@ using CodeCompiler = Mono.TextTemplating.CodeCompilation.CodeCompiler;
 
 namespace Mono.TextTemplating
 {
-	class RoslynCodeCompiler : CodeCompiler
+	sealed class RoslynCodeCompiler : CodeCompiler
 	{
 		readonly RuntimeInfo runtime;
 

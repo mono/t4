@@ -32,7 +32,7 @@ using Mono.Options;
 
 namespace Mono.TextTemplating
 {
-	class TextTransform
+	sealed class TextTransform
 	{
 		static OptionSet optionSet;
 

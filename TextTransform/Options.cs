@@ -756,7 +756,9 @@ namespace Mono.Options
 
 #if !PCL
 #pragma warning disable 618 // SecurityPermissionAttribute is obsolete
+#pragma warning disable SYSLIB0003 // Type or member is obsolete
 		[SecurityPermission (SecurityAction.LinkDemand, SerializationFormatter = true)]
+#pragma warning restore SYSLIB0003
 #pragma warning restore 618
 		public override void GetObjectData (SerializationInfo info, StreamingContext context)
 		{

@@ -209,7 +209,7 @@ namespace Mono.TextTemplating.Build
 			return generator;
 		}
 
-		class WriteTimeCache
+		sealed class WriteTimeCache
 		{
 			public DateTime? GetWriteTime (string filepath)
 			{

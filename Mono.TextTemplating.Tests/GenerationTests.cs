@@ -89,7 +89,7 @@ namespace Mono.TextTemplating.Tests
 
 		#region Helpers
 
-		static string GenerateCode (ITextTemplatingEngineHost host, string content, string name, string generatorNewline)
+		static string GenerateCode (DummyHost host, string content, string name, string generatorNewline)
 		{
 			var pt = ParsedTemplate.FromTextInternal (content, host);
 			if (pt.Errors.HasErrors) {

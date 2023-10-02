@@ -260,7 +260,7 @@ namespace Mono.TextTemplating.Build
 
 				var state =  MessagePackSerializer.Deserialize<TemplateBuildState> (stream, options);
 
-				if (state.FormatVersion != TemplateBuildState.CURRENT_FORMAT_VERSION) {
+				if (state.FormatVersion != TemplateBuildState.CurrentFormatVersion) {
 					Log.LogMessageFromResources (MessageImportance.Low, nameof(Messages.BuildStateFormatChanged));
 				}
 
