@@ -116,8 +116,8 @@ namespace Mono.TextTemplating.Build
 				buildState.TransformTemplates = new List<TemplateBuildState.TransformTemplate> ();
 				foreach (var tt in TransformTemplates) {
 					//TODO: OutputFilePath, OutputFileName
-					//var outputFilePathMetadata = tt.GetMetadata("OutputFilePath");
-					//var outputFileNameMetadata = tt.GetMetadata("OutputFileName");
+					//var outputFilePathMetadata = tt.TryGetMetadata("OutputFilePath");
+					//var outputFileNameMetadata = tt.TryGetMetadata("OutputFileName");
 					string inputFile = tt.ItemSpec;
 					string outputFile = Path.ChangeExtension (inputFile, ".txt");
 					buildState.TransformTemplates.Add (new TemplateBuildState.TransformTemplate {
@@ -175,15 +175,15 @@ namespace Mono.TextTemplating.Build
 				}
 
 				// metadata overrides encoded values. todo: warn when this happens?
-				if (par.GetMetadata ("Value") is string valueMetadata) {
+				if (par.TryGetMetadata ("Value", out string valueMetadata)) {
 					paramVal = valueMetadata;
 				}
 
-				if (par.GetMetadata ("Processor") is string processorMetadata) {
+				if (par.TryGetMetadata ("Processor", out string processorMetadata)) {
 					processorName = processorMetadata;
 				}
 
-				if (par.GetMetadata ("Directive") is string directiveMetadata) {
+				if (par.TryGetMetadata ("Directive", out string directiveMetadata)) {
 					directiveName = directiveMetadata;
 				}
 
@@ -231,15 +231,15 @@ namespace Mono.TextTemplating.Build
 					assembly = split[2];
 				}
 
-				if (dirItem.GetMetadata ("Class") is string classMetadata) {
+				if (dirItem.TryGetMetadata ("Class", out string classMetadata)) {
 					className = classMetadata;
 				}
 
-				if (dirItem.GetMetadata ("Codebase") is string codebaseMetadata) {
+				if (dirItem.TryGetMetadata ("Codebase", out string codebaseMetadata)) {
 					assembly = codebaseMetadata;
 				}
 
-				if (dirItem.GetMetadata ("Assembly") is string assemblyMetadata) {
+				if (dirItem.TryGetMetadata ("Assembly", out string assemblyMetadata)) {
 					assembly = assemblyMetadata;
 				}
 
@@ -309,6 +309,21 @@ namespace Mono.TextTemplating.Build
 				catch {
 				}
 			}
+		}
+	}
+
+	static class TaskItemExtensions
+	{
+		public static bool TryGetMetadata (this ITaskItem item, string name, out string value)
+		{
+			var potentialValue = item.GetMetadata (name);
+			if (potentialValue?.Length > 0) {
+				value = potentialValue;
+				return true;
+			}
+
+			value = null;
+			return false;
 		}
 	}
 }
