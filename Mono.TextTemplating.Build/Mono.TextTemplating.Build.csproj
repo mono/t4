@@ -16,11 +16,11 @@
 
   <Target Name="AddTargetsFilesToPack" BeforeTargets="GenerateNuspec">
     <ItemGroup>
-      <_PackageFiles Include="Mono.TextTemplating.Build.props" PackagePath="build" Pack="true" />
-      <_PackageFiles Include="Mono.TextTemplating.Build.targets" PackagePath="build" Pack="true" />
-      <_PackageFiles Include="multitargeting.props" PackagePath="buildMultiTargeting\Mono.TextTemplating.Build.props" Pack="true" />
-      <_PackageFiles Include="multitargeting.targets" PackagePath="buildMultiTargeting\Mono.TextTemplating.Build.targets" Pack="true" />
-      <_PackageFiles Include="Mono.TextTemplating.Build.targets.buildschema.json" PackagePath="build" Pack="true" />
+      <_PackageFiles Include="T4.BuildTools.props" PackagePath="build\$(PackageId).props" Pack="true" />
+      <_PackageFiles Include="T4.BuildTools.targets" PackagePath="build\$(PackageId).targets" Pack="true" />
+      <_PackageFiles Include="multitargeting.props" PackagePath="buildMultiTargeting\$(PackageId).props" Pack="true" />
+      <_PackageFiles Include="multitargeting.targets" PackagePath="buildMultiTargeting\$(PackageId).targets" Pack="true" />
+      <_PackageFiles Include="T4.BuildTools.targets.buildschema.json" PackagePath="build\$(PackageId).targets.buildschema.json" Pack="true" />
     </ItemGroup>
   </Target>
 
