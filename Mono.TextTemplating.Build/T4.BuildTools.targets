@@ -91,6 +91,7 @@
       UseLegacyPreprocessingMode="$(UseLegacyT4Preprocessing)"
       IntermediateDirectory="$(_T4IntermediateTemplateOutputDir)"
       TransformOutOfDateOnly="$(TransformOutOfDateOnly)"
+      PreprocessTargetRuntimeIdentifier="$(TargetFrameworkIdentifier)"
       >
         <Output TaskParameter="TransformTemplateOutput" ItemName="GeneratedTemplates" />
         <Output TaskParameter="PreprocessedTemplateOutput" ItemName="PreprocessedTemplates" />

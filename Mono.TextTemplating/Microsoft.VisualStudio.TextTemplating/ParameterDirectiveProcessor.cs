@@ -30,11 +30,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 
+using Mono.TextTemplating;
 using Mono.TextTemplating.CodeDomBuilder;
 
 namespace Microsoft.VisualStudio.TextTemplating
 {
-	public sealed class ParameterDirectiveProcessor : DirectiveProcessor, IRecognizeHostSpecific
+	public sealed class ParameterDirectiveProcessor : DirectiveProcessor, IRecognizeHostSpecific, ISupportCodeGenerationOptions
 	{
 		CodeDomProvider provider;
 		
@@ -147,12 +148,8 @@ namespace Microsoft.VisualStudio.TextTemplating
 			var namePrimitive = Expression.Primitive (name);
 			var session = Expression.This.Property ("Session");
 
-#if FEATURE_APPDOMAINS
-			bool hasAcquiredCheck = true;
-			var callContextType = TypeReference.Default ("System.Runtime.Remoting.Messaging.CallContext");
-#else
-			bool hasAcquiredCheck = hostSpecific;
-#endif
+			bool hasAcquiredCheck = hostSpecific || CodeGenerationOptions.UseRemotingCallContext;
+
 			var acquiredVariable = Declare.Variable<bool> ($"_{name}Acquired", Expression.False, out var acquiredVariableRef);
 			if (hasAcquiredCheck) {
 				postStatements.Add (acquiredVariable);
@@ -214,16 +211,17 @@ namespace Microsoft.VisualStudio.TextTemplating
 					}));
 			}
 
-#if FEATURE_APPDOMAINS
 			// try to acquire parameter value from call context
-			postStatements.Add (
-				Statement.If (acquiredVariableRef.IsFalse (),
-				Then: new CodeStatement[] {
-					Declare.Variable<object> (data.VariableName, callContextType.InvokeMethod ("LogicalGetData", namePrimitive), out _),
-					Statement.If (data.IsNotNull (),
-						Then: checkCastThenAssignVal)
-				}));
-#endif
+			if (CodeGenerationOptions.UseRemotingCallContext) {
+				var callContextType = TypeReference.Default ("System.Runtime.Remoting.Messaging.CallContext");
+				postStatements.Add (
+					Statement.If (acquiredVariableRef.IsFalse (),
+					Then: new CodeStatement[] {
+						Declare.Variable<object> (data.VariableName, callContextType.InvokeMethod ("LogicalGetData", namePrimitive), out _),
+						Statement.If (data.IsNotNull (),
+							Then: checkCastThenAssignVal)
+					}));
+			}
 		}
 		
 		void IRecognizeHostSpecific.SetProcessingRunIsHostSpecific (bool hostSpecific)
@@ -231,9 +229,13 @@ namespace Microsoft.VisualStudio.TextTemplating
 			this.hostSpecific = hostSpecific;
 		}
 
+		void ISupportCodeGenerationOptions.SetCodeGenerationOptions (CodeGenerationOptions options) => CodeGenerationOptions = options;
+
 		public bool RequiresProcessingRunIsHostSpecific {
 			get { return false; }
 		}
+
+		CodeGenerationOptions CodeGenerationOptions { get; set; }
 	}
 }
 

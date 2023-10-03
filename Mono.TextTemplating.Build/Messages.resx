@@ -193,4 +193,7 @@
   <data name="SkippingTransformUpToDate" xml:space="preserve">
     <value>Skipping transform template '{0}': output '{1}' is up to date</value>
   </data>
+  <data name="RegeneratingAllPreprocessedTargetRuntimeChanged" xml:space="preserve">
+    <value>Regenerating all preprocessed templates: target runtime has changed from '{0}' to '{1}'</value>
+  </data>
 </root>
