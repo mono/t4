@@ -400,7 +400,6 @@ namespace Mono.TextTemplating
 			var settings = new TemplateSettings ();
 
 			bool relativeLinePragmas = host.GetHostOption ("UseRelativeLinePragmas") as bool? ?? false;
-
 			foreach (Directive dt in pt.Directives) {
 				switch (dt.Name.ToLowerInvariant ()) {
 				case "template":
@@ -520,6 +519,9 @@ namespace Mono.TextTemplating
 				kv.Value.SetProcessingRunIsHostSpecific (settings.HostSpecific);
 				if (kv.Value is IRecognizeHostSpecific hs)
 					hs.SetProcessingRunIsHostSpecific (settings.HostSpecific);
+				if (kv.Value is ISupportCodeGenerationOptions opt) {
+					opt.SetCodeGenerationOptions (settings.CodeGenerationOptions);
+				}
 			}
 
 			if (settings.Name == null)
@@ -547,6 +549,10 @@ namespace Mono.TextTemplating
 			}
 
 			settings.RelativeLinePragmas = relativeLinePragmas;
+
+#if FEATURE_APPDOMAINS
+			settings.CodeGenerationOptions.UseRemotingCallContext = true;
+#endif
 
 			return settings;
 		}

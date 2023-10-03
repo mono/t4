@@ -17,7 +17,7 @@ namespace Mono.TextTemplating.Build
 	[MessagePackObject]
 	public class TemplateBuildState
 	{
-		public const int CurrentFormatVersion = 0;
+		public const int CurrentFormatVersion = 1;
 
 		[Key (0)]
 		public int FormatVersion { get; set; } = CurrentFormatVersion;
@@ -39,6 +39,8 @@ namespace Mono.TextTemplating.Build
 		public List<TransformTemplate> TransformTemplates { get; set; }
 		[Key (9)]
 		public List<Parameter> Parameters { get; set; }
+		[Key(10)]
+		public string PreprocessTargetRuntimeIdentifier { get; set; }
 
 		internal (List<TransformTemplate> transforms, List<PreprocessedTemplate> preprocessed) GetStaleAndNewTemplates (
 			TemplateBuildState previousBuildState, bool preprocessOnly, Func<string, DateTime?> getFileWriteTime, TaskLoggingHelper logger)
@@ -105,6 +107,7 @@ namespace Mono.TextTemplating.Build
 		{
 			(bool, bool) regenAll = (true, true);
 			(bool, bool) regenTransforms = (true, false);
+			(bool, bool) regenPreprocessed = (false, true);
 
 			if (lastSession == null) {
 				return regenAll;
@@ -113,6 +116,11 @@ namespace Mono.TextTemplating.Build
 			if (lastSession.DefaultNamespace != session.DefaultNamespace) {
 				logger.LogMessageFromResources (MessageImportance.Low, nameof(Messages.RegeneratingAllDefaultNamespaceChanged));
 				return regenAll;
+			}
+
+			if (lastSession.PreprocessTargetRuntimeIdentifier != session.PreprocessTargetRuntimeIdentifier) {
+				logger.LogMessageFromResources (MessageImportance.Low, nameof (Messages.RegeneratingAllPreprocessedTargetRuntimeChanged), lastSession.PreprocessTargetRuntimeIdentifier, session.PreprocessTargetRuntimeIdentifier);
+				return regenPreprocessed;
 			}
 
 			// this is probably impossible as the previous session is loaded from the intermediate directory, but let's be safe
