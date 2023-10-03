@@ -1,3 +1,5 @@
 <Project>
-  <Import Project="..\build\Mono.TextTemplating.Build.props" />
-<Project>
+  <!--
+  <Import Project="..\build\$(MSBuildThisFileName).props" />
+  -->
+</Project>

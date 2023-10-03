@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="$(TemplatingTargetsPath)\Mono.TextTemplating.Build.props" />
+  <Import Project="$(TemplatingTargetsPath)\T4.BuildTools.props" />
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -11,5 +11,5 @@
     <T4Argument Include="Year" Value="2019" />
   </ItemGroup>
 
-  <Import Project="$(TemplatingTargetsPath)\Mono.TextTemplating.Build.targets" />
+  <Import Project="$(TemplatingTargetsPath)\T4.BuildTools.targets" />
 </Project>
