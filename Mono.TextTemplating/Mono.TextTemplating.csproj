@@ -16,6 +16,8 @@
     <PackageValidationBaselineVersion>2.2.1</PackageValidationBaselineVersion>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <NeutralLanguage>en-US</NeutralLanguage>
+    <!-- ignore the _._ files that suppress compat targets in newer frameworks -->
+    <NoWarn>$(NoWarn);NU5129</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,9 +25,9 @@
     <PackageReference Include="System.CodeDom" Version="6.0.0" Condition="'$(TargetFramework)'!='net472'" />
     <None Include="readme.md" Pack="true" PackagePath="\" />
     <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\net461\Mono.TextTemplating.targets" />
-    <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\net472\_._" />
+    <None Include="package\_._" Pack="true" PackagePath="buildTransitive\net472\_._" />
     <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\netcoreapp2.0\Mono.TextTemplating.targets" />
-    <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\net6.0\_._" />
+    <None Include="package\_._" Pack="true" PackagePath="buildTransitive\net6.0\_._" />
   </ItemGroup>
 
   <ItemGroup>

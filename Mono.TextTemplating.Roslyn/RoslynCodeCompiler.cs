@@ -1,6 +1,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -102,7 +103,7 @@ namespace Mono.TextTemplating
 				var startLinePosition = location.StartLinePosition;
 				var endLinePosition = location.EndLinePosition;
 				return new CodeCompilerError {
-					Message = x.GetMessage (),
+					Message = x.GetMessage (CultureInfo.CurrentCulture),
 					Column = startLinePosition.Character,
 					Line = startLinePosition.Line,
 					EndLine = endLinePosition.Line,
