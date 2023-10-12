@@ -1,6 +1,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -37,11 +38,13 @@ namespace Mono.TextTemplating
 			CancellationToken token)
 		{
 			CSharpCommandLineArguments args = null;
+			bool hasLangVersionArg = false;
 			if (arguments.AdditionalArguments != null) {
 				var splitArgs = CommandLineParser.SplitCommandLineIntoArguments (arguments.AdditionalArguments, false);
 				if (splitArgs.Any ()) {
 					args = CSharpCommandLineParser.Default.Parse (splitArgs, arguments.TempDirectory, null, null);
 				}
+				hasLangVersionArg = splitArgs.Any (CSharpLangVersionHelper.IsLangVersionArg);
 			}
 
 			var references = new List<MetadataReference> ();
@@ -51,15 +54,31 @@ namespace Mono.TextTemplating
 
 			var parseOptions = args?.ParseOptions ?? new CSharpParseOptions();
 
+			// arguments.LangVersion takes precedence over any langversion arg in arguments.AdditionalArguments
+			// This behavior should match that of CscCodeCompiler.CompileFile and CSharpLangVersionHelper.GetLangVersionArg
 			if (arguments.LangVersion != null) {
 				if (LanguageVersionFacts.TryParse(arguments.LangVersion, out var langVersion)) {
 					parseOptions = parseOptions.WithLanguageVersion (langVersion);
+					hasLangVersionArg = true;
 				} else {
 					throw new RoslynCodeCompilerException ($"Unknown value '{arguments.LangVersion}' for langversion");
 				}
-			} else {
-				// need to update this when updating referenced roslyn binaries
-				CSharpLangVersionHelper.GetBestSupportedLangVersion (runtime, CSharpLangVersion.v9_0);
+			}
+
+			if (!hasLangVersionArg) {
+				// Default to the highest language version supported by the runtime
+				// as we may be using a version of Roslyn where "latest" language
+				// features depend on new APIs that aren't available on the current runtime.
+				// If the runtime is an unknown version, its MaxSupportedLangVersion will default
+				// to "latest" so new runtime versions will work before we explicitly add support for them.
+				if (LanguageVersionFacts.TryParse (CSharpLangVersionHelper.ToString (runtime.MaxSupportedLangVersion), out var runtimeSupportedLangVersion)) {
+					parseOptions = parseOptions.WithLanguageVersion (runtimeSupportedLangVersion);
+				} else {
+					// if Roslyn did not recognize the runtime's default lang version, it's newer than
+					// this version of Roslyn supports, so default to the latest supported version
+					parseOptions = parseOptions.WithLanguageVersion (LanguageVersion.Latest);
+				}
+
 			}
 
 			var syntaxTrees = new List<SyntaxTree> ();
@@ -102,7 +121,7 @@ namespace Mono.TextTemplating
 				var startLinePosition = location.StartLinePosition;
 				var endLinePosition = location.EndLinePosition;
 				return new CodeCompilerError {
-					Message = x.GetMessage (),
+					Message = x.GetMessage (CultureInfo.CurrentCulture),
 					Column = startLinePosition.Character,
 					Line = startLinePosition.Line,
 					EndLine = endLinePosition.Line,

@@ -24,6 +24,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#if NETFRAMEWORK
+#nullable enable annotations
+#else
+#nullable enable
+#endif
 
 using System;
 using System.Collections.Generic;
@@ -45,21 +50,19 @@ namespace Mono.TextTemplating.CodeCompilation
 
 		static StreamWriter CreateTempTextFile (string extension, out string path)
 		{
-			path = null;
-			Exception ex = null;
 			try {
 				var tempDir = Path.GetTempPath ();
 				Directory.CreateDirectory (tempDir);
 
 				//this is how msbuild does it...
-				path = Path.Combine (tempDir, $"tmp{Guid.NewGuid ():N}{extension}");
+				path = Path.Combine (tempDir, $"tmp{Guid.NewGuid ():N}{extension}")!;
 				if (!File.Exists (path)) {
 					return File.CreateText (path);
 				}
- 			} catch (Exception e) {
-				ex = e;
+			} catch (Exception ex) {
+				throw new TemplatingEngineException ("Failed to create temp file", ex);
 			}
-			throw new TemplatingEngineException ("Failed to create temp file", ex);
+			throw new TemplatingEngineException ("Failed to create temp file");
 		}
 
 		/// <summary>
@@ -70,7 +73,7 @@ namespace Mono.TextTemplating.CodeCompilation
 		/// <param name="token">Token.</param>
 		public override async Task<CodeCompilerResult> CompileFile (CodeCompilerArguments arguments, TextWriter log, CancellationToken token)
 		{
-			string rspPath;
+			string? rspPath;
 			StreamWriter rsp;
 			if (arguments.TempDirectory != null) {
 				rspPath = Path.Combine (arguments.TempDirectory, "response.rsp");
@@ -84,11 +87,6 @@ namespace Mono.TextTemplating.CodeCompilation
 
 				if (arguments.Debug) {
 					rsp.WriteLine ("-debug");
-				}
-
-				var langVersionArg = CSharpLangVersionHelper.GetLangVersionArg (arguments, runtime);
-				if (langVersionArg != null) {
-					rsp.WriteLine (langVersionArg);
 				}
 
 				foreach (var reference in AssemblyResolver.GetResolvedReferences (runtime, arguments.AssemblyReferences)) {
@@ -105,6 +103,15 @@ namespace Mono.TextTemplating.CodeCompilation
 
 				if (arguments.AdditionalArguments != null) {
 					rsp.WriteLine (arguments.AdditionalArguments);
+				}
+
+				// This comes after AdditionalArguments so arguments.LangVersion will take precedence
+				// over any langversion arg in AdditionalArguments.
+				// This behavior should match that of CSharpLangVersionHelper.GetLangVersionArg and
+				// RoslynCodeCompiler.CompileFileInternal
+				var langVersionArg = CSharpLangVersionHelper.GetLangVersionArg (arguments, runtime);
+				if (langVersionArg != null) {
+					rsp.WriteLine (langVersionArg);
 				}
 
 				//in older versions of csc, these must come last
@@ -151,8 +158,7 @@ namespace Mono.TextTemplating.CodeCompilation
 			void ConsumeOutput (string s)
 			{
 				using var sw = new StringReader (s);
-				string line;
-				while ((line = sw.ReadLine ()) != null) {
+				while (sw.ReadLine () is string line) {
 					outputList.Add (line);
 					var err = MSBuildErrorParser.TryParseLine (line);
 					if (err != null) {
@@ -197,7 +203,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				b.WriteLine ();
 			}
 
-			public override void Write (string value)
+			public override void Write (string? value)
 			{
 				a.Write (value);
 				b.Write (value);
