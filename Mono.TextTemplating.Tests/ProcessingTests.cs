@@ -67,7 +67,26 @@ namespace Mono.TextTemplating.Tests
 #endif
 		}
 
-#if !NET472
+		[Fact]
+		public async Task CSharp11StructRecords ()
+		{
+			string template = "<#+ public record struct Foo(string bar); #>";
+			var gen = new TemplateGenerator ();
+			string outputName = null;
+			await gen.ProcessTemplateAsync (null, template, outputName);
+
+			CompilerError firstError = gen.Errors.OfType<CompilerError> ().FirstOrDefault ();
+
+			// note: when running on netsdk we use the highest available csc regardless of runtime version,
+			// so struct records will always be available on our test environments
+#if NETFRAMEWORK
+			Assert.NotNull (firstError);
+#else
+			Assert.Null (firstError);
+#endif
+		}
+
+#if !NETFRAMEWORK
 		[Fact]
 		public async Task SetLangVersionViaAttribute ()
 		{
