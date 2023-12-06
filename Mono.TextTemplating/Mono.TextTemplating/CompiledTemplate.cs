@@ -82,7 +82,10 @@ namespace Mono.TextTemplating
 		TemplateProcessor CreateTemplateProcessor ()
 		{
 			var domain = host.ProvideTemplatingAppDomain (templateContentForAppDomain);
-			if (domain == null) {
+
+			// hosts are supposed to return null of they don't want to use a domain
+			// but check for CurrentDomain too so we can optimize if they do that
+			if (domain == null || domain == AppDomain.CurrentDomain) {
 				return new TemplateProcessor ();
 			}
 
