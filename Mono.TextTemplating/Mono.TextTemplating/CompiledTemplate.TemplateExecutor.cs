@@ -17,13 +17,16 @@ partial class CompiledTemplate
 	class TemplateProcessor : MarshalByRefObject
 	{
 		[SuppressMessage ("Performance", "CA1822:Mark members as static", Justification = "Needs to be an instance for MarshalByRefObject")]
-		public string CreateAndProcess (ITextTemplatingEngineHost host, CompiledAssemblyData templateAssemblyData, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referencedAssemblyFiles)
+		public string CreateAndProcess (ITextTemplatingEngineHost host, CompiledAssemblyData templateAssemblyData, string templateAssemblyFile, string fullName, CultureInfo culture, string[] referencedAssemblyFiles, bool loadAssemblyIntoAppDomain)
 		{
 			using var context = new TemplateAssemblyContext (host, referencedAssemblyFiles);
 
-			Assembly assembly = templateAssemblyData is not null
-				? context.LoadInMemoryAssembly (templateAssemblyData)
-				: context.LoadAssemblyFile (templateAssemblyFile);
+			Assembly assembly =
+				templateAssemblyData is not null
+					? loadAssemblyIntoAppDomain
+						? Assembly.Load (templateAssemblyData.Assembly)
+						: context.LoadInMemoryAssembly (templateAssemblyData)
+					: context.LoadAssemblyFile (templateAssemblyFile);
 
 			// MS Templating Engine does not care about the type itself
 			// it only requires the expected members to be on the compiled type
