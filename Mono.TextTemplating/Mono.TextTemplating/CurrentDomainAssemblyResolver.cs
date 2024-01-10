@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#if !FEATURE_ASSEMBLY_LOAD_CONTEXT
-
 using System;
 using System.IO;
 using System.Reflection;
@@ -49,5 +47,3 @@ namespace Mono.TextTemplating
 		}
 	}
 }
-
-#endif
