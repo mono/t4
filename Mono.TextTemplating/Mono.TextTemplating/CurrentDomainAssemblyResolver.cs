@@ -26,15 +26,18 @@ namespace Mono.TextTemplating
 		{
 			var asmName = new AssemblyName (args.Name);
 
+			// The list of assembly files referenced by the template may contain reference assemblies,
+			// which will fail to load. Letting the host attempt to resolve the assembly first
+			// gives it an opportunity to resolve runtime assemblies.
+			var path = resolveAssemblyReference (asmName.Name + ".dll");
+			if (File.Exists (path)) {
+				return Assembly.LoadFrom (path);
+			}
+
 			foreach (var asmFile in assemblyFiles) {
 				if (asmName.Name == Path.GetFileNameWithoutExtension (asmFile)) {
 					return Assembly.LoadFrom (asmFile);
 				}
-			}
-
-			var path = resolveAssemblyReference (asmName.Name + ".dll");
-			if (File.Exists (path)) {
-				return Assembly.LoadFrom (path);
 			}
 
 			return null;

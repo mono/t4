@@ -96,6 +96,14 @@ namespace Mono.TextTemplating
 
 		Assembly ResolveAssembly (AssemblyLoadContext context, AssemblyName assemblyName)
 		{
+			// The list of assembly files referenced by the template may contain reference assemblies,
+			// which will fail to load. Letting the host attempt to resolve the assembly first
+			// gives it an opportunity to resolve runtime assemblies.
+			var path = host.ResolveAssemblyReference (assemblyName.Name + ".dll");
+			if (File.Exists (path)) {
+				return LoadFromAssemblyPath (path);
+			}
+
 			for (int i = 0; i < templateAssemblyFiles.Length; i++) {
 				var asmFile = templateAssemblyFiles[i];
 				if (asmFile is null) {
@@ -111,11 +119,6 @@ namespace Mono.TextTemplating
 						break;
 					}
 				}
-			}
-
-			var path = host.ResolveAssemblyReference (assemblyName.Name + ".dll");
-			if (File.Exists (path)) {
-				return LoadFromAssemblyPath (path);
 			}
 
 			return null;
