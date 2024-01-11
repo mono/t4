@@ -38,7 +38,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				return loadContext.LoadFromStream (new MemoryStream (Assembly));
 			}
 		}
-#else
+#endif
 		public Assembly LoadInCurrentAppDomain ()
 		{
 			if (DebugSymbols != null) {
@@ -47,6 +47,5 @@ namespace Mono.TextTemplating.CodeCompilation
 				return System.Reflection.Assembly.Load (Assembly);
 			}
 		}
-#endif
 	}
 }
