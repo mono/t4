@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+    <ContentType
+      Name="T4Transform"
+      DisplayName="T4 template"
+      ItemType="T4Transform">
+        <NameValuePair Name="DefaultMetadata_Generator" Value="MSBuild:TransformTemplates" />
+    </ContentType>
+
+    <ContentType
+      Name="T4Preprocess"
+      DisplayName="T4 runtime template"
+      ItemType="T4Preprocess">
+        <NameValuePair Name="DefaultMetadata_Generator" Value="MSBuild:TransformTemplates" />
+    </ContentType>
+
+    <ItemType Name="T4Transform" DisplayName="T4 template"/>
+    <ItemType Name="T4Preprocess" DisplayName="T4 runtime template"/>
+
+    <FileExtension Name=".tt" ContentType="T4 template" />
+
+</ProjectSchemaDefinitions>

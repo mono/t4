@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Rule Name="Build"
+      OverrideMode="Extend"
+      Description="Specifies properties that control how the project builds."
+      DisplayName="Build"
+      PageTemplate="generic"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+    <Rule.Categories>
+        <Category Name="T4Templates"
+                  DisplayName="T4 Templates" />
+    </Rule.Categories>
+
+    <Rule.DataSource>
+        <DataSource Persistence="ProjectFile"
+                    SourceOfDefaultValue="AfterContext"
+                    HasConfigurationCondition="False" />
+    </Rule.DataSource>
+
+    <BoolProperty Name="TransformOnBuild"
+                    DisplayName="Transform on build"
+                    Description="Transform T4 templates when building the project."
+                    Category="T4Templates" />
+
+    <StringProperty Name="T4DefaultNamespace"
+                    DisplayName="T4 Default Namespace"
+                    Description="Default namespace for preprocessed T4 templates."
+                    Category="T4Templates" />
+
+    <BoolProperty Name="TransformOutOfDateOnly"
+                    DisplayName="Transform out-of-date templates only"
+                    Description="When transforming T4 templates, skip ones that are already up to date."
+                    Category="T4Templates" />
+
+    <BoolProperty Name="UseLegacyT4Preprocessing"
+                    DisplayName="Use legacy T4 preprocessing"
+                    Description="Place the output files of preprocessed templates beside the template files instead of dynamically injecting them into the build."
+                    Category="T4Templates" />
+</Rule>
