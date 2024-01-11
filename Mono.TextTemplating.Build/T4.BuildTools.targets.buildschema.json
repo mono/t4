@@ -79,6 +79,18 @@
         "description": "Overrides the output filename for a T4 template. Note that Visual Studio does not respect this.",
         "type": "file"
       }
+    },
+    {
+      "$appliesTo": [ "GeneratedTemplates", "PreprocessedTemplates" ],
+      "InputFile": {
+        "description": "The original template file that generated this file",
+        "type": "file"
+      },
+      "Dependencies": {
+        "description": "The files that the template depends on",
+        "type": "file",
+        "isList": true
+      }
     }
   ],
   "properties": {
