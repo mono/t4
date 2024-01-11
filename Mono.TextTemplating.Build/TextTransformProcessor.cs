@@ -80,6 +80,9 @@ namespace Mono.TextTemplating.Build
 						var pt = LoadTemplate (generator, inputFile, out var inputContent);
 						TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
 
+						settings.RelativeLinePragmas = true;
+						settings.RelativeLinePragmasBaseDirectory = Path.GetDirectoryName (preprocess.OutputFile);
+
 						settings.CodeGenerationOptions.UseRemotingCallContext = buildState.PreprocessTargetRuntimeIdentifier == ".NETFramework";
 
 						// FIXME: make these configurable, take relative path into account
@@ -207,8 +210,6 @@ namespace Mono.TextTemplating.Build
 					generator.AddParameter (par.Processor, par.Directive, par.Name, par.Value);
 				}
 			}
-
-			generator.UseRelativeLinePragmas = true;
 
 			return generator;
 		}

@@ -63,7 +63,16 @@ namespace Mono.TextTemplating
 
 		static void GenerateTransformMethod (CodeTypeDeclaration templateType, TemplateSettings settings, ParsedTemplate pt, string templateFile, bool isOverride)
 		{
-			string baseDirectory = Path.GetDirectoryName (templateFile);
+			string pragmasRelativeToDirectory = null;
+
+			if (settings.RelativeLinePragmas) {
+				if (!string.IsNullOrEmpty (settings.RelativeLinePragmasBaseDirectory)) {
+					pragmasRelativeToDirectory = Path.GetFullPath (settings.RelativeLinePragmasBaseDirectory);
+				}
+				if (pragmasRelativeToDirectory is null && templateFile is not null) {
+					pragmasRelativeToDirectory = Path.GetDirectoryName (Path.GetFullPath (templateFile));
+				}
+			}
 
 			var transformMeth = Declare.Method ("TransformText").Returns<string> ().AsVirtual ();
 
@@ -87,16 +96,14 @@ namespace Mono.TextTemplating
 				CodeStatement st = null;
 				CodeLinePragma location = null;
 				if (!settings.NoLinePragmas) {
-					var f = seg.StartLocation.FileName ?? templateFile;
-					if (!string.IsNullOrEmpty (f)) {
-						// FIXME: we need to know where the output file will be to make this work properly
-						if (settings.RelativeLinePragmas) {
-							f = FileUtil.AbsoluteToRelativePath (baseDirectory, f);
-						} else {
-							f = Path.GetFullPath (f);
+					var filename = seg.StartLocation.FileName ?? templateFile;
+					if (!string.IsNullOrEmpty (filename)) {
+						filename = Path.GetFullPath (filename);
+						if (pragmasRelativeToDirectory is not null) {
+							filename = FileUtil.AbsoluteToRelativePath (pragmasRelativeToDirectory, filename);
 						}
 					}
-					location = new CodeLinePragma (f, seg.StartLocation.Line);
+					location = new CodeLinePragma (filename, seg.StartLocation.Line);
 				}
 				switch (seg.Type) {
 				case SegmentType.Block:

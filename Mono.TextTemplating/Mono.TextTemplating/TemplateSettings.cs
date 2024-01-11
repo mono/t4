@@ -69,6 +69,12 @@ namespace Mono.TextTemplating
 		public string GetFullName () => string.IsNullOrEmpty (Namespace) ? Name : Namespace + "." + Name;
 
 		internal CodeGenerationOptions CodeGenerationOptions { get; } = new CodeGenerationOptions ();
+
+		/// <summary>
+		/// Base directory for calculation of relative line pragmas.
+		/// Internal until we clean up the settings API.
+		/// </summary>
+		internal string RelativeLinePragmasBaseDirectory { get; set; }
 	}
 	
 	public class CustomDirective
