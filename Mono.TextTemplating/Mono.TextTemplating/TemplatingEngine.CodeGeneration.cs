@@ -98,8 +98,10 @@ namespace Mono.TextTemplating
 				if (!settings.NoLinePragmas) {
 					var filename = seg.StartLocation.FileName ?? templateFile;
 					if (!string.IsNullOrEmpty (filename)) {
-						filename = Path.GetFullPath (filename);
-						if (pragmasRelativeToDirectory is not null) {
+						if (!settings.RelativeLinePragmas) {
+							filename = Path.GetFileName (filename);
+						} else if (pragmasRelativeToDirectory is not null) {
+							filename = Path.GetFullPath (filename);
 							filename = FileUtil.AbsoluteToRelativePath (pragmasRelativeToDirectory, filename);
 						}
 					}
