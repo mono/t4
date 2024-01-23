@@ -22,5 +22,6 @@ enum CSharpLangVersion
 	v10_0,
 	v11_0,
 	v12_0,
+	v13_0,
 	Latest = 1024 // make sure value doesn't change as we add new C# versions
 }

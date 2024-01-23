@@ -18,7 +18,7 @@
       }
     },
     "T4Argument": {
-      "description": "T4 template argument, optionally scoped to a directive and/or directive processor. The value, processor and directive may be provided using the `Value, `Processor` and `Directive metadata, or encoded into the `Include` with the syntax `name=value`, `directive!name!value` or `processor!directive!name!value`.",
+      "description": "T4 template argument, optionally scoped to a directive and/or directive processor. The value, processor and directive may be provided using the `Value, `Processor` and `Directive metadata, or encoded into the `Include` with the format `name=value`, `directive!name!value` or `processor!directive!name!value`.",
       "includeDescription": "T4 argument name",
       "metadata": {
         "Value": "The T4 argument value. Overrides any value encoded in the `Include`.",
@@ -55,15 +55,15 @@
       "type": "file"
     },
     "T4RequiredAssemblies": {
-      "description": "After running the TransformTemplates target, the assemblies that must be referenced to compile the preprocessed templates",
+      "description": "After running the `TransformTemplates` target, the assemblies that must be referenced to compile the preprocessed templates",
       "type": "file"
     },
     "GeneratedTemplates": {
-      "description": "After running the TransformTemplates target, the output of all transformed templates",
+      "description": "After running the `TransformTemplates` target, the output of all transformed templates",
       "type": "file"
     },
     "PreprocessedTemplates": {
-      "description": "After running the TransformTemplates target, the output of all preprocessed templates",
+      "description": "After running the `TransformTemplates` target, the output of all preprocessed templates",
       "type": "file"
     }
   },
@@ -79,6 +79,18 @@
         "description": "Overrides the output filename for a T4 template. Note that Visual Studio does not respect this.",
         "type": "file"
       }
+    },
+    {
+      "$appliesTo": [ "GeneratedTemplates", "PreprocessedTemplates" ],
+      "InputFile": {
+        "description": "The original template file that generated this file",
+        "type": "file"
+      },
+      "Dependencies": {
+        "description": "The files that the template depends on",
+        "type": "file",
+        "isList": true
+      }
     }
   ],
   "properties": {
@@ -93,20 +105,20 @@
       "defaultValue": "true"
     },
     "TransformFile": {
-      "description": "The T4 files to transform when running the Transform target",
+      "description": "The T4 files to transform when running the `Transform` target",
       "type": "file",
       "isList": true
     },
     "BeforeTransform": {
       "description": "Targets to run before the T4 Transform target",
       "type": "target-name",
-      "deprecationMessage": "Use `BeforeTargets=\"TransformTemplatesCore\" for target ordering`",
+      "deprecationMessage": "Use `BeforeTargets=\"TransformTemplatesCore\"` for target ordering.",
       "isList": true
     },
     "AfterTransform": {
       "description": "Targets to run after the T4 Transform target",
       "type": "target-name",
-      "deprecationMessage": "Use `AfterTargets=\"TransformTemplatesCore\" for target ordering`",
+      "deprecationMessage": "Use `AfterTargets=\"TransformTemplatesCore\"` for target ordering.",
       "isList": true
     },
     "IncludeFolders": {
@@ -122,20 +134,15 @@
     "PreprocessTemplateDefaultNamespace": {
       "description": "Default namespace for preprocessed templates",
       "defaultValue": "$(RootNamespace)",
-      "deprecationMessage": "Legacy alternative to`$(T4DefaultNamespace)`"
+      "deprecationMessage": "Legacy alternative to `$(T4DefaultNamespace)`"
     },
     "UseLegacyT4Preprocessing": {
       "description": "Place preprocessed templates beside the templates instead of dynamically injecting them into the build.",
       "type": "bool"
     },
     "T4Arguments": {
-      "description": "Semicolon-separated list of values to convert to `@(T4Argument)` items. Intended to be used from command-line invocations only.",
-      "isList": true,
-      "type": {
-        "description": "Key-value pair",
-        "allowUnknownValues": true,
-        "values": {}
-      }
+      "description": "Used to pass arguments when invoking on the CLI. This is a semicolon-separated list and uses the same format as encoded `T4Argument` items: `name=value`, `directive!name!value` or `processor!directive!name!value`.",
+      "isList": true
     }
   },
   "targets": {

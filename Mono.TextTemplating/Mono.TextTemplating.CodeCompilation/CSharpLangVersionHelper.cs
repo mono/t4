@@ -48,6 +48,7 @@ static class CSharpLangVersionHelper
 	//https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-version-history
 	public static CSharpLangVersion FromNetCoreSdkVersion (SemVersion sdkVersion)
 		=> sdkVersion switch {
+			{ Major: 9 } => CSharpLangVersion.v13_0,
 			{ Major: 8 } => CSharpLangVersion.v12_0,
 			{ Major: 7 } => CSharpLangVersion.v11_0,
 			{ Major: 6 } => CSharpLangVersion.v10_0,
@@ -73,6 +74,7 @@ static class CSharpLangVersionHelper
 		CSharpLangVersion.v10_0 => "10.0",
 		CSharpLangVersion.v11_0 => "11.0",
 		CSharpLangVersion.v12_0 => "12.0",
+		CSharpLangVersion.v13_0 => "13.0",
 		CSharpLangVersion.Latest => "latest",
 		_ => throw new ArgumentException ($"Not a valid value: '{version}'", nameof (version))
 	};

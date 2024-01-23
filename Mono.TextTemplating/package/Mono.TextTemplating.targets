@@ -1,6 +1,18 @@
 <Project InitialTargets="NETStandardCompatError_Mono_TextTemplating_net6_0">
   <Target Name="NETStandardCompatError_Mono_TextTemplating_net6_0"
           Condition="'$(SuppressTfmSupportBuildWarnings)' == ''">
-    <Warning Text="Mono_TextTemplating doesn't support $(TargetFramework) and has not been tested with it. Consider upgrading your TargetFramework to net6.0 or later. You may also set &lt;SuppressTfmSupportBuildWarnings&gt;true&lt;/SuppressTfmSupportBuildWarnings&gt; in the project file to ignore this warning and attempt to run in this unsupported configuration at your own risk." />
+    <PropertyGroup>
+      <_Mono_TextTemplating_Warn_Compat_Tfm
+          Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp2.0')) AND
+          !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">
+      >net6.0</_Mono_TextTemplating_Warn_Compat_Tfm>
+      <_Mono_TextTemplating_Warn_Compat_Tfm
+          Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) AND
+                     !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net462'))"
+      >net462</_Mono_TextTemplating_Warn_Compat_Tfm>
+    </PropertyGroup>
+    <Warning
+        Condition="'$(_Mono_TextTemplating_Warn_Compat_Tfm)' != ''"
+        Text="Mono_TextTemplating doesn't support $(TargetFramework) and has not been tested with it. Consider upgrading your TargetFramework to $(_Mono_TextTemplating_Warn_Compat_Tfm) or later. You may also set &lt;SuppressTfmSupportBuildWarnings&gt;true&lt;/SuppressTfmSupportBuildWarnings&gt; in the project file to ignore this warning and attempt to run in this unsupported configuration at your own risk." />
   </Target>
 </Project>

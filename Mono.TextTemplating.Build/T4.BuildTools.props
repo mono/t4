@@ -1,11 +1,6 @@
 <Project>
-  <PropertyGroup>
-    <TransformOnBuild Condition="'$(TransformOnBuild)'==''">false</TransformOnBuild>
-    <TransformOutOfDateOnly Condition="'$(TransformOutOfDateOnly)'==''">true</TransformOutOfDateOnly>
-  </PropertyGroup>
-
+  <!-- hide T4 key/value pairs and other non-file items from the solution tree -->
   <ItemDefinitionGroup>
-    <!-- hide T4 key/value pairs and other non-file items from the solution tree -->
     <T4ParameterValues>
       <Visible>False</Visible>
     </T4ParameterValues>
@@ -24,18 +19,30 @@
     <T4AssemblyReference>
       <Visible>False</Visible>
     </T4AssemblyReference>
-    <!-- transform on save in VS -->
+  </ItemDefinitionGroup>
+
+  <!-- transform on save in VS -->
+  <ItemDefinitionGroup>
     <T4Transform>
-      <Generator>MSBuild:TransformAll</Generator>
+      <Generator>MSBuild:TransformTemplates</Generator>
     </T4Transform>
     <T4Preprocess>
-      <Generator>MSBuild:TransformAll</Generator>
+      <Generator>MSBuild:TransformTemplates</Generator>
     </T4Preprocess>
   </ItemDefinitionGroup>
 
-  <!-- make these items show up as a build action in VS -->
+  <!--
+  Make these items show up as a build action in VS.
+  The PropertyPageSchema also seems to be necessary to make Generator metadata work.
+  -->
   <ItemGroup>
-    <AvailableItemName Include="T4Transform" />
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)T4PropertyPage.xaml">
+        <Context>Project</Context>
+    </PropertyPageSchema>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)T4PropertySchema.xaml">
+        <Context>File;BrowseObject</Context>
+    </PropertyPageSchema>
     <AvailableItemName Include="T4Preprocess" />
+    <AvailableItemName Include="T4Transform" />
   </ItemGroup>
 </Project>

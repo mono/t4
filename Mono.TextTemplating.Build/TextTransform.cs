@@ -135,14 +135,16 @@ namespace Mono.TextTemplating.Build
 			if (buildState.TransformTemplates != null) {
 				TransformTemplateOutput = new ITaskItem[buildState.TransformTemplates.Count];
 				for (int i = 0; i < buildState.TransformTemplates.Count; i++) {
-					TransformTemplateOutput[i] = new TaskItem (buildState.TransformTemplates[i].OutputFile);
+					var template = buildState.TransformTemplates[i];
+					TransformTemplateOutput[i] = ConstructOutputItem (template.OutputFile, template.InputFile, template.Dependencies);
 				}
 			}
 
 			if (buildState.PreprocessTemplates != null) {
 				PreprocessedTemplateOutput = new ITaskItem[buildState.PreprocessTemplates.Count];
 				for (int i = 0; i < buildState.PreprocessTemplates.Count; i++) {
-					PreprocessedTemplateOutput[i] = new TaskItem (buildState.PreprocessTemplates[i].OutputFile);
+					var template = buildState.PreprocessTemplates[i];
+					PreprocessedTemplateOutput[i] = ConstructOutputItem (template.OutputFile, template.InputFile, template.Dependencies);
 				}
 			}
 
@@ -157,6 +159,18 @@ namespace Mono.TextTemplating.Build
 			//var stateJson = MessagePackSerializer.ConvertToJson (File.ReadAllBytes (buildStateFilename), msgPackOptions);
 
 			return success;
+		}
+
+		static TaskItem ConstructOutputItem (string outputFile, string inputFile, List<string> itemDependencies)
+		{
+			var item = new TaskItem (outputFile);
+			item.SetMetadata ("InputFile", inputFile);
+
+			if (itemDependencies?.Count > 0) {
+				item.SetMetadata ("Dependencies", string.Join (";", itemDependencies));
+			}
+
+			return item;
 		}
 
 		bool AddParameters (TemplateBuildState buildState)

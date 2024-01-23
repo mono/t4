@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net48;net6.0</TargetFrameworks>
@@ -14,15 +14,15 @@
     <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
-  <Target Name="AddTargetsFilesToPack" BeforeTargets="GenerateNuspec">
-    <ItemGroup>
-      <_PackageFiles Include="T4.BuildTools.props" PackagePath="build\$(PackageId).props" Pack="true" />
-      <_PackageFiles Include="T4.BuildTools.targets" PackagePath="build\$(PackageId).targets" Pack="true" />
-      <_PackageFiles Include="multitargeting.props" PackagePath="buildMultiTargeting\$(PackageId).props" Pack="true" />
-      <_PackageFiles Include="multitargeting.targets" PackagePath="buildMultiTargeting\$(PackageId).targets" Pack="true" />
-      <_PackageFiles Include="T4.BuildTools.targets.buildschema.json" PackagePath="build\$(PackageId).targets.buildschema.json" Pack="true" />
-    </ItemGroup>
-  </Target>
+  <ItemGroup>
+    <None Update="T4.BuildTools.props" PackagePath="build\$(PackageId).props" Pack="true" />
+    <None Update="T4.BuildTools.targets" PackagePath="build\$(PackageId).targets" Pack="true" />
+    <None Update="multitargeting.props" PackagePath="buildMultiTargeting\$(PackageId).props" Pack="true" />
+    <None Update="multitargeting.targets" PackagePath="buildMultiTargeting\$(PackageId).targets" Pack="true" />
+    <None Update="T4.BuildTools.targets.buildschema.json" PackagePath="build\$(PackageId).targets.buildschema.json" Pack="true" />
+    <None Update="T4PropertyPage.xaml" PackagePath="build\T4PropertyPage.xaml" Pack="true" />
+    <None Update="T4PropertySchema.xaml" PackagePath="build\T4PropertyPageSchema.xaml" Pack="true" />
+  </ItemGroup>
 
   <Target Name="AddCopyLocalToPack" BeforeTargets="_GetBuildOutputFilesWithTfm" DependsOnTargets="ReferenceCopyLocalPathsOutputGroup">
     <ItemGroup>
