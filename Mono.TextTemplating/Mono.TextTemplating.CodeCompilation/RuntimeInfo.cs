@@ -26,9 +26,7 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace Mono.TextTemplating.CodeCompilation
 {
@@ -112,18 +110,27 @@ namespace Mono.TextTemplating.CodeCompilation
 		{
 			static bool DotnetRootIsValid (string root) => !string.IsNullOrEmpty (root) && (File.Exists (Path.Combine (root, "dotnet")) || File.Exists (Path.Combine (root, "dotnet.exe")));
 
-			// this should get us something like /usr/local/share/dotnet/shared/Microsoft.NETCore.App/5.0.0
+			// the runtime dir is used when probing for DOTNET_ROOT
+			// and as a fallback in case we cannot locate reference assemblies
 			var runtimeDir = Path.GetDirectoryName (typeof (object).Assembly.Location);
-			var dotnetRoot = Path.GetDirectoryName (Path.GetDirectoryName (Path.GetDirectoryName (runtimeDir)));
+
+			var dotnetRoot = Environment.GetEnvironmentVariable ("DOTNET_ROOT");
 
 			if (!DotnetRootIsValid (dotnetRoot)) {
-				// this may happen on single file deployments
-				return FromError (RuntimeKind.NetCore, "Not a valid .NET Core host");
+				// this will work if runtimeDir is $DOTNET_ROOT/shared/Microsoft.NETCore.App/5.0.0
+				dotnetRoot = Path.GetDirectoryName (Path.GetDirectoryName (Path.GetDirectoryName (runtimeDir)));
+
+				if (!DotnetRootIsValid (dotnetRoot)) {
+					return FromError (RuntimeKind.NetCore, "Could not locate .NET root directory from running app. It can be set explicitly via the `DOTNET_ROOT` environment variable.");
+				}
 			}
 
 			var hostVersion = Environment.Version;
-			if (hostVersion.Major < 5)
+
+			// fallback for .NET Core < 3.1, which always returned 4.0.x
+			if (hostVersion.Major == 4)
 			{
+				// this will work if runtimeDir is $DOTNET_ROOT/shared/Microsoft.NETCore.App/5.0.0
 				var versionPathComponent = Path.GetFileName (runtimeDir);
 				if (SemVersion.TryParse (versionPathComponent, out var hostSemVersion)) {
 					hostVersion = new Version (hostSemVersion.Major, hostSemVersion.Minor, hostSemVersion.Patch);
