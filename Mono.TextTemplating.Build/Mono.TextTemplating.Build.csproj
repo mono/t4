@@ -15,13 +15,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="T4.BuildTools.props" PackagePath="build\$(PackageId).props" Pack="true" />
-    <None Update="T4.BuildTools.targets" PackagePath="build\$(PackageId).targets" Pack="true" />
-    <None Update="multitargeting.props" PackagePath="buildMultiTargeting\$(PackageId).props" Pack="true" />
-    <None Update="multitargeting.targets" PackagePath="buildMultiTargeting\$(PackageId).targets" Pack="true" />
-    <None Update="T4.BuildTools.targets.buildschema.json" PackagePath="build\$(PackageId).targets.buildschema.json" Pack="true" />
-    <None Update="T4PropertyPage.xaml" PackagePath="build\T4PropertyPage.xaml" Pack="true" />
-    <None Update="T4PropertySchema.xaml" PackagePath="build\T4PropertyPageSchema.xaml" Pack="true" />
+    <None Include="T4.BuildTools.props" PackagePath="build\$(PackageId).props" Pack="true"  />
+    <None Include="T4.BuildTools.targets" PackagePath="build\$(PackageId).targets" Pack="true" />
+    <None Include="multitargeting.props" PackagePath="buildMultiTargeting\$(PackageId).props" Pack="true" />
+    <None Include="multitargeting.targets" PackagePath="buildMultiTargeting\$(PackageId).targets" Pack="true" />
+    <None Include="T4.BuildTools.targets.buildschema.json" PackagePath="build\$(PackageId).targets.buildschema.json" Pack="true" />
+    <None Include="T4PropertyPage.xaml" PackagePath="build\T4PropertyPage.xaml" Pack="true" />
+    <None Include="T4PropertySchema.xaml" PackagePath="build\T4PropertyPageSchema.xaml" Pack="true" />
   </ItemGroup>
 
   <Target Name="AddCopyLocalToPack" BeforeTargets="_GetBuildOutputFilesWithTfm" DependsOnTargets="ReferenceCopyLocalPathsOutputGroup">
