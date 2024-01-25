@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.IO;
 using System.Linq;
-
 using Xunit;
 
 namespace Mono.TextTemplating.Tests
@@ -154,15 +151,15 @@ namespace Mono.TextTemplating.Tests
 			AssertNoopBuild ();
 
 			// check touching a template causes rebuild of that file only
-			File.SetLastWriteTime (fooTemplate, DateTime.Now);
+			WriteTimeTracker.SetWriteTimeNewerThan (barWriteTime, barTemplate);
 			ExecuteAndValidate ();
-			fooWriteTime.AssertChanged ();
-			barWriteTime.AssertSame ();
+			fooWriteTime.AssertSame ();
+			barWriteTime.AssertChanged ();
 
 			AssertNoopBuild ();
 
 			// check touching the include causes rebuild of the file that uses it
-			File.SetLastWriteTime (includeFile, DateTime.Now);
+			WriteTimeTracker.SetWriteTimeNewerThan (fooWriteTime, includeFile);
 			ExecuteAndValidate ();
 			fooWriteTime.AssertChanged ();
 			barWriteTime.AssertSame ();
@@ -170,7 +167,6 @@ namespace Mono.TextTemplating.Tests
 			AssertNoopBuild ();
 
 			// check changing a parameter causes rebuild of both files
-			File.SetLastWriteTime (includeFile, DateTime.Now);
 			project.Project.GetItems ("T4Argument").Single (i => i.UnevaluatedInclude == "Year").SetMetadataValue ("Value", "2021");
 			ExecuteAndValidate ();
 			fooGenerated.AssertTextStartsWith ("Helper says Hello 2021!");

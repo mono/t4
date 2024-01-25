@@ -147,15 +147,6 @@ struct TestDataPath
 	}
 }
 
-sealed class WriteTimeTracker
-{
-	readonly TestDataPath file;
-	DateTime lastWriteTime;
-	public WriteTimeTracker (TestDataPath file) => lastWriteTime = (this.file = file).GetLastWriteTime ();
-	public void AssertChanged () => lastWriteTime = file.AssertWriteTimeNewerThan (lastWriteTime);
-	public void AssertSame () => file.AssertWriteTimeEquals (lastWriteTime);
-}
-
 static class StringNormalizationExtensions
 {
 	public static string NormalizeNewlines (this string s, string newLine = "\n") => s.Replace ("\r\n", "\n").Replace ("\n", newLine);
