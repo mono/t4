@@ -34,6 +34,7 @@
     <None Include="TestCases\**\*.*" />
     <Compile Include="..\Mono.TextTemplating.Tests\Platform.cs" />
     <Compile Include="..\Mono.TextTemplating.Tests\TestDataPath.cs" />
+    <Compile Include="..\Mono.TextTemplating.Tests\WriteTimeTracker.cs" />
   </ItemGroup>
 
 </Project>
