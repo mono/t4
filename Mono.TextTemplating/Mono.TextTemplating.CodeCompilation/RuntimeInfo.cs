@@ -46,10 +46,17 @@ namespace Mono.TextTemplating.CodeCompilation
 		public RuntimeKind Kind { get; private set; }
 		public string Error { get; private set; }
 		public string RuntimeDir { get; private set; }
+
+		// may be null, as this is not a problem when the optional in-process compiler is used
 		public string CscPath { get; private set; }
+
+		/// <summary>
+		/// Maximum C# language version supported by C# compiler in <see cref="CscPath"/>.
+		/// </summary>
+		public CSharpLangVersion CscMaxLangVersion { get; private set; }
+
 		public bool IsValid => Error == null;
 		public Version Version { get; private set; }
-		public CSharpLangVersion MaxSupportedLangVersion { get; private set; }
 
 		public string RefAssembliesDir { get; private set; }
 		public string RuntimeFacadesDir { get; internal set; }
@@ -85,7 +92,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				// we don't really care about the version if it's not .net core
 				Version = new Version ("4.7.2"),
 				//if mono has csc at all, we know it at least supports 6.0
-				MaxSupportedLangVersion = CSharpLangVersion.v6_0
+				CscMaxLangVersion = CSharpLangVersion.v6_0
 			};
 		}
 
@@ -102,7 +109,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				RuntimeFacadesDir = runtimeDir,
 				// we don't really care about the version if it's not .net core
 				Version = new Version ("4.7.2"),
-				MaxSupportedLangVersion = CSharpLangVersion.v5_0
+				CscMaxLangVersion = CSharpLangVersion.v5_0
 			};
 		}
 
@@ -140,11 +147,12 @@ namespace Mono.TextTemplating.CodeCompilation
 				}
 			}
 
+			// find the highest available C# compiler. we don't load it in process, so its runtime doesn't matter.
 			static string MakeCscPath (string d) => Path.Combine (d, "Roslyn", "bincore", "csc.dll");
 			var sdkDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "sdk"), d => File.Exists (MakeCscPath (d)), out var sdkVersion);
-			if (sdkDir == null) {
-				return FromError (RuntimeKind.NetCore, "Could not find csc.dll in any .NET Core SDK");
-			}
+
+			// it's okay if cscPath is null as we may be using the in-process compiler
+			string cscPath = sdkDir == null ? null : MakeCscPath (sdkDir);
 			var maxCSharpVersion = CSharpLangVersionHelper.FromNetCoreSdkVersion (sdkVersion);
 
 			// it's ok if this is null, we may be running on an older SDK that didn't support packs
@@ -155,7 +163,7 @@ namespace Mono.TextTemplating.CodeCompilation
 				out _
 			);
 
-			return new RuntimeInfo (RuntimeKind.NetCore) { RuntimeDir = runtimeDir, RefAssembliesDir = refAssembliesDir, CscPath = MakeCscPath (sdkDir), MaxSupportedLangVersion = maxCSharpVersion, Version = hostVersion };
+			return new RuntimeInfo (RuntimeKind.NetCore) { RuntimeDir = runtimeDir, RefAssembliesDir = refAssembliesDir, CscPath = MakeCscPath (sdkDir), CscMaxLangVersion = maxCSharpVersion, Version = hostVersion };
 		}
 
 		static string FindHighestVersionedDirectory (string parentFolder, Func<string, bool> validate, out SemVersion bestVersion)
