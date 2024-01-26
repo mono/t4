@@ -42,7 +42,7 @@ static class CSharpLangVersionHelper
 		// If we were unable to determine the supported language version for the runtime,
 		// its MaxSupportedLangVersion will default to "Latest" so its language features
 		// are available before we add a language version mapping for that runtime version.
-		return $"-langversion:{ToString (runtime.CscMaxLangVersion)}";
+		return $"-langversion:{ToString (runtime.RuntimeLangVersion)}";
 	}
 
 	//https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-version-history

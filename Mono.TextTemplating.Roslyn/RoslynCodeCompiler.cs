@@ -71,14 +71,13 @@ namespace Mono.TextTemplating
 				// features depend on new APIs that aren't available on the current runtime.
 				// If the runtime is an unknown version, its MaxSupportedLangVersion will default
 				// to "latest" so new runtime versions will work before we explicitly add support for them.
-				if (LanguageVersionFacts.TryParse (CSharpLangVersionHelper.ToString (runtime.MaxSupportedLangVersion), out var runtimeSupportedLangVersion)) {
+				if (LanguageVersionFacts.TryParse (CSharpLangVersionHelper.ToString (runtime.RuntimeLangVersion), out var runtimeSupportedLangVersion)) {
 					parseOptions = parseOptions.WithLanguageVersion (runtimeSupportedLangVersion);
 				} else {
 					// if Roslyn did not recognize the runtime's default lang version, it's newer than
 					// this version of Roslyn supports, so default to the latest supported version
 					parseOptions = parseOptions.WithLanguageVersion (LanguageVersion.Latest);
 				}
-
 			}
 
 			var syntaxTrees = new List<SyntaxTree> ();
