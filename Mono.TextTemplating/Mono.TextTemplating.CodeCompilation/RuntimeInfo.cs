@@ -26,9 +26,7 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace Mono.TextTemplating.CodeCompilation
 {
@@ -41,20 +39,51 @@ namespace Mono.TextTemplating.CodeCompilation
 
 	class RuntimeInfo
 	{
-		RuntimeInfo (RuntimeKind kind) => Kind = kind;
+		RuntimeInfo (RuntimeKind kind, string error)
+		{
+			Kind = kind;
+			Error = error;
+		}
 
-		static RuntimeInfo FromError (RuntimeKind kind, string error) => new (kind) { Error = error };
+		RuntimeInfo (RuntimeKind kind, string runtimeDir, Version runtimeVersion, string refAssembliesDir, string runtimeFacadesDir, string cscPath, CSharpLangVersion cscMaxLangVersion, CSharpLangVersion runtimeLangVersion)
+		{
+			Kind = kind;
+			RuntimeVersion = runtimeVersion;
+			RuntimeDir = runtimeDir;
+			RefAssembliesDir = refAssembliesDir;
+			RuntimeFacadesDir = runtimeFacadesDir;
+			CscPath = cscPath;
+			CscMaxLangVersion = cscMaxLangVersion;
+			RuntimeLangVersion = runtimeLangVersion;
+		}
 
-		public RuntimeKind Kind { get; private set; }
-		public string Error { get; private set; }
-		public string RuntimeDir { get; private set; }
-		public string CscPath { get; private set; }
+		static RuntimeInfo FromError (RuntimeKind kind, string error) => new (kind, error);
+
+		public RuntimeKind Kind { get; }
+		public string Error { get; }
+		public string RuntimeDir { get; }
+
+		// may be null, as this is not a problem when the optional in-process compiler is used
+		public string CscPath { get; }
+
+		/// <summary>
+		/// Maximum C# language version supported by C# compiler in <see cref="CscPath"/>.
+		/// </summary>
+		public CSharpLangVersion CscMaxLangVersion { get; }
+
+		/// <summary>
+		/// The C# version fully supported by the runtime, which is the default when targeting this runtime.
+		/// </summary>
+		/// <remarks>
+		/// Using newer C# language versions is possible but some features may not work if they depend on runtime changes.
+		/// </remarks>
+		public CSharpLangVersion RuntimeLangVersion { get; }
+
 		public bool IsValid => Error == null;
-		public Version Version { get; private set; }
-		public CSharpLangVersion MaxSupportedLangVersion { get; private set; }
+		public Version RuntimeVersion { get; }
 
-		public string RefAssembliesDir { get; private set; }
-		public string RuntimeFacadesDir { get; internal set; }
+		public string RefAssembliesDir { get; }
+		public string RuntimeFacadesDir { get; }
 
 		public static RuntimeInfo GetRuntime ()
 		{
@@ -80,15 +109,18 @@ namespace Mono.TextTemplating.CodeCompilation
 				return FromError (RuntimeKind.Mono, "Could not find csc in host Mono installation" );
 			}
 
-			return new RuntimeInfo (RuntimeKind.Mono) {
-				CscPath = csc,
-				RuntimeDir = runtimeDir,
-				RuntimeFacadesDir = Path.Combine (runtimeDir, "Facades"),
+			return new RuntimeInfo (
+				RuntimeKind.Mono,
+				runtimeDir: runtimeDir,
 				// we don't really care about the version if it's not .net core
-				Version = new Version ("4.7.2"),
+				runtimeVersion: new Version ("4.7.2"),
+				refAssembliesDir: null,
+				runtimeFacadesDir: Path.Combine (runtimeDir, "Facades"),
+				cscPath: csc,
 				//if mono has csc at all, we know it at least supports 6.0
-				MaxSupportedLangVersion = CSharpLangVersion.v6_0
-			};
+				cscMaxLangVersion: CSharpLangVersion.v6_0,
+				runtimeLangVersion: CSharpLangVersion.v5_0
+			);
 		}
 
 		static RuntimeInfo GetNetFrameworkRuntime ()
@@ -98,32 +130,44 @@ namespace Mono.TextTemplating.CodeCompilation
 			if (!File.Exists (csc)) {
 				return FromError (RuntimeKind.NetFramework, "Could not find csc in host .NET Framework installation");
 			}
-			return new RuntimeInfo (RuntimeKind.NetFramework) {
-				CscPath = csc,
-				RuntimeDir = runtimeDir,
-				RuntimeFacadesDir = runtimeDir,
+			return new RuntimeInfo (
+				RuntimeKind.NetFramework,
+				runtimeDir: runtimeDir,
 				// we don't really care about the version if it's not .net core
-				Version = new Version ("4.7.2"),
-				MaxSupportedLangVersion = CSharpLangVersion.v5_0
-			};
+				runtimeVersion: new Version ("4.7.2"),
+				refAssembliesDir: null,
+				runtimeFacadesDir: runtimeDir,
+				cscPath: csc,
+				cscMaxLangVersion: CSharpLangVersion.v5_0,
+				runtimeLangVersion: CSharpLangVersion.v5_0
+			);
 		}
 
 		static RuntimeInfo GetDotNetCoreSdk ()
 		{
 			static bool DotnetRootIsValid (string root) => !string.IsNullOrEmpty (root) && (File.Exists (Path.Combine (root, "dotnet")) || File.Exists (Path.Combine (root, "dotnet.exe")));
 
-			// this should get us something like /usr/local/share/dotnet/shared/Microsoft.NETCore.App/5.0.0
+			// the runtime dir is used when probing for DOTNET_ROOT
+			// and as a fallback in case we cannot locate reference assemblies
 			var runtimeDir = Path.GetDirectoryName (typeof (object).Assembly.Location);
-			var dotnetRoot = Path.GetDirectoryName (Path.GetDirectoryName (Path.GetDirectoryName (runtimeDir)));
+
+			var dotnetRoot = Environment.GetEnvironmentVariable ("DOTNET_ROOT");
 
 			if (!DotnetRootIsValid (dotnetRoot)) {
-				// this may happen on single file deployments
-				return FromError (RuntimeKind.NetCore, "Not a valid .NET Core host");
+				// this will work if runtimeDir is $DOTNET_ROOT/shared/Microsoft.NETCore.App/5.0.0
+				dotnetRoot = Path.GetDirectoryName (Path.GetDirectoryName (Path.GetDirectoryName (runtimeDir)));
+
+				if (!DotnetRootIsValid (dotnetRoot)) {
+					return FromError (RuntimeKind.NetCore, "Could not locate .NET root directory from running app. It can be set explicitly via the `DOTNET_ROOT` environment variable.");
+				}
 			}
 
 			var hostVersion = Environment.Version;
-			if (hostVersion.Major < 5)
+
+			// fallback for .NET Core < 3.1, which always returned 4.0.x
+			if (hostVersion.Major == 4)
 			{
+				// this will work if runtimeDir is $DOTNET_ROOT/shared/Microsoft.NETCore.App/5.0.0
 				var versionPathComponent = Path.GetFileName (runtimeDir);
 				if (SemVersion.TryParse (versionPathComponent, out var hostSemVersion)) {
 					hostVersion = new Version (hostSemVersion.Major, hostSemVersion.Minor, hostSemVersion.Patch);
@@ -133,11 +177,12 @@ namespace Mono.TextTemplating.CodeCompilation
 				}
 			}
 
+			// find the highest available C# compiler. we don't load it in process, so its runtime doesn't matter.
 			static string MakeCscPath (string d) => Path.Combine (d, "Roslyn", "bincore", "csc.dll");
 			var sdkDir = FindHighestVersionedDirectory (Path.Combine (dotnetRoot, "sdk"), d => File.Exists (MakeCscPath (d)), out var sdkVersion);
-			if (sdkDir == null) {
-				return FromError (RuntimeKind.NetCore, "Could not find csc.dll in any .NET Core SDK");
-			}
+
+			// it's okay if cscPath is null as we may be using the in-process compiler
+			string cscPath = sdkDir == null ? null : MakeCscPath (sdkDir);
 			var maxCSharpVersion = CSharpLangVersionHelper.FromNetCoreSdkVersion (sdkVersion);
 
 			// it's ok if this is null, we may be running on an older SDK that didn't support packs
@@ -148,7 +193,18 @@ namespace Mono.TextTemplating.CodeCompilation
 				out _
 			);
 
-			return new RuntimeInfo (RuntimeKind.NetCore) { RuntimeDir = runtimeDir, RefAssembliesDir = refAssembliesDir, CscPath = MakeCscPath (sdkDir), MaxSupportedLangVersion = maxCSharpVersion, Version = hostVersion };
+
+
+			return new RuntimeInfo (
+				RuntimeKind.NetCore,
+				runtimeDir: runtimeDir,
+				runtimeVersion: hostVersion,
+				refAssembliesDir: refAssembliesDir,
+				runtimeFacadesDir: null,
+				cscPath: MakeCscPath (sdkDir),
+				cscMaxLangVersion: maxCSharpVersion,
+				runtimeLangVersion: CSharpLangVersionHelper.FromNetCoreSdkVersion (sdkVersion)
+			);
 		}
 
 		static string FindHighestVersionedDirectory (string parentFolder, Func<string, bool> validate, out SemVersion bestVersion)

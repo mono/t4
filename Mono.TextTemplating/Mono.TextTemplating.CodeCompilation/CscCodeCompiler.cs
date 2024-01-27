@@ -46,6 +46,9 @@ namespace Mono.TextTemplating.CodeCompilation
 		public CscCodeCompiler (RuntimeInfo runtime)
 		{
 			this.runtime = runtime;
+			if (runtime.CscPath is null) {
+				throw new TemplatingEngineException ("Cannot find C# compiler");
+			}
 		}
 
 		static StreamWriter CreateTempTextFile (string extension, out string path)
