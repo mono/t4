@@ -48,7 +48,9 @@ static class CSharpLangVersionHelper
 	//https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-version-history
 	public static CSharpLangVersion FromNetCoreSdkVersion (SemVersion sdkVersion)
 		=> sdkVersion switch {
-			{ Major: 9 } => CSharpLangVersion.v13_0,
+			// disable .NET 9.0 -> C# 13 mapping for now, as csc in early .NET 9.0 previews
+			// doesn't recognize C# 13 as a valid version option
+			// { Major: 9 } => CSharpLangVersion.v13_0,
 			{ Major: 8 } => CSharpLangVersion.v12_0,
 			{ Major: 7 } => CSharpLangVersion.v11_0,
 			{ Major: 6 } => CSharpLangVersion.v10_0,
