@@ -108,9 +108,12 @@ namespace Mono.TextTemplating
 #endif
 
 		public string Process ()
+			=> Process (loadAssemblyIntoAppDomain: false);
+
+		public string Process (bool loadAssemblyIntoAppDomain)
 		{
 			TemplateProcessor processor = CreateTemplateProcessor ();
-			return processor.CreateAndProcess (host, templateAssemblyData, templateAssemblyFile, templateClassFullName, culture, ReferencedAssemblyFiles);
+			return processor.CreateAndProcess (host, templateAssemblyData, templateAssemblyFile, templateClassFullName, culture, ReferencedAssemblyFiles, loadAssemblyIntoAppDomain);
 		}
 
 		public void Dispose ()
