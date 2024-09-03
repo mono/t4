@@ -22,6 +22,8 @@
     <None Include="T4.BuildTools.targets.buildschema.json" PackagePath="build\$(PackageId).targets.buildschema.json" Pack="true" />
     <None Include="T4PropertyPage.xaml" PackagePath="build\T4PropertyPage.xaml" Pack="true" />
     <None Include="T4PropertySchema.xaml" PackagePath="build\T4PropertyPageSchema.xaml" Pack="true" />
+    <!-- upgrade vulnerable transitive deps  -->
+    <PackageReference Include="System.Drawing.Common" Version="8.0.8" IncludeAssets="none" PrivateAssets="all"/>
   </ItemGroup>
 
   <Target Name="AddCopyLocalToPack" BeforeTargets="_GetBuildOutputFilesWithTfm" DependsOnTargets="ReferenceCopyLocalPathsOutputGroup">
