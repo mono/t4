@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net6.0;net472</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <NoWarn>1591;1573</NoWarn>
+    <NoWarn>$(NoWarn);1591;1573</NoWarn>
     <TFxId>$([MSBuild]::GetTargetFrameworkIdentifier('$(TargetFramework)'))</TFxId>
     <DefineConstants Condition="'$(TFxId)'=='.NETFramework'">$(DefineConstants);FEATURE_APPDOMAINS</DefineConstants>
     <DefineConstants Condition="'$(TFxId)'=='.NETCoreApp'">$(DefineConstants);FEATURE_ASSEMBLY_LOAD_CONTEXT</DefineConstants>
@@ -21,8 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- limit to 6.0 so that the MSBuild task can load on .NET 6.0 -->
-    <PackageReference Include="System.CodeDom" Version="6.0.0" Condition="'$(TargetFramework)'!='net472'" />
+    <PackageReference Include="System.CodeDom" Condition="'$(TargetFramework)'!='net472'" />
     <None Include="readme.md" Pack="true" PackagePath="\" />
     <None Include="package\Mono.TextTemplating.targets" Pack="true" PackagePath="buildTransitive\Mono.TextTemplating.targets" />
   </ItemGroup>

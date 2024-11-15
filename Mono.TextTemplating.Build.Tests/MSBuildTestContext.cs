@@ -29,8 +29,10 @@ namespace Mono.TextTemplating.Tests
 
 			var globalProps = new Dictionary<string, string> {
 				{ "ImportDirectoryBuildProps", "false" },
+				{ "ImportDirectoryBuildTargets", "false" },
 				{ "TemplatingTargetsPath", buildTargetsProjectDir },
-				{ "TextTransformTaskAssembly", buildTasksPath }
+				{ "TextTransformTaskAssembly", buildTasksPath },
+				{ "ManagePackageVersionsCentrally", "false" }
 			};
 
 			Engine = new ProjectCollection (globalProps);

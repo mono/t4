@@ -15,23 +15,19 @@ jobs:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
         fetch-depth: 0 # GitVersioning needs deep clone
 
     - name: Set up dotnet
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
           6.0.x
-          7.0.x
+          8.0.x
 
-    - name: Find MSBuild
-      if: startsWith(matrix.os, 'windows')
-      uses: microsoft/setup-msbuild@v1.1.0
-
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       with:
         path: ${{ env.NUGET_PACKAGES }}
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -51,12 +47,12 @@ jobs:
 
     - name: Upload Test Results
       if: failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: "TestResults-${{ matrix.os }}-${{ matrix.config }}"
         path: "TestResults-${{ matrix.os }}-${{ matrix.config }}"
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: matrix.config == 'Release' && startsWith(matrix.os, 'windows')
       with:
         name: packages
