@@ -21,7 +21,7 @@
     and loads first, thereby breaking loading of MSBuild assemblies. Force-upgrade it.
     -->
     <PackageReference Include="NuGet.Frameworks" Version="6.9.1" />
-    <PackageReference Include="System.Text.Json" Version="7.0.3" />
+    <PackageReference Include="System.Text.Json" Version="8.0.4" />
   </ItemGroup>
 
   <ItemGroup>
