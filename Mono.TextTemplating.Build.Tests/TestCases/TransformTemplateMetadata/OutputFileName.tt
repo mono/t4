@@ -1,0 +1,5 @@
+<#@ template language="C#" #>
+<#@ output extension=".log" #>
+<#@ parameter name="Year" type="int" #>
+<#@ parameter name="Greeting" #>
+<#=Greeting#> OutputFileName <#=Year#>!

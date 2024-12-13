@@ -85,6 +85,21 @@ struct TestDataPath
 		return this;
 	}
 
+	/// <summary>
+	/// Assert that the file exists and contains the given values
+	/// </summary>
+	public TestDataPath AssertContainsText (StringComparison comparison, params string[] values)
+	{
+		AssertFileExists ();
+		var text = File.ReadAllText (path);
+		Assert.Multiple(() => {
+			foreach (var value in values) {
+				Assert.Contains (value, text, comparison);
+			}
+		});
+		return this;
+	}
+
 	static string TrimEndingDirectorySeparator (string path)
 #if NETCOREAPP3_0_OR_GREATER
 		=> Path.TrimEndingDirectorySeparator (path);

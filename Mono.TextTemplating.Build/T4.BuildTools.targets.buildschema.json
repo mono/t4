@@ -69,14 +69,24 @@
   },
   "metadata": [
     {
-      // Metadata that controls how a specific template is processed
-      "$appliesTo": [ "T4Transform", "T4Preprocess" ],
-      "OutputFilePath": {
-        "description": "Overrides the output folder for a T4 template. Note that Visual Studio does not respect this.",
+      "$appliesTo": [ "T4Transform" ],
+      "OutputDirectory": {
+        "description": "Overrides the output folder for a transformed T4 template. Note that the Visual Studio T4 generator does not respect this.",
         "type": "folder"
       },
       "OutputFileName": {
-        "description": "Overrides the output filename for a T4 template. Note that Visual Studio does not respect this.",
+        "description": "Overrides the output filename for a transformed T4 template. Note that the Visual Studio T4 generator does not respect this.",
+        "type": "file"
+      }
+    },
+    {
+      "$appliesTo": [ "T4Preprocess" ],
+      "OutputDirectory": {
+        "description": "Legacy option to override the output folder for a preprocessed T4 template. Ignored unless `UseLegacyT4Preprocessing` is `true`. Note that the Visual Studio T4 generator does not respect this.",
+        "type": "folder"
+      },
+      "OutputFileName": {
+        "description": "Legacy option to override the output filename for a preprocessed T4 template. Ignored unless `UseLegacyT4Preprocessing` is `true`. Note that the Visual Studio T4 generator does not respect this.",
         "type": "file"
       }
     },

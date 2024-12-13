@@ -1,0 +1,3 @@
+<#@ template language="C#" #>
+<#@ output extension=".generated.cs" #>
+Hello Item Metadata OutputDFileName

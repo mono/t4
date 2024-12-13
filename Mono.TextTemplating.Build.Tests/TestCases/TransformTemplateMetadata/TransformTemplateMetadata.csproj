@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(TemplatingTargetsPath)\T4.BuildTools.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <T4Argument Include="Greeting=Hello Metadata" />
+    <T4Argument Include="Year" Value="2024" />
+
+    <T4Transform Include="OutputDirectory.tt">
+      <OutputDirectory>Demo/Output</OutputDirectory>
+    </T4Transform>
+    <T4Transform Include="OutputFilePath.tt">
+      <OutputFilePath>Demo/LegacyOutput</OutputFilePath>
+    </T4Transform>
+    <T4Transform Include="OutputFileName.tt">
+      <OutputFileName>Demo/OutputFileNameTest</OutputFileName>
+    </T4Transform>
+    <T4Transform Include="OutputDirectoryAndOutputFileName.tt">
+      <OutputDirectory>Demo/Output</OutputDirectory>
+      <OutputFileName>OutputDirectoryAndFileNameTest.log</OutputFileName>
+    </T4Transform>
+  </ItemGroup>
+
+  <Import Project="$(TemplatingTargetsPath)\T4.BuildTools.targets" />
+</Project>

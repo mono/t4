@@ -1,0 +1,5 @@
+<#@ template language="C#" #>
+<#@ output extension=".html" #>
+<#@ parameter name="Year" type="int" #>
+<#@ parameter name="Greeting" #>
+<h1><#=Greeting#> <#=Year#>!</h1>

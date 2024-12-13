@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(TemplatingTargetsPath)\T4.BuildTools.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <T4Preprocess Include="OutputDirectory.tt">
+      <OutputDirectory>Demo/Output</OutputDirectory>
+    </T4Preprocess>
+    <T4Preprocess Include="OutputFilePath.tt">
+      <OutputFilePath>Demo/LegacyOutput</OutputFilePath>
+    </T4Preprocess>
+    <T4Preprocess Include="OutputFileName.tt">
+      <OutputFileName>Demo/OutputFileNameTest.cs</OutputFileName>
+    </T4Preprocess>
+    <T4Preprocess Include="OutputDirectoryAndOutputFileName.tt">
+      <OutputDirectory>Demo/Output</OutputDirectory>
+      <OutputFileName>OutputDirectoryAndFileNameTest.g.cs</OutputFileName>
+    </T4Preprocess>
+    <PackageReference Include="System.CodeDom" Version="5.0.0" />
+  </ItemGroup>
+
+  <Import Project="$(TemplatingTargetsPath)\T4.BuildTools.targets" />
+</Project>

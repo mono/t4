@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(TemplatingTargetsPath)\T4.BuildTools.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <T4Transform Include="Nested\Template\Folder\foo.tt" />
+    <T4Argument Include="Greeting=Hello" />
+    <T4Argument Include="Year" Value="2024" />
+  </ItemGroup>
+
+  <Import Project="$(TemplatingTargetsPath)\T4.BuildTools.targets" />
+</Project>

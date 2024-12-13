@@ -76,6 +76,7 @@
       <_T4PreprocessOnly>False</_T4PreprocessOnly>
       <_T4PreprocessOnly Condition="'$(_T4TransformKind)'=='DesignTime' Or ('$(_T4TransformKind)'=='OnBuild' And '$(TransformOnBuild)'=='False')">True</_T4PreprocessOnly>
       <_T4IntermediateTemplateOutputDir Condition="'$(_T4IntermediateTemplateOutputDir)'==''">$(IntermediateOutputPath)TextTransform\</_T4IntermediateTemplateOutputDir>
+      <_T4ProjectDirectory Condition="'$(_T4ProjectDirectory)'==''">$(MSBuildProjectDirectory)</_T4ProjectDirectory>
     </PropertyGroup>
 
     <TextTransform
@@ -90,6 +91,7 @@
       PreprocessOnly="$(_T4PreprocessOnly)"
       UseLegacyPreprocessingMode="$(UseLegacyT4Preprocessing)"
       IntermediateDirectory="$(_T4IntermediateTemplateOutputDir)"
+      ProjectDirectory="$(_T4ProjectDirectory)"
       TransformOutOfDateOnly="$(TransformOutOfDateOnly)"
       PreprocessTargetRuntimeIdentifier="$(TargetFrameworkIdentifier)"
       >

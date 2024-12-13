@@ -36,9 +36,9 @@ namespace Mono.TextTemplating.Build
 				foreach (var transform in transforms) {
 					yield return (transform.InputFile, (generator) => {
 						string inputFile = transform.InputFile;
-						string outputFile = Path.ChangeExtension (inputFile, ".txt");
 						var pt = LoadTemplate (generator, inputFile, out var inputContent);
 						TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
+						UpdateOutputExtensionWithSettings (transform, settings);
 
 						if (parameterMap != null) {
 							AddCoercedSessionParameters (generator, pt, parameterMap);
@@ -49,14 +49,12 @@ namespace Mono.TextTemplating.Build
 							return;
 						}
 
-						string outputContent;
-						(outputFile, outputContent) = generator.ProcessTemplateAsync (pt, inputFile, inputContent, outputFile, settings).Result;
+						(var outputFile, var outputContent) = generator.ProcessTemplateAsync (pt, inputFile, inputContent, transform.OutputFile, settings).Result;
 
 						if (generator.Errors.HasErrors) {
 							return;
 						}
 
-						transform.OutputFile = outputFile;
 						transform.Dependencies = new List<string> (generator.IncludedFiles);
 						transform.Dependencies.AddRange (generator.CapturedReferences);
 
@@ -79,25 +77,20 @@ namespace Mono.TextTemplating.Build
 
 						var pt = LoadTemplate (generator, inputFile, out var inputContent);
 						TemplateSettings settings = TemplatingEngine.GetSettings (generator, pt);
+						UpdateOutputExtensionWithSettings (preprocess, settings);
 
 						settings.RelativeLinePragmas = true;
 						settings.RelativeLinePragmasBaseDirectory = Path.GetDirectoryName (preprocess.OutputFile);
 
 						settings.CodeGenerationOptions.UseRemotingCallContext = buildState.PreprocessTargetRuntimeIdentifier == ".NETFramework";
 
-						// FIXME: make these configurable, take relative path into account
-						settings.Namespace = buildState.DefaultNamespace;
-						settings.Name = Path.GetFileNameWithoutExtension (preprocess.InputFile);
+						settings.Namespace = preprocess.Namespace;
+						settings.Name = GetFileNameWithoutExtension (preprocess.OutputFile);
 
 						generator.Errors.AddRange (pt.Errors);
 						if (generator.Errors.HasErrors) {
 							return;
 						}
-
-						//FIXME: escaping
-						//FIXME: namespace name based on relative path and link metadata
-						string preprocessClassName = Path.GetFileNameWithoutExtension (inputFile);
-						settings.Name = preprocessClassName;
 
 						var outputContent = generator.PreprocessTemplate (pt, inputFile, inputContent, settings, out var references);
 
@@ -142,6 +135,19 @@ namespace Mono.TextTemplating.Build
 			return !hasErrors;
 		}
 
+		static void UpdateOutputExtensionWithSettings (TemplateBuildState.ITemplateState state, TemplateSettings settings)
+		{
+			// If extension is an empty string, the returned path from Path.ChangeExtension contains
+			// the contents of path with any characters following the last period removed.
+			// Therefore we must trim the trailing period.
+			if (state.ExtensionOverride != null) {
+				state.OutputFile = Path.ChangeExtension (state.OutputFile, state.ExtensionOverride).TrimEnd ('.');
+				settings.Extension = state.ExtensionOverride;
+			} else if (settings.Extension != null) {
+				state.OutputFile = Path.ChangeExtension (state.OutputFile, settings.Extension).TrimEnd ('.');
+			}
+		}
+
 		static bool LogErrors (TaskLoggingHelper taskLog, string filename, CompilerErrorCollection errors)
 		{
 			bool hasErrors = false;
@@ -178,9 +184,20 @@ namespace Mono.TextTemplating.Build
 			return generator.ParseTemplate (filename, inputContent);
 		}
 
+		static string GetFileNameWithoutExtension (string path)
+		{
+			var fileName = Path.GetFileName (path);
+			var firstDotIndex = fileName.IndexOf ('.');
+			return firstDotIndex != -1
+				? fileName.Substring (0, firstDotIndex)
+				: fileName;
+		}
+
 		static void WriteOutput (MSBuildTemplateGenerator generator, string outputFile, string outputContent, Encoding encoding)
 		{
 			try {
+				var parentDir = Path.GetDirectoryName (outputFile);
+				Directory.CreateDirectory (parentDir);
 				File.WriteAllText (outputFile, outputContent, encoding ?? new UTF8Encoding (encoderShouldEmitUTF8Identifier: false));
 			}
 			catch (IOException ex) {
@@ -219,7 +236,7 @@ namespace Mono.TextTemplating.Build
 			public DateTime? GetWriteTime (string filepath)
 			{
 				if (!writeTimeCache.TryGetValue (filepath, out var value)) {
-					writeTimeCache.Add (filepath, value = File.Exists(filepath)? File.GetLastWriteTime (filepath) : null);
+					writeTimeCache.Add (filepath, value = File.Exists (filepath) ? File.GetLastWriteTime (filepath) : null);
 				}
 				return value;
 			}
