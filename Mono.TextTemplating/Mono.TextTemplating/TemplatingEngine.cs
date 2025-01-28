@@ -59,10 +59,10 @@ namespace Mono.TextTemplating
 			createCompilerFunc = createCompiler;
 		}
 
-		CodeCompilation.CodeCompiler GetOrCreateCompiler ()
+		CodeCompilation.CodeCompiler GetOrCreateCompiler (ICodeCompilationContext context)
 		{
 			if (cachedCompiler == null) {
-				var runtime = RuntimeInfo.GetRuntime ();
+				var runtime = RuntimeInfo.GetRuntime (context);
 				if (runtime.Error != null) {
 					throw new TemplatingEngineException (runtime.Error);
 				}
@@ -79,13 +79,13 @@ namespace Mono.TextTemplating
 
 		public async Task<string> ProcessTemplateAsync (string content, ITextTemplatingEngineHost host, CancellationToken token = default)
 		{
-			using var tpl = await CompileTemplateAsync (content, host, token).ConfigureAwait (false);
+			using var tpl = await CompileTemplateAsync (content, host, new DefaultCodeCompilationContext(), token).ConfigureAwait (false);
 			return tpl?.Process ();
 		}
 
-		public async Task<string> ProcessTemplateAsync (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, CancellationToken token = default)
+		public async Task<string> ProcessTemplateAsync (ParsedTemplate pt, string content, TemplateSettings settings, ITextTemplatingEngineHost host, ICodeCompilationContext context, CancellationToken token = default)
 		{
-			var tpl = await CompileTemplateAsync (pt, content, host, settings, token).ConfigureAwait (false);
+			var tpl = await CompileTemplateAsync (pt, content, host, settings, context, token).ConfigureAwait (false);
 			using (tpl?.template) {
 				return tpl?.template.Process ();
 			}
@@ -189,9 +189,12 @@ namespace Mono.TextTemplating
 
 		[Obsolete("Use CompileTemplateAsync")]
 		public CompiledTemplate CompileTemplate (string content, ITextTemplatingEngineHost host)
-			=> CompileTemplateAsync (content, host, CancellationToken.None).Result;
+			=> CompileTemplateAsync (content, host, new DefaultCodeCompilationContext(), CancellationToken.None).Result;
 
 		public async Task<CompiledTemplate> CompileTemplateAsync (string content, ITextTemplatingEngineHost host, CancellationToken token)
+			=> await CompileTemplateAsync (content, host, new DefaultCodeCompilationContext(), token).ConfigureAwait (false);
+
+		public async Task<CompiledTemplate> CompileTemplateAsync (string content, ITextTemplatingEngineHost host, ICodeCompilationContext context, CancellationToken token)
 		{
 			if (content == null)
 				throw new ArgumentNullException (nameof (content));
@@ -204,7 +207,7 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			var tpl = await CompileTemplateInternal (pt, content, host, null, token).ConfigureAwait (false);
+			var tpl = await CompileTemplateInternal (pt, content, host, null, context, token).ConfigureAwait (false);
 			return tpl?.template;
 		}
 
@@ -224,7 +227,7 @@ namespace Mono.TextTemplating
 			out string[] references,
 			TemplateSettings settings = null)
 		{
-			var result = CompileTemplateAsync (pt, content, host, settings, CancellationToken.None).Result;
+			var result = CompileTemplateAsync (pt, content, host, settings, new DefaultCodeCompilationContext(), CancellationToken.None).Result;
 			references = result?.references;
 			return result?.template;
 		}
@@ -234,14 +237,17 @@ namespace Mono.TextTemplating
 			string content,
 			ITextTemplatingEngineHost host,
 			TemplateSettings settings = null,
+			ICodeCompilationContext context = null,
 			CancellationToken token = default)
 		{
 			if (pt == null)
 				throw new ArgumentNullException (nameof (pt));
 			if (host == null)
 				throw new ArgumentNullException (nameof (host));
+			if (content == null)
+				context = new DefaultCodeCompilationContext();
 
-			return CompileTemplateInternal (pt, content, host, settings, token);
+			return CompileTemplateInternal (pt, content, host, settings,context, token);
 		}
 
 		async Task<(CompiledTemplate template, string[] references)?> CompileTemplateInternal (
@@ -249,6 +255,7 @@ namespace Mono.TextTemplating
 			string content,
 			ITextTemplatingEngineHost host,
 			TemplateSettings settings,
+			ICodeCompilationContext context,
 			CancellationToken token
 			)
 		{
@@ -274,7 +281,7 @@ namespace Mono.TextTemplating
 				return null;
 			}
 
-			(var results, var assembly) = await CompileCode (references, settings, ccu, token).ConfigureAwait (false);
+			(var results, var assembly) = await CompileCode (references, settings, ccu, context, token).ConfigureAwait (false);
 			if (results.Errors.HasErrors) {
 				host.LogErrors (pt.Errors);
 				host.LogErrors (results.Errors);
@@ -288,7 +295,7 @@ namespace Mono.TextTemplating
 			return (compiledTemplate, references);
 		}
 
-		async Task<(CompilerResults, CompiledAssemblyData)> CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu, CancellationToken token)
+		async Task<(CompilerResults, CompiledAssemblyData)> CompileCode (IEnumerable<string> references, TemplateSettings settings, CodeCompileUnit ccu, ICodeCompilationContext context, CancellationToken token)
 		{
 			string sourceText;
 			var genOptions = new CodeGeneratorOptions ();
@@ -300,7 +307,7 @@ namespace Mono.TextTemplating
 			CompiledAssemblyData compiledAssembly = null;
 
 			// this may throw, so do it before writing source files
-			var compiler = GetOrCreateCompiler ();
+			var compiler = GetOrCreateCompiler (context);
 
 			// GetTempFileName guarantees that the returned file name is unique, but
 			// there are no equivalent for directories, so we create a directory

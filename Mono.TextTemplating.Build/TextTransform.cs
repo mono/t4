@@ -10,6 +10,7 @@ using MessagePack;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Mono.TextTemplating.CodeCompilation;
 
 namespace Mono.TextTemplating.Build
 {
@@ -36,6 +37,11 @@ namespace Mono.TextTemplating.Build
 		public bool TransformOutOfDateOnly { get; set; }
 
 		public string PreprocessTargetRuntimeIdentifier { get; set; }
+
+		/// <summary>
+		/// The path to roslyn which will be used for this build.
+		/// </summary>
+		public string RoslynTargetsPath { get; set; }
 
 		[Required]
 		public string IntermediateDirectory { get; set; }
@@ -130,7 +136,9 @@ namespace Mono.TextTemplating.Build
 				}
 			}
 
-			TextTransformProcessor.Process (Log, previousBuildState, buildState, PreprocessOnly);
+			ICodeCompilationContext context = RoslynTargetsPath != null ? new BuildSpecificCodeCompilationContext(RoslynTargetsPath) : new DefaultCodeCompilationContext ();
+
+			TextTransformProcessor.Process (Log, previousBuildState, buildState, PreprocessOnly, context);
 
 			if (buildState.TransformTemplates != null) {
 				TransformTemplateOutput = new ITaskItem[buildState.TransformTemplates.Count];

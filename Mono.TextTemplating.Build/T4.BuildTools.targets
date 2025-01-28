@@ -84,6 +84,7 @@
       IncludePaths="@(T4IncludePath)"
       ParameterValues="@(T4Argument)"
       ReferencePaths="@(T4ReferencePath)"
+      RoslynTargetsPath="$(RoslynTargetsPath)"
       TransformTemplates="@(T4Transform)"
       PreprocessTemplates="@(T4Preprocess)"
       AssemblyReferences="@(T4AssemblyReference)"

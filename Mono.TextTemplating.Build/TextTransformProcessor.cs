@@ -12,12 +12,13 @@ using System.Threading.Tasks;
 
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TextTemplating;
+using Mono.TextTemplating.CodeCompilation;
 
 namespace Mono.TextTemplating.Build
 {
 	static class TextTransformProcessor
 	{
-		public static bool Process (TaskLoggingHelper taskLog, TemplateBuildState previousBuildState, TemplateBuildState buildState, bool preprocessOnly)
+		public static bool Process (TaskLoggingHelper taskLog, TemplateBuildState previousBuildState, TemplateBuildState buildState, bool preprocessOnly, ICodeCompilationContext context)
 		{
 			(var transforms, var preprocessed) = buildState.GetStaleAndNewTemplates (previousBuildState, preprocessOnly, new WriteTimeCache ().GetWriteTime, taskLog);
 
@@ -50,7 +51,7 @@ namespace Mono.TextTemplating.Build
 						}
 
 						string outputContent;
-						(outputFile, outputContent) = generator.ProcessTemplateAsync (pt, inputFile, inputContent, outputFile, settings).Result;
+						(outputFile, outputContent) = generator.ProcessTemplateAsync (pt, inputFile, inputContent, outputFile, settings, context).Result;
 
 						if (generator.Errors.HasErrors) {
 							return;

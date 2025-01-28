@@ -29,7 +29,7 @@ using System.CodeDom.Compiler;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Mono.TextTemplating.CodeCompilation;
 using Xunit;
 
 namespace Mono.TextTemplating.Tests
@@ -150,7 +150,7 @@ namespace Mono.TextTemplating.Tests
 			var gen = new TemplateGenerator ();
 			var pt = gen.ParseTemplate (inputFile, inputContent);
 			TemplateSettings settings = TemplatingEngine.GetSettings (gen, pt);
-			(outputName, _) = await gen.ProcessTemplateAsync (pt, inputFile, inputContent, outputName, settings);
+			(outputName, _) = await gen.ProcessTemplateAsync (pt, inputFile, inputContent, outputName, settings, new DefaultCodeCompilationContext());
 
 			Assert.Equal ("hello.cfg", outputName);
 		}

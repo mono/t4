@@ -85,7 +85,9 @@ namespace Mono.TextTemplating.CodeCompilation
 		public string RefAssembliesDir { get; }
 		public string RuntimeFacadesDir { get; }
 
-		public static RuntimeInfo GetRuntime ()
+		public static RuntimeInfo GetRuntime () => GetRuntime (new DefaultCodeCompilationContext ());
+
+		public static RuntimeInfo GetRuntime (ICodeCompilationContext context)
 		{
 			if (Type.GetType ("Mono.Runtime") != null)
 			{
@@ -93,7 +95,7 @@ namespace Mono.TextTemplating.CodeCompilation
 			}
 			else if (RuntimeInformation.FrameworkDescription.StartsWith (".NET Framework", StringComparison.OrdinalIgnoreCase))
 			{
-				return GetNetFrameworkRuntime ();
+				return GetNetFrameworkRuntime (context);
 			}
 			else
 			{
@@ -123,24 +125,56 @@ namespace Mono.TextTemplating.CodeCompilation
 			);
 		}
 
-		static RuntimeInfo GetNetFrameworkRuntime ()
+		static RuntimeInfo GetNetFrameworkRuntime (ICodeCompilationContext context)
 		{
-			var runtimeDir = Path.GetDirectoryName (typeof (object).Assembly.Location);
-			var csc = Path.Combine (runtimeDir, "csc.exe");
+			var csc = Path.Combine (context.CompilerSearchPath, "csc.exe");
 			if (!File.Exists (csc)) {
 				return FromError (RuntimeKind.NetFramework, "Could not find csc in host .NET Framework installation");
 			}
-			return new RuntimeInfo (
-				RuntimeKind.NetFramework,
-				runtimeDir: runtimeDir,
-				// we don't really care about the version if it's not .net core
-				runtimeVersion: new Version ("4.7.2"),
-				refAssembliesDir: null,
-				runtimeFacadesDir: runtimeDir,
-				cscPath: csc,
-				cscMaxLangVersion: CSharpLangVersion.v5_0,
-				runtimeLangVersion: CSharpLangVersion.v5_0
-			);
+
+			// now, determine the csc max lang version, just run csc -langversion:? and parse the output
+			var psi = new System.Diagnostics.ProcessStartInfo (csc, "-langversion:?") {
+				RedirectStandardOutput = true,
+				UseShellExecute = false,
+				CreateNoWindow = true
+			};
+
+			psi.RedirectStandardOutput = true;
+			using (var p = System.Diagnostics.Process.Start (psi)) {
+				p.WaitForExit ();
+				var output = p.StandardOutput.ReadToEnd ();
+				if (output.Contains ("error CS2008")) {
+					// then we have a basic csc that doesn't support -langversion, probably net4
+					return new RuntimeInfo (
+						RuntimeKind.NetFramework,
+						runtimeDir: context.CompilerSearchPath,
+						// we don't really care about the version if it's not .net core
+						runtimeVersion: new Version ("4.7.2"),
+						refAssembliesDir: null,
+						runtimeFacadesDir: context.CompilerSearchPath,
+						cscPath: csc,
+						cscMaxLangVersion: CSharpLangVersion.v5_0,
+						runtimeLangVersion: CSharpLangVersion.v5_0
+					);
+				}
+
+				var maxLangVersion = CSharpLangVersionHelper.ParseLangVersionOutput (output);
+
+				// now that we know the max lang version, we need to find the runtime dir, which if it's msbuild, it's gonna be one dir up from CompilerSearchPath
+				// C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\Roslyn -> C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
+
+				return new RuntimeInfo (
+					RuntimeKind.NetFramework,
+					runtimeDir: Directory.GetParent (context.CompilerSearchPath).FullName,
+					// we don't really care about the version if it's not .net core
+					runtimeVersion: new Version ("4.7.2"),
+					refAssembliesDir: null,
+					runtimeFacadesDir: context.CompilerSearchPath,
+					cscPath: csc,
+					cscMaxLangVersion: maxLangVersion,
+					runtimeLangVersion: maxLangVersion
+				);
+			}
 		}
 
 		static RuntimeInfo GetDotNetCoreSdk ()
@@ -192,8 +226,6 @@ namespace Mono.TextTemplating.CodeCompilation
 				d => File.Exists (Path.Combine (d, $"net{hostVersion.Major}.{hostVersion.Minor}", "System.Runtime.dll")),
 				out _
 			);
-
-
 
 			return new RuntimeInfo (
 				RuntimeKind.NetCore,

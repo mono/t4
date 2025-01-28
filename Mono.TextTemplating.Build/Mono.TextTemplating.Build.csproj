@@ -34,7 +34,7 @@
     <None Include="readme.md" Pack="true" PackagePath="\" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" PrivateAssets="all" />
     <PackageReference Include="MessagePackAnalyzer" Version="2.5.129" PrivateAssets="all" />
-    <PackageReference Include="MessagePack" Version="2.5.129" PrivateAssets="all" />
+    <PackageReference Include="MessagePack" Version="2.5.192" PrivateAssets="all" />
     <!-- intentionally downlevel these so they can be loaded in older VS versions -->
     <PackageReference Include="Microsoft.Build.Framework" Version="17.0.0" PrivateAssets="all" IncludeAssets="compile" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.0.0" PrivateAssets="all" IncludeAssets="compile" />

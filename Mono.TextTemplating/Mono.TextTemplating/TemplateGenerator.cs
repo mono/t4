@@ -33,6 +33,7 @@ using System.Text;
 using Microsoft.VisualStudio.TextTemplating;
 using System.Threading;
 using System.Threading.Tasks;
+using Mono.TextTemplating.CodeCompilation;
 
 namespace Mono.TextTemplating
 {
@@ -119,7 +120,22 @@ namespace Mono.TextTemplating
 		public bool ProcessTemplate (string inputFile, string outputFile)
 			=> ProcessTemplateAsync (inputFile, outputFile, CancellationToken.None).Result;
 
-		public async Task<bool> ProcessTemplateAsync (string inputFile, string outputFile, CancellationToken token = default)
+		public async Task<bool> ProcessTemplateAsync (string inputFile, string outputFile)
+			=> await ProcessTemplateAsync (inputFile, outputFile, CancellationToken.None).ConfigureAwait (false);
+
+		public async Task<bool> ProcessTemplateAsync (string inputFile, string outputFile, CancellationToken token)
+			=> await ProcessTemplateAsync (inputFile, outputFile, new DefaultCodeCompilationContext(), token).ConfigureAwait (false);
+
+		internal async Task<(string outputFile, string outputContent)> ProcessTemplateAsync (ParsedTemplate pt, string inputFile, string inputContent, string outputFile, TemplateSettings settings)
+		{
+			InitializeForRun (inputFileName: inputFile, outputFileName: outputFile);
+
+			var outputContent = await Engine.ProcessTemplateAsync (pt, inputContent, settings, this, new DefaultCodeCompilationContext()).ConfigureAwait (false);
+
+			return (OutputFile, outputContent);
+		}
+
+		public async Task<bool> ProcessTemplateAsync (string inputFile, string outputFile, ICodeCompilationContext context, CancellationToken token)
 		{
 			if (string.IsNullOrEmpty (inputFile))
 				throw new ArgumentNullException (nameof (inputFile));
@@ -263,10 +279,20 @@ namespace Mono.TextTemplating
 			string outputFileName,
 			TemplateSettings settings,
 			CancellationToken token = default)
+			=> await ProcessTemplateAsync (pt, inputFileName, inputContent, outputFileName, settings, new DefaultCodeCompilationContext (), token).ConfigureAwait (false);
+
+		public async Task<(string fileName, string content)> ProcessTemplateAsync (
+			ParsedTemplate pt,
+			string inputFileName,
+			string inputContent,
+			string outputFileName,
+			TemplateSettings settings,
+			ICodeCompilationContext context,
+			CancellationToken token = default)
 		{
 			InitializeForRun (inputFileName, outputFileName);
 
-			var outputContent = await Engine.ProcessTemplateAsync (pt, inputContent, settings, this, token).ConfigureAwait (false);
+			var outputContent = await Engine.ProcessTemplateAsync (pt, inputContent, settings, this, context, token).ConfigureAwait (false);
 
 			return (OutputFile, outputContent);
 		}
