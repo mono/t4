@@ -34,6 +34,7 @@ namespace Mono.TextTemplating.Build
 		public bool PreprocessOnly { get; set; }
 		public bool UseLegacyPreprocessingMode { get; set; }
 		public bool TransformOutOfDateOnly { get; set; }
+		public bool UseInProcessCompiler { get; set; }
 
 		public string PreprocessTargetRuntimeIdentifier { get; set; }
 
@@ -74,7 +75,8 @@ namespace Mono.TextTemplating.Build
 			var buildState = new TemplateBuildState {
 				IntermediateDirectory = IntermediateDirectory,
 				DefaultNamespace = DefaultNamespace,
-				PreprocessTargetRuntimeIdentifier = PreprocessTargetRuntimeIdentifier
+				PreprocessTargetRuntimeIdentifier = PreprocessTargetRuntimeIdentifier,
+				UseInProcessCompiler = UseInProcessCompiler
 			};
 
 			success &= AddParameters (buildState);

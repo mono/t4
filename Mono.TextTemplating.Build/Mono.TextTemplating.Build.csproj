@@ -33,6 +33,7 @@
   <ItemGroup>
     <None Include="readme.md" Pack="true" PackagePath="\" />
     <ProjectReference Include="..\Mono.TextTemplating\Mono.TextTemplating.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\Mono.TextTemplating.Roslyn\Mono.TextTemplating.Roslyn.csproj" PrivateAssets="all" />
     <PackageReference Include="MessagePackAnalyzer" Version="2.5.129" PrivateAssets="all" />
     <PackageReference Include="MessagePack" Version="2.5.129" PrivateAssets="all" />
     <!-- intentionally downlevel these so they can be loaded in older VS versions -->

@@ -41,6 +41,8 @@ namespace Mono.TextTemplating.Build
 		public List<Parameter> Parameters { get; set; }
 		[Key(10)]
 		public string PreprocessTargetRuntimeIdentifier { get; set; }
+		[Key(11)]
+		public bool UseInProcessCompiler { get; set; }
 
 		internal (List<TransformTemplate> transforms, List<PreprocessedTemplate> preprocessed) GetStaleAndNewTemplates (
 			TemplateBuildState previousBuildState, bool preprocessOnly, Func<string, DateTime?> getFileWriteTime, TaskLoggingHelper logger)
