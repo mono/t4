@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TextTemplating;
 
+using Mono.TextTemplating;
+
 namespace Mono.TextTemplating.Build
 {
 	static class TextTransformProcessor
@@ -191,6 +193,9 @@ namespace Mono.TextTemplating.Build
 		static MSBuildTemplateGenerator CreateGenerator (TemplateBuildState buildState)
 		{
 			var generator = new MSBuildTemplateGenerator ();
+			if (buildState.UseInProcessCompiler) {
+				generator.UseInProcessCompiler ();
+			}
 			if (buildState.ReferencePaths != null) {
 				generator.ReferencePaths.AddRange (buildState.ReferencePaths);
 			}

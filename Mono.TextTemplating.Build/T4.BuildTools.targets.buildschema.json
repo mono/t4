@@ -140,6 +140,11 @@
       "description": "Place preprocessed templates beside the templates instead of dynamically injecting them into the build.",
       "type": "bool"
     },
+    "T4UseInProcessCompiler": {
+      "description": "Use the in-process Roslyn compiler for T4 templates, enabling modern C# language features even when running under Visual Studio's .NET Framework MSBuild host.",
+      "type": "bool",
+      "defaultValue": "false"
+    },
     "T4Arguments": {
       "description": "Used to pass arguments when invoking on the CLI. This is a semicolon-separated list and uses the same format as encoded `T4Argument` items: `name=value`, `directive!name!value` or `processor!directive!name!value`.",
       "isList": true
