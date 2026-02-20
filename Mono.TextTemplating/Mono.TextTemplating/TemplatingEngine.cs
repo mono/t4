@@ -367,7 +367,11 @@ namespace Mono.TextTemplating
 			if (!args.Debug && !r.Errors.HasErrors) {
 				r.TempFiles.Delete ();
 				// we can delete our temporary file after our temporary folder is deleted.
-				Directory.Delete (tempFolder);
+				try {
+					Directory.Delete (tempFolder);
+				} catch(IOException) {
+					// the directory is in the system temp folder and will be cleaned up by the OS
+				}
 			}
 
 			return (r, compiledAssembly);
